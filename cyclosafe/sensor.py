@@ -1,27 +1,33 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
+from rcl_interfaces.msg import ParameterDescriptor
 from std_msgs.msg import String
 from serial import Serial, serialutil
 from collections import deque
 
 class SensorPublisher(Node):
 	
-	def __init__(self, serial_name: str, baud: int = 57600):
+	def __init__(self):
 			super().__init__('sensor_publisher')
 			self.pub = self.create_publisher(String, 'range_data', 10)
 			timer_period = 0.5
 			self.timer = self.create_timer(timer_period, self.timer_callback)
 			self.count = 0
-			self.serial_name = serial_name
-			self.baudrate = baud
+			self.port = None
+			self.baud = None
 			self.values = deque()
 			self.buffer = bytes()
 			self.serial = None
 
+			self.declare_parameter('port', '/dev/ttyUSB0', ParameterDescriptor(description="device from which the serial data will be read"))
+			self.declare_parameter('baud', 57600, ParameterDescriptor(description="serial interface baudrate"))
+
 	def timer_callback(self):
+		port = self.get_parameter('port').get_parameter_value().string_value
+		baud = self.get_parameter('baud').get_parameter_value().integer_value
 		try:
-			if self.serial:
+			if (self.serial and self.port == port and baud == self.baud):
 				data: str = self.read()
 				if data:
 					msg = String()
@@ -30,7 +36,9 @@ class SensorPublisher(Node):
 					self.get_logger().info(f"Publishing: {msg.data}")
 					self.count += 1
 			else:
-				self.serial: Serial = Serial(self.serial_name, self.baudrate)
+				self.port = port
+				self.baud = baud
+				self.serial: Serial = Serial(self.port, self.baud)
 				self.timer.timer_period_ns = 0.5 * 1000 * 1000 * 1000
 		except (serialutil.SerialException, OSError) as e:
 			# print(f"Failed to read from serial: {e.strerror}\nRetrying...")
@@ -55,7 +63,7 @@ class SensorPublisher(Node):
 def main(args=None):
 	try:
 		rclpy.init(args=args)
-		sensor_publisher = SensorPublisher('/dev/ttyUSB0', 57600)
+		sensor_publisher = SensorPublisher()
 		rclpy.spin(sensor_publisher)
 	
 	except (KeyboardInterrupt, ExternalShutdownException):
