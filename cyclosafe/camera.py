@@ -3,10 +3,11 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import CompressedImage
-from picamera2 import Picamera2
 import io, time
+from picamera2 import Picamera2
 
 class ImagePublisher(Node):
+
 	def __init__(self):
 		super().__init__('camera_publisher')
 		self.cam = Picamera2()
