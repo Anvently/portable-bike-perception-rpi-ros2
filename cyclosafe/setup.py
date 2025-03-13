@@ -1,11 +1,11 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 package_name = 'cyclosafe'
 
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=find_packages(),
     data_files=[
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
@@ -22,8 +22,8 @@ setup(
     entry_points={
         'console_scripts': [
             'sensor = cyclosafe.sensor:main',
-			'camera = cyclosafe.camera:main',
-			'camera_cv = cyclosafe.camera_cv:main'
+			'camera_py = cyclosafe.camera_pi:main',
+			'camera_webcam = cyclosafe.camera_webcam:main'
         ],
     },
 )
