@@ -36,7 +36,7 @@ class AImagePublisher(Node):
 		self.init_camera()
 
 		self.pub = self.create_publisher(Image, 'images', 10)
-		self.save_service = self.create_service(SaveImages, 'save', self.save_files)
+		self.save_service = self.create_service(SaveImages, 'save_images', self.save_files)
 		self.timer = self.create_timer(0.2, self.routine)
 		self.get_logger().info('Camera publisher node started')
 
@@ -54,17 +54,17 @@ class AImagePublisher(Node):
 			if (len(self.img_queue) == 0):
 				raise Exception("no image available")
 			now = datetime.datetime.now()
-			delta: datetime.datetime = now - self.img_queue[0][0]
-			if (delta.timestamp() >= request.time):
+			delta: datetime.datetime = now.timestamp() - self.img_queue[0][0].timestamp()
+			if (delta >= request.time):
 				response.result = SaveFilesResult.SUCCESS
 			else:
 				response.result = SaveFilesResult.PARTIAL_SUCCESS
 
-				while self.img_queue:
-					(img_time, img_data) = self.img_queue.popleft()
+				for i in range(0, len(self.img_queue)):
+					(img_time, img_data) = self.img_queue[i]
 					if (now.timestamp() - img_time.timestamp() > request.time):
 						continue
-					path: str = f"{IMAGES_PATH}{img_time.strftime("%m-%d-%H-%M-%S")}.jpg"
+					path: str = f"{IMAGES_PATH}{img_time.strftime('%m-%d_%H-%M-%S-%f')}.jpg"
 					if (os.path.isfile(path)):
 						continue
 					cv2.imwrite(path, cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, self.compression])
