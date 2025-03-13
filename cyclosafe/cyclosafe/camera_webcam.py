@@ -4,7 +4,7 @@ from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import Image
 from cyclosafe.src.acamera import AImagePublisher
-import cv2
+import cv2, datetime
 
 
 class ImagePublisherDesktop(AImagePublisher):
@@ -26,7 +26,7 @@ class ImagePublisherDesktop(AImagePublisher):
 	def capture(self):
 		self.cam.grab()
 		ret, frame = self.cam.retrieve()
-		self.img_queue.append(frame)
+		self.img_queue.append((datetime.datetime.now(), frame))
 			
 		if not ret:
 			self.get_logger().error('Failed to capture image')

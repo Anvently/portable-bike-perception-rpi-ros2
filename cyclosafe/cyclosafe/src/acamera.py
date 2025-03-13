@@ -1,9 +1,21 @@
 from rclpy.node import Node, ParameterDescriptor
 from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import Image
+from std_srvs.srv import Trigger
 from cv_bridge import CvBridge
 from collections import deque
 from abc import abstractmethod
+from cyclosafe_interfaces.srv import SaveImages
+from enum import IntEnum
+import os
+import datetime, cv2
+
+IMAGES_PATH = os.getenv("HOME") + "/data/images/"
+
+class SaveFilesResult(IntEnum):
+	SUCCESS = 0
+	PARTIAL_SUCCESS = 1
+	FAILURE = 2
 
 class AImagePublisher(Node):
 
@@ -24,6 +36,7 @@ class AImagePublisher(Node):
 		self.init_camera()
 
 		self.pub = self.create_publisher(Image, 'images', 10)
+		self.save_service = self.create_service(SaveImages, 'save', self.save_files)
 		self.timer = self.create_timer(0.2, self.routine)
 		self.get_logger().info('Camera publisher node started')
 
@@ -35,10 +48,36 @@ class AImagePublisher(Node):
 	def capture(self):
 		pass
 
+	def save_files(self, request: SaveImages.Request, response : SaveImages.Response) -> SaveImages.Response:
+		try:
+
+			if (len(self.img_queue) == 0):
+				raise Exception("no image available")
+			now = datetime.datetime.now()
+			delta: datetime.datetime = now - self.img_queue[0][0]
+			if (delta.timestamp() >= request.time):
+				response.result = SaveFilesResult.SUCCESS
+			else:
+				response.result = SaveFilesResult.PARTIAL_SUCCESS
+
+				while self.img_queue:
+					(img_time, img_data) = self.img_queue.popleft()
+					if (now.timestamp() - img_time.timestamp() > request.time):
+						continue
+					path: str = f"{IMAGES_PATH}{img_time.strftime("%m-%d-%H-%M-%S")}.jpg"
+					if (os.path.isfile(path)):
+						continue
+					cv2.imwrite(path, cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, self.compression])
+	
+		except Exception as e:
+			self.get_logger().error(f"SaveFiles service: Failed to save images: {str(e)}")
+			response.result = SaveFilesResult.FAILURE
+		return response
+
 	def publish(self, encoding="rgb8"):
 		if (len(self.img_queue) > 0):
-			self.pub.publish(self.bridge.cv2_to_imgmsg(self.img_queue[-1], encoding))
-			self.get_logger().info(f"Published image: {self.img_queue[-1].nbytes / 1024 / 1024:.2f}MB")
+			self.pub.publish(self.bridge.cv2_to_imgmsg(self.img_queue[-1][1], encoding))
+			self.get_logger().info(f"Published image: {self.img_queue[-1][1].nbytes / 1024 / 1024:.2f}MB")
 
 	def update_parameters(self):
 		self.compression = self.get_parameter('compression').get_parameter_value().integer_value

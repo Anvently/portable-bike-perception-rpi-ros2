@@ -6,6 +6,7 @@ from sensor_msgs.msg import Image
 from picamera2 import Picamera2, Preview
 from libcamera import Transform
 from cv_bridge import CvBridge
+import datetime
 from cyclosafe.src.acamera import AImagePublisher
 
 class ImagePublisherPy(AImagePublisher):
@@ -21,7 +22,7 @@ class ImagePublisherPy(AImagePublisher):
 		self.cam.start()
 
 	def capture(self):
-		self.img_queue.append(self.cam.capture_array())
+		self.img_queue.append((datetime.datetime.now(), self.cam.capture_array()))
 		
 	def destroy(self):
 		if hasattr(self, 'cam'):
