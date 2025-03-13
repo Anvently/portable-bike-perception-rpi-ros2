@@ -22,7 +22,7 @@ setup(
     entry_points={
         'console_scripts': [
             'sensor = cyclosafe.sensor:main',
-			'camera_py = cyclosafe.camera_pi:main',
+			'camera_pi = cyclosafe.camera_pi:main',
 			'camera_webcam = cyclosafe.camera_webcam:main'
         ],
     },

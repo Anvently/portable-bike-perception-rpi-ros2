@@ -17,14 +17,12 @@
   <!-- <build_depend>rostest</build_depend> -->
   <build_depend>std_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
-  <build_depend>cyclosafe_interfaces</build_depend>
 
   <!-- <run_depend>message_runtime</run_depend> -->
   <exec_depend>rclpy</exec_depend>
   <exec_depend>python3-serial</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>cyclosafe_interfaces</exec_depend>
   <!-- <exec_depend>picamera2</exec_depend> -->
 
   <export>
