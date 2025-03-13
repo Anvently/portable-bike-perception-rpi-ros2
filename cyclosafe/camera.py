@@ -2,44 +2,42 @@ import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import Image
 import io, time
-from picamera2 import Picamera2
+from picamera2 import Picamera2, Preview
+from libcamera import Transform
+from cv_bridge import CvBridge
+import cv2
 
 class ImagePublisher(Node):
 
 	def __init__(self):
 		super().__init__('camera_publisher')
 		self.cam = Picamera2()
-		self.capture_config = self.cam.create_still_configuration()
-		self.configure(self.cam.capture_config)
-		self.format = "jpeg"
-		self.quality = 80
+		self.bridge = CvBridge()
+		capture_config = self.cam.create_video_configuration(main={"size": (1200, 800), "format": "RGB888"}, transform=Transform(vflip=True))
+		self.cam.configure(capture_config)
+		self.cam.start_preview(Preview.DRM)
+		self.count = 0
+		self.quality = 100
+		#self.cam.options["quality"] = self.quality
+		#self.cam.options["compress_level"] = 2
 		self.cam.start()
 
-		time.sleep(2)
+		#time.sleep(2)
 
-		self.pub = self.create_publisher(CompressedImage, 'images', 10)
-		self.timer = self.create_timer(1, self.capture)
-		self.job = None
+		self.pub = self.create_publisher(Image, 'images', 10)
+		self.timer = self.create_timer(0.2, self.capture)
 		self.get_logger().info('Camera publisher node started')
 
 
 	def capture(self):
 		try:
-			msg = CompressedImage()
-			msg.header.stamp = self.get_clock().now().to_msg()
-			msg.format = self.format
-	
-			data = io.BytesIO()
-			self.job = self.cam.capture_file(data, self.capture_config, format=self.format, quality=self.quality, wait=False)
-			self.cam.wait(self.job)
-			data.seek(0)
-			msg.data = data.getvalue()
-
-			self.pub.publish(msg)
-			self.get_logger().debug(f"Published image: {len(msg.data)} bytes")
-			
+			img = self.cam.capture_array()
+			cv2.imwrite(f"/home/npirard/data/images/{self.count}.jpg", cv2.cvtColor(img, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, self.quality])
+			self.pub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
+			self.get_logger().info(f"Published image")
+			self.count += 1
 		except Exception as e:
 			self.get_logger().error(f"Failed to capture image: {str(e)}")
 			
