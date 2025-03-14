@@ -1,10 +1,7 @@
 import rclpy
-from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from rcl_interfaces.msg import ParameterDescriptor
 from std_msgs.msg import String as StringMsg
-from serial import Serial, serialutil
-from collections import deque
 from cyclosafe.src.ASerialSensor import ASerialPublisher
 
 class SensorPublisher(ASerialPublisher):

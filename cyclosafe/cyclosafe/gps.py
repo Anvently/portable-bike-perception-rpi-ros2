@@ -1,8 +1,6 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
-from serial import Serial, serialutil
-from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import NavSatFix
 from cyclosafe.src.ASerialSensor import ASerialPublisher
 

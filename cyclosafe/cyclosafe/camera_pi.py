@@ -1,8 +1,5 @@
 import rclpy
 from rclpy.executors import ExternalShutdownException
-from rclpy.node import Node, ParameterDescriptor
-from rcl_interfaces.msg import ParameterDescriptor
-from sensor_msgs.msg import Image
 from picamera2 import Picamera2, Preview
 from libcamera import Transform
 from cv_bridge import CvBridge

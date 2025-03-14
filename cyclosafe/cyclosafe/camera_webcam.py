@@ -1,11 +1,7 @@
 import rclpy
 from rclpy.executors import ExternalShutdownException
-from rclpy.node import Node
-from rcl_interfaces.msg import ParameterDescriptor
-from sensor_msgs.msg import Image
 from cyclosafe.src.ACamera import AImagePublisher
 import cv2, datetime
-
 
 class ImagePublisherDesktop(AImagePublisher):
 	def init_camera(self):
