@@ -3,7 +3,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import Image
-from cyclosafe.src.acamera import AImagePublisher
+from cyclosafe.src.ACamera import AImagePublisher
 import cv2, datetime
 
 
@@ -12,8 +12,8 @@ class ImagePublisherDesktop(AImagePublisher):
 
 		self.cam = cv2.VideoCapture(0)
 		if not self.cam.isOpened():
-			self.get_logger().error(f'Failed to open camera with ID {self.camera_id}')
-			raise RuntimeError(f'Failed to open camera with ID {self.camera_id}')
+			self.get_logger().error(f'Failed to open camera')
+			raise RuntimeError(f'Failed to open camera')
 		
 		self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
 		self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])

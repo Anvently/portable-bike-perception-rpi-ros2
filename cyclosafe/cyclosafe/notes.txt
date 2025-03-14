@@ -1,0 +1,8 @@
+Pour simuler des ports virtuels :
+sudo socat  -d -d PTY,link=/dev/ttyV0,raw,echo=0,b115200 PTY,link=/dev/ttyV1,raw,echo=0,b115200
+sudo chmod 666 /dev/ttyV*
+Lancer un noeud écoutant sur un des ports, ex:
+
+ros2 run cyclosafe sensor --ros-args -p port:='/dev/ttyV0' -p baud:=115200
+cat > /dev/ttyV1
+

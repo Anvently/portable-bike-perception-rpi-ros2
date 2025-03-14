@@ -7,7 +7,7 @@ from picamera2 import Picamera2, Preview
 from libcamera import Transform
 from cv_bridge import CvBridge
 import datetime
-from cyclosafe.src.acamera import AImagePublisher
+from cyclosafe.src.ACamera import AImagePublisher
 
 class ImagePublisherPy(AImagePublisher):
 	def init_camera(self):
