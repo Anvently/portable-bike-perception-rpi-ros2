@@ -39,7 +39,7 @@ class GPIOController(Node):
 		self.set_rgb(0,0,0)
 		pi.set_mode(BTN_TEST_GPIO, pigpio.INPUT)
 		pi.callback(BTN_TEST_GPIO, pigpio.FALLING_EDGE, self.button_callback)
-		self.create_timer(0, self.routine)
+		self.create_timer(0.01, self.routine)
 		self.pos = 0
 		self.enable = True
 		self.get_logger().info('gpio node started')
@@ -50,15 +50,15 @@ class GPIOController(Node):
 		pi.set_PWM_dutycycle(LED_B_GPIO, b)
 
 	def wheel(self):
-		pos = 255 - pos
-		if (pos < 85):
-			self.set_rgb(255 - pos * 3, 0, pos * 3)
-		elif (pos < 170):
-			pos = pos - 85
+		self.pos = (self.pos + 1) % 255
+		if (self.pos < 85):
+			self.set_rgb(255 - self.pos * 3, 0, self.pos * 3)
+		elif (self.pos < 170):
+			pos = self.pos - 85
 			self.set_rgb(0, pos * 3, 255 - pos * 3)
 		else:
-			pos = pos - 170
-			self.set_rgb(pos * 3, 255 - pos * 3, 0)
+			pos = self.pos - 170
+			self.set_rgb(pos * 3, pos * 3, 0)
 
 	def button_callback(self, GPIO, level, tick):
 		# self.color_index = (self.color_index + 1) % len(GPIOController.colors)
@@ -69,7 +69,6 @@ class GPIOController(Node):
 
 	def routine(self):
 		if self.enable:
-			self.pos = (self.pos + 1) % 255
 			self.wheel()
 
 def main(args=None):
