@@ -63,6 +63,7 @@ class GPIOController(Node):
 	def button_callback(self, GPIO, level, tick):
 		# self.color_index = (self.color_index + 1) % len(GPIOController.colors)
 		# self.set_rgb(*GPIOController.colors[self.color_index])
+		exit(1)
 		self.enable = not self.enable
 		self.get_logger().info(f"button pushed: {GPIO}, {level}, {tick}")
 
