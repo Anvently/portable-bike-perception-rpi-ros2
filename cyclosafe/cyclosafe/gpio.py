@@ -23,10 +23,16 @@ class GPIOController(Node):
 			- control state led
 	"""
 
-
 	def __init__(self):
 		super().__init__('gpio_controller')
+		self.duty_cycle = 0
+		pi.set_PWM_dutycycle(LED_G_GPIO, self.duty_cycle)
+		self.create_timer(0.1, self.routine)
+		self.get_logger('gpio node started')
 		
+	def routine(self):
+		self.duty_cycle = (self.duty_cycle + 1) % 255
+		pi.set_PWM_dutycycle(LED_G_GPIO, self.duty_cycle)
 
 
 def main(args=None):
