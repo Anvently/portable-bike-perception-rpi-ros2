@@ -7,3 +7,4 @@ if [ $? -eq 1 ]; then
 	sleep 1
     sudo halt
 fi
+echo "Error: $?"

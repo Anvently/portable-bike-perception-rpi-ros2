@@ -3,20 +3,23 @@ from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
 from rcl_interfaces.msg import ParameterDescriptor
 import pigpio
+import os, time
 
 BTN_RST_GPIO = 16
-BTN_TEST_GPIO = 25
+BTN_TEST_GPIO = 16
 LED_R_GPIO = 7
 LED_G_GPIO = 8
-LED_B_GPIO = 20
+LED_B_GPIO = 9
 
 
 pi = pigpio.pi()
 
-def host_shutdown():
+def host_shutdown(GPIO, level, tick):
 	"""Shutdown host computer."""
-	pass
-
+	print("Shutting down...")
+	time.sleep(0.5)
+	rclpy.shutdown()
+	os.system('sudo halt')
 
 class GPIOController(Node):
 	
@@ -37,7 +40,6 @@ class GPIOController(Node):
 		pi.set_PWM_range(LED_G_GPIO, 255)
 		pi.set_PWM_range(LED_B_GPIO, 255)
 		self.set_rgb(0,0,0)
-		pi.set_mode(BTN_TEST_GPIO, pigpio.INPUT)
 		pi.callback(BTN_TEST_GPIO, pigpio.FALLING_EDGE, self.button_callback)
 		self.create_timer(0.01, self.routine)
 		self.pos = 0
@@ -63,9 +65,9 @@ class GPIOController(Node):
 	def button_callback(self, GPIO, level, tick):
 		# self.color_index = (self.color_index + 1) % len(GPIOController.colors)
 		# self.set_rgb(*GPIOController.colors[self.color_index])
-		exit(1)
-		self.enable = not self.enable
 		self.get_logger().info(f"button pushed: {GPIO}, {level}, {tick}")
+		rclpy.shutdown()	
+		self.enable = not self.enable
 
 	def routine(self):
 		if self.enable:
@@ -73,13 +75,17 @@ class GPIOController(Node):
 
 def main(args=None):
 	try:
+		pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
+		pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
 		rclpy.init(args=args)
 		gpio_controler = GPIOController()
 		rclpy.spin(gpio_controler)
 	
-	except (KeyboardInterrupt, ExternalShutdownException):
+	except (KeyboardInterrupt):
 		pass
+	except (ExternalShutdownException):
+		print("external shutdopwn")
+		sys.exit(1)
 
 if __name__ == '__main__':
-	pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
 	main()
