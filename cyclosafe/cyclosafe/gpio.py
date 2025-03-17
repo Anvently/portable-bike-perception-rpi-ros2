@@ -8,7 +8,7 @@ BTN_RST_GPIO = 16
 BTN_TEST_GPIO = 25
 LED_R_GPIO = 7
 LED_G_GPIO = 8
-LED_B_GPIO = 9
+LED_B_GPIO = 20
 
 
 pi = pigpio.pi()
@@ -28,26 +28,32 @@ class GPIOController(Node):
 
 	def __init__(self):
 		super().__init__('gpio_controller')
-		self.duty_cycle = 0
-		pi.callback(BTN_TEST_GPIO, pigpio.FALLING_EDGE, self.button_callback)
-		pi.set_mode(BTN_TEST_GPIO, pigpio.INPUT)
-		pi.set_PWM_dutycycle(LED_G_GPIO, self.duty_cycle)
+		GPIOController.colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (0,255,255), (255,255,255)]
+		self.color_index = 0
+		pi.set_mode(LED_R_GPIO, pigpio.OUTPUT)
+		pi.set_mode(LED_G_GPIO, pigpio.OUTPUT)
+		pi.set_mode(LED_B_GPIO, pigpio.OUTPUT)
+		pi.set_PWM_range(LED_R_GPIO, 255)
 		pi.set_PWM_range(LED_G_GPIO, 255)
-		self.create_timer(0, self.routine)
+		pi.set_PWM_range(LED_B_GPIO, 255)
+		self.set_rgb(0,0,0)
+		pi.set_mode(BTN_TEST_GPIO, pigpio.INPUT)
+		pi.callback(BTN_TEST_GPIO, pigpio.FALLING_EDGE, self.button_callback)
+		#self.create_timer(0, self.routine)
 		self.get_logger().info('gpio node started')
-		self.enable = True
+
+	def set_rgb(self, r, g, b):
+		pi.set_PWM_dutycycle(LED_R_GPIO, r)
+		pi.set_PWM_dutycycle(LED_G_GPIO, g)
+		pi.set_PWM_dutycycle(LED_B_GPIO, b)
 
 	def button_callback(self, GPIO, level, tick):
-		self.enable = not self.enable
+		self.color_index = (self.color_index + 1) % len(GPIOController.colors)
+		self.set_rgb(*GPIOController.colors[self.color_index])
 		self.get_logger().info(f"button pushed: {GPIO}, {level}, {tick}")
 
 	def routine(self):
-		if self.enable:
-			self.duty_cycle = (self.duty_cycle + 1) % 255
-		else:
-			self.duty_cycle = 0
-		pi.set_PWM_dutycycle(LED_G_GPIO, self.duty_cycle)
-
+		pass
 
 def main(args=None):
 	try:
