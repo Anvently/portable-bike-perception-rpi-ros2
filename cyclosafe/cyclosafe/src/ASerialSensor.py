@@ -61,6 +61,9 @@ class ASerialPublisher(Node):
 			self.get_logger().error(f"Failed to read from serial: {e.strerror}\nRetrying...")
 			self.timer.timer_period_ns = 2 * 1000 * 1000 * 1000
 			self.serial = None
+
+		except Exception as e:
+			self.get_logger().error(f"Exception while parsing: {str(e)}")
 	
 	@abstractmethod
 	def publish(self, data: Any):
