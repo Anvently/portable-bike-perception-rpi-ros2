@@ -116,7 +116,7 @@ ssize_t	Serial::receive(unsigned char* buffer, size_t nmax, bool block) {
 	while (nread < nmax) {
 		ret = read(_fd, buffer + nread, nmax - nread);
 		if (ret < 0) {
-			if (ret == EAGAIN) {
+			if (errno == EAGAIN) {
 				if (block == true)
 					continue;
 				break;
@@ -138,9 +138,9 @@ ssize_t		Serial::receive(std::deque<unsigned char>& dest, size_t nmax, bool bloc
 	char	buffer[1024];
 
 	while (nread < nmax) {
-		ret = read(_fd, buffer, std::max(nmax - nread, 1024UL));
+		ret = read(_fd, &buffer[0], std::min(nmax - nread, 1024UL));
 		if (ret < 0) {
-			if (ret == EAGAIN) {
+			if (errno == EAGAIN) {
 				if (block == true)
 					continue;
 				break;
@@ -151,7 +151,7 @@ ssize_t		Serial::receive(std::deque<unsigned char>& dest, size_t nmax, bool bloc
 			this->closeSerial();
 		} else {
 			nread += ret;
-			std::copy(&buffer[0], &buffer[nread], std::back_insert_iterator(dest));
+			std::copy(&buffer[0], &buffer[ret], std::back_insert_iterator(dest));
 		}
 	}
 	return (nread);

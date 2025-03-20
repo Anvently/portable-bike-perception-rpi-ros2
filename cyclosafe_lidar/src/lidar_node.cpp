@@ -42,14 +42,11 @@ class LidarNode : public rclcpp::Node {
 
 		std::string	_extractSep(char separator) {
 
-			// size_t	len_str;
-			
 			auto pos_substr = std::find(_buffer.begin(), _buffer.end(), separator);
 			if (pos_substr == _buffer.end())
 				return "";
 			// len_str = pos_substr - _buffer.begin();
 			std::string	substr(_buffer.begin(), std::next(pos_substr));
-			// std::cout << "len_str=" << pos_substr - _buffer.begin() << std::endl;
 			_buffer.erase(_buffer.begin(), std::next(pos_substr));
 			return (substr);
 		}
