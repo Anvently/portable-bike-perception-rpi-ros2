@@ -14,11 +14,12 @@
             "name": "cpp-ros2",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/opt/ros/jazzy/**"
+                "/opt/ros/jazzy/**",
+                "include/**"
             ],
             "defines": [],
             "cStandard": "c17",
-            "cppStandard": "gnu++17",
+            "cppStandard": "gnu++20",
             "intelliSenseMode": "linux-clang-x64",
             "compilerPath": "/usr/bin/g++"
         }

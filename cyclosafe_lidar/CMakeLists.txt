@@ -5,11 +5,31 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 20)
+endif()
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+
+include_directories(include)
+add_executable(node_lidar src/lidar_node.cpp src/Serial.cpp)
+
+ament_target_dependencies(node_lidar
+  rclcpp
+  sensor_msgs
+)
+
+install(TARGETS
+  node_lidar
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -23,4 +43,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_dependencies(rclcpp)
+ament_export_dependencies(sensor_msgs)
+ament_export_include_directories(include)
 ament_package()
