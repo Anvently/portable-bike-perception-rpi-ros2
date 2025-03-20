@@ -10,7 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-		('share/' + package_name, ['launch/multi_sensor.launch.py']),
+		('share/' + package_name, ['launch/multi_sensor.launch.py', 'launch/test_config.launch.py']),
     ],
     install_requires=['setuptools', 'picamera2'],
     zip_safe=True,
@@ -26,6 +26,7 @@ setup(
 			'camera_webcam = cyclosafe.camera_webcam:main',
 			'gpio = cyclosafe.gpio:main',
 			'gps = cyclosafe.gps:main',
+			'aggregator = cyclosafe.aggregator:main',
         ],
     },
 )

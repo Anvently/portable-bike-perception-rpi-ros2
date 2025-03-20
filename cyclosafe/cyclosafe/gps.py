@@ -63,7 +63,6 @@ class GPSPublisher(ASerialPublisher):
 				update = True
 		if len(lines) > 1:
 			self.buffer = b'\n'.join(lines[:-1])
-		print(hey)
 		return update
 	
 	def publish(self, data: NavSatFix):

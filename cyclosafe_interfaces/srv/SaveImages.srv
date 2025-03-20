@@ -1,3 +1,9 @@
-int32 time
+uint32 time
+string path
 ---
-int8 result
+
+uint8 SUCCESS = 0
+uint8 PARTIAL_SUCCESS = 1
+uint8 FAILURE = 2
+
+uint8 result
