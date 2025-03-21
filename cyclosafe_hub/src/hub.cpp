@@ -58,8 +58,8 @@ class HubNode : public rclcpp::Node {
 		rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr	_sub_gps;
 		rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedPtr	_client_images;
 
-		using SaveImagesFutureResponse = rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedFuture;
-		std::shared_ptr<SaveImagesFutureResponse>	_pending_request_images;
+		using SaveImagesFutureResponse = rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedFutureAndRequestId;
+		SaveImagesFutureResponse	_pending_request_images;
 
 		void	_range_callback(const sensor_msgs::msg::Range& msg) {
 			(void)msg;
@@ -95,16 +95,13 @@ class HubNode : public rclcpp::Node {
 			};
 			
 
-			auto result = _client_images->async_send_request(request, res_save_files_callback);
+			_pending_request_images = _client_images->async_send_request(request, res_save_files_callback);
 
 		}
 
 		void	_setup_out_dir(void) {
 			//check if out path exists
 			struct stat	file_stats;
-
-			if (_paths.parent_dir == "" && (_paths.parent_dir = utils::get_default_path()) == "")
-				throw (VerboseException("Could not resolve the default out path ($HOME/data) using $HOME variable"));
 
 			if (stat(_paths.parent_dir.c_str(), &file_stats)) // Check if given path exists
 				throw (OSException(_paths.parent_dir));
@@ -125,21 +122,21 @@ class HubNode : public rclcpp::Node {
 
 		HubNode(const HubNode& model);
 
-		rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscriber_; // The subscriber object.
-
 	public:
 
 		HubNode() : Node("hub_node"), _pending_request_images(nullptr)
 		{
 
 			this->declare_parameter("cache_ttl", 30.f);
-			this->declare_parameter("save_interval", 10.f);
+			this->declare_parameter("save_interval", 2.f);
 			this->declare_parameter("save_path", "");
 			
 			_cache_ttl = this->get_parameter("cache_ttl").as_double();
 			_save_interval = this->get_parameter("save_interval").as_double();
 			_paths.parent_dir = this->get_parameter("save_path").as_string();
 			
+			if (_paths.parent_dir == "" && (_paths.parent_dir = utils::get_default_path()) == "")
+				throw (VerboseException("Could not resolve the default out path ($HOME/data) using $HOME variable"));
 			_sim_start_t = system_clock::now();
 			_paths.main_dir = std::format("{0}/{1:%Y%m%d-%H%M}", _paths.parent_dir, _sim_start_t);
 			_paths.images_dir = _paths.main_dir + "/images";
@@ -155,7 +152,7 @@ class HubNode : public rclcpp::Node {
 
 			_client_images = this->create_client<cyclosafe_interfaces::srv::SaveImages>("save_images");
 			
-			_timer_save_files = this->create_wall_timer(500ms, std::bind(&HubNode::_save_files_callback, this));
+			_timer_save_files = this->create_wall_timer(std::chrono::duration<double>(_save_interval), std::bind(&HubNode::_save_files_callback, this));
 			if (_timer_save_files == nullptr)
 				throw VerboseException("Failed to construct timer");
 
@@ -185,12 +182,12 @@ class HubNode : public rclcpp::Node {
 			const std::string	message;
 			const int			error;
 		public:
-			OSException(const std::string& message) : message(message), error(errno) {}
+			OSException(const std::string& message) : message(std::format(
+				"{0}: {1} ({2})", message.c_str(), strerror(errno), errno)), error(errno) {
+			}
 			virtual ~OSException(void) throw() {}
 			virtual const char*	what(void) const throw() {
-				return (std::format(
-						"{0}: {1} ({2})", this->message.c_str(), strerror(error), error)
-					).c_str();
+				return (message.c_str());
 			}
 	};
 	
@@ -202,7 +199,7 @@ int	main(int argc, char** argv) {
 		rclcpp::init(argc, argv);
 		rclcpp::spin(std::make_shared<HubNode>());
 		rclcpp::shutdown();
-	} catch (const HubNode::VerboseException& e) {
+	} catch (const std::exception& e) {
 		std::cout << e.what() << std::endl;
 	}
 

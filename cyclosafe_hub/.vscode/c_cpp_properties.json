@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/opt/ros/foxy/include/**",
+                "/opt/ros/jazzy/include/**",
                 "${HOME}/Documents/npirard/ros_ws/install/*/include/**"
             ],
             "defines": [],
