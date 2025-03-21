@@ -95,7 +95,7 @@ class HubNode : public rclcpp::Node {
 			};
 			
 
-			auto result = _client_images->async_send_request(request);
+			auto result = _client_images->async_send_request(request, res_save_files_callback);
 
 		}
 
@@ -141,7 +141,7 @@ class HubNode : public rclcpp::Node {
 			_paths.parent_dir = this->get_parameter("save_path").as_string();
 			
 			_sim_start_t = system_clock::now();
-			_paths.main_dir = std::format("{0}/{:%Y%m%d-%H%M}", _paths.parent_dir, _sim_start_t);
+			_paths.main_dir = std::format("{0}/{1:%Y%m%d-%H%M}", _paths.parent_dir, _sim_start_t);
 			_paths.images_dir = _paths.main_dir + "/images";
 			this->_setup_out_dir();
 
@@ -161,7 +161,7 @@ class HubNode : public rclcpp::Node {
 
 			RCLCPP_INFO(this->get_logger(), std::format(
 				"Hub node initialized and started.\nOut path: {0}\nSave interval: {1}, Cache time-to-live: {2}", _paths.main_dir, _save_interval, _cache_ttl
-			));
+			).c_str());
 
 		}
 

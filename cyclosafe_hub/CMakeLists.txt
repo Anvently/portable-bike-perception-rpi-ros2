@@ -12,10 +12,11 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-
+find_package(sensor_msgs REQUIRED)
+find_package(cyclosafe_interfaces REQUIRED)
 
 include_directories(include)
-add_executable(hub src/lidar_node.cpp src/Serial.cpp)
+add_executable(hub src/hub.cpp)
 
 ament_target_dependencies(hub
   rclcpp
