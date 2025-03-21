@@ -4,13 +4,13 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/opt/ros/jazzy/include/**",
-                "${HOME}/ros_ws/install/*/include/**"
+                "/opt/ros/foxy/include/**",
+                "${HOME}/Documents/npirard/ros_ws/install/*/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
-            "cStandard": "c17",
-            "cppStandard": "gnu++20",
+            "cStandard": "c23",
+            "cppStandard": "gnu++23",
             "intelliSenseMode": "linux-gcc-x64"
         }
     ],
