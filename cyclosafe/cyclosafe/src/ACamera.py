@@ -60,15 +60,15 @@ class AImagePublisher(Node):
 			else:
 				response.result = SaveFilesResult.PARTIAL_SUCCESS
 
-				for i in range(0, len(self.img_queue)):
-					(img_time, img_data) = self.img_queue[i]
-					if (now.timestamp() - img_time.timestamp() > request.time):
-						continue
-					path: str = f"{request.path}/{img_time.strftime('%m-%d_%H-%M-%S-%f')}.jpg"
-					if (os.path.isfile(path)):
-						continue
-					if (cv2.imwrite(path, cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, self.compression]) == False):
-						raise Exception("file creation failed, is th directory created ?")
+			for i in range(0, len(self.img_queue)):
+				(img_time, img_data) = self.img_queue[i]
+				if (now.timestamp() - img_time.timestamp() > request.time):
+					continue
+				path: str = f"{request.path}/{img_time.strftime('%m-%d_%H-%M-%S-%f')}.jpg"
+				if (os.path.isfile(path)):
+					continue
+				if (cv2.imwrite(path, cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, self.compression]) == False):
+					raise Exception("file creation failed, is th directory created ?")
 	
 		except Exception as e:
 			self.get_logger().error(f"SaveFiles service: Failed to save images: {str(e)}")

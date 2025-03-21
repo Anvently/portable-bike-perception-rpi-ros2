@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/opt/ros/jazzy/include/**",
-                "${HOME}/Documents/npirard/ros_ws/install/*/include/**"
+                "${HOME}/ros_ws/install/*/include/**",
+                "include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

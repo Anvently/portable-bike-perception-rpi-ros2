@@ -10,20 +10,12 @@
 #include <format>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "hub.hpp"
 
-using namespace std::chrono_literals;
-using std::chrono::system_clock;
-using std::placeholders::_1;
+// using namespace std::chrono_literals;
+// using std::chrono::system_clock;
+// using std::placeholders::_1;
 
-class Datas {
-
-	private:
-
-		
-
-	public:
-
-};
 
 namespace utils {
 
@@ -38,93 +30,7 @@ namespace utils {
 
 }
 
-class HubNode : public rclcpp::Node {
-	
-	private:
-		
-		double							_cache_ttl; // Data time-to-live
-		double							_save_interval; // Seconds
-		struct {
-			std::string	parent_dir; // outpath given as parameter. Ex: ~/data/
-			std::string	main_dir; // name of the run. Ex: ~/data/20240321-1318
-			std::string	images_dir;
-		}	_paths;
-
-		system_clock::time_point		_sim_start_t;
-
-		rclcpp::TimerBase::SharedPtr	_timer_save_files;
-
-		rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr		_sub_range;
-		rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr	_sub_gps;
-		rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedPtr	_client_images;
-
-		using SaveImagesFutureResponse = rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedFutureAndRequestId;
-		SaveImagesFutureResponse	_pending_request_images;
-
-		void	_range_callback(const sensor_msgs::msg::Range& msg) {
-			(void)msg;
-		}
-
-		void	_gps_callback(const sensor_msgs::msg::NavSatFix& msg) {
-			(void)msg;
-		}
-
-		void	_save_files_callback(void) {
-
-			auto request = std::make_shared<cyclosafe_interfaces::srv::SaveImages::Request>();
-			request->path = _paths.images_dir;
-			request->time = _save_interval;
-			
-			if (_pending_request_images) {
-				if (_pending_request_images->wait_for(0s) != std::future_status::ready)
-					RCLCPP_ERROR(this->get_logger(), "Request to save images timed out. Is the camera node running ?");
-				_pending_request_images.reset();
-			}
-
-			auto res_save_files_callback = [this](rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedFuture future){
-				try {
-					auto response = future.get();
-					if (response->result == response->PARTIAL_SUCCESS)
-						RCLCPP_WARN(this->get_logger(), "Camera node could not fulfill the timespan requirement. Some images will be missing.");
-					if (response->result == response->FAILURE)
-						RCLCPP_ERROR(this->get_logger(), "Camera node failed to save images. Check storage usage");
-				} catch (const std::exception& e) {
-					RCLCPP_ERROR(this->get_logger(), "Runtime error: reading response from save images service.");
-				}
-				_pending_request_images = nullptr;
-			};
-			
-
-			_pending_request_images = _client_images->async_send_request(request, res_save_files_callback);
-
-		}
-
-		void	_setup_out_dir(void) {
-			//check if out path exists
-			struct stat	file_stats;
-
-			if (stat(_paths.parent_dir.c_str(), &file_stats)) // Check if given path exists
-				throw (OSException(_paths.parent_dir));
-
-			if (S_ISDIR(file_stats.st_mode) == false) // Check if it's a directory
-				throw (VerboseException(std::format("{0}: not a directory", _paths.parent_dir.c_str())));
-
-			if (mkdir(_paths.main_dir.c_str(), 0711)) // Create the working directory
-				throw (OSException(_paths.main_dir));
-
-			if (chdir(_paths.main_dir.c_str())) // Change dir
-				throw (OSException(_paths.main_dir));
-
-			if (mkdir("images", 0711)) // Create images dir
-				throw (OSException(_paths.main_dir + "/images"));
-
-		}
-
-		HubNode(const HubNode& model);
-
-	public:
-
-		HubNode() : Node("hub_node"), _pending_request_images(nullptr)
+HubNode::HubNode() : Node("hub_node"), _pending_request_images(nullptr)
 		{
 
 			this->declare_parameter("cache_ttl", 30.f);
@@ -136,7 +42,7 @@ class HubNode : public rclcpp::Node {
 			_paths.parent_dir = this->get_parameter("save_path").as_string();
 			
 			if (_paths.parent_dir == "" && (_paths.parent_dir = utils::get_default_path()) == "")
-				throw (VerboseException("Could not resolve the default out path ($HOME/data) using $HOME variable"));
+				throw (HubNode::VerboseException("Could not resolve the default out path ($HOME/data) using $HOME variable"));
 			_sim_start_t = system_clock::now();
 			_paths.main_dir = std::format("{0}/{1:%Y%m%d-%H%M}", _paths.parent_dir, _sim_start_t);
 			_paths.images_dir = _paths.main_dir + "/images";
@@ -144,17 +50,17 @@ class HubNode : public rclcpp::Node {
 
 			_sub_range = this->create_subscription<sensor_msgs::msg::Range>("range", 10, std::bind(&HubNode::_range_callback, this, _1));
 			if (_sub_range == nullptr)
-				throw VerboseException("Failed to construct range suscriber");
+				throw HubNode::VerboseException("Failed to construct range suscriber");
 
 			_sub_gps = this->create_subscription<sensor_msgs::msg::NavSatFix>("gps", 10, std::bind(&HubNode::_gps_callback, this, _1));
 			if (_sub_gps == nullptr)
-				throw VerboseException("Failed to construct gps suscriber");
+				throw HubNode::VerboseException("Failed to construct gps suscriber");
 
 			_client_images = this->create_client<cyclosafe_interfaces::srv::SaveImages>("save_images");
 			
 			_timer_save_files = this->create_wall_timer(std::chrono::duration<double>(_save_interval), std::bind(&HubNode::_save_files_callback, this));
 			if (_timer_save_files == nullptr)
-				throw VerboseException("Failed to construct timer");
+				throw HubNode::VerboseException("Failed to construct timer");
 
 			RCLCPP_INFO(this->get_logger(), std::format(
 				"Hub node initialized and started.\nOut path: {0}\nSave interval: {1}, Cache time-to-live: {2}", _paths.main_dir, _save_interval, _cache_ttl
@@ -162,36 +68,72 @@ class HubNode : public rclcpp::Node {
 
 		}
 
+void	HubNode::_range_callback(const sensor_msgs::msg::Range& msg) {
+	(void)msg;
+}
 
-		virtual ~HubNode(void) throw() {
-			
+void	HubNode::_gps_callback(const sensor_msgs::msg::NavSatFix& msg) {
+	(void)msg;
+}
+
+void	HubNode::_save_files_callback(void) {
+
+	auto request = std::make_shared<cyclosafe_interfaces::srv::SaveImages::Request>();
+	request->path = _paths.images_dir;
+	request->time = _save_interval;
+	
+	if (_pending_request_images) {
+		if (_pending_request_images->wait_for(0s) != std::future_status::ready)
+			RCLCPP_ERROR(this->get_logger(), "Request to save images timed out. Is the camera node running ?");
+		_pending_request_images = nullptr;
+	}
+
+	auto res_save_files_callback = [this](rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedFuture future){
+		try {
+			auto response = future.get();
+			if (response->result == response->PARTIAL_SUCCESS)
+				RCLCPP_WARN(this->get_logger(), "Camera node could not fulfill the timespan requirement. Some images will be missing.");
+			if (response->result == response->FAILURE)
+				RCLCPP_ERROR(this->get_logger(), "Camera node failed to save images. Check storage usage");
+		} catch (const std::exception& e) {
+			RCLCPP_ERROR(this->get_logger(), "Runtime error: reading response from save images service.");
 		}
-
-
-	class VerboseException : public std::exception {
-		private:
-			const std::string	message;
-		public:
-			VerboseException(const std::string& message) : message(message) {}
-			virtual ~VerboseException(void) throw() {}
-			virtual const char*	what(void) const throw() {return (this->message.c_str());}
-	};
-
-	class OSException : public std::exception {
-		private:
-			const std::string	message;
-			const int			error;
-		public:
-			OSException(const std::string& message) : message(std::format(
-				"{0}: {1} ({2})", message.c_str(), strerror(errno), errno)), error(errno) {
-			}
-			virtual ~OSException(void) throw() {}
-			virtual const char*	what(void) const throw() {
-				return (message.c_str());
-			}
+		_pending_request_images = nullptr;
 	};
 	
-};
+
+	_pending_request_images = std::make_shared<SaveImagesFutureResponse>(_client_images->async_send_request(request, res_save_files_callback));
+
+}
+
+void	HubNode::_setup_out_dir(void) {
+	//check if out path exists
+	struct stat	file_stats;
+
+	if (stat(_paths.parent_dir.c_str(), &file_stats)) // Check if given path exists
+		throw (HubNode::OSException(_paths.parent_dir));
+
+	if (S_ISDIR(file_stats.st_mode) == false) // Check if it's a directory
+		throw (HubNode::VerboseException(std::format("{0}: not a directory", _paths.parent_dir.c_str())));
+
+	if (mkdir(_paths.main_dir.c_str(), 0711)) // Create the working directory
+		throw (HubNode::OSException(_paths.main_dir));	
+
+	// Create or update "latest" symbolic link
+	std::string	symlink_path = _paths.parent_dir + "/latest";
+	unlink(symlink_path.c_str());
+	symlink(_paths.main_dir.c_str(), symlink_path.c_str());
+	errno = 0; // discard any unlink() or symlink() error
+
+	if (chdir(_paths.main_dir.c_str())) // Change dir
+		throw (HubNode::OSException(_paths.main_dir));
+		
+
+	if (mkdir("images", 0711)) // Create images dir
+		throw (HubNode::OSException(_paths.main_dir + "/images"));
+
+}
+
 
 int	main(int argc, char** argv) {
 
