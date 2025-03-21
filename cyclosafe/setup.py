@@ -12,7 +12,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
 		('share/' + package_name, ['launch/multi_sensor.launch.py', 'launch/test_config.launch.py']),
     ],
-    install_requires=['setuptools', 'picamera2'],
+    install_requires=['setuptools'],
     zip_safe=True,
     maintainer='manu',
     maintainer_email='pirard.nicolas@hotmail.fr',

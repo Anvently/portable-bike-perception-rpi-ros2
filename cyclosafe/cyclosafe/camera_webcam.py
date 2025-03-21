@@ -6,11 +6,12 @@ import cv2, datetime
 class ImagePublisherDesktop(AImagePublisher):
 	def init_camera(self):
 
-		self.cam = cv2.VideoCapture(0)
+		self.get_logger().info(f'Starting webcam')
+		self.cam = cv2.VideoCapture(0, cv2.CAP_V4L2)
 		if not self.cam.isOpened():
 			self.get_logger().error(f'Failed to open camera')
 			raise RuntimeError(f'Failed to open camera')
-		
+		self.get_logger().info(f'Webcam started')
 		self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
 		self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, self.resolution[1])
 		self.cam.set(cv2.CAP_PROP_FPS, 30)
@@ -22,10 +23,10 @@ class ImagePublisherDesktop(AImagePublisher):
 	def capture(self):
 		self.cam.grab()
 		ret, frame = self.cam.retrieve()
-		self.img_queue.append((datetime.datetime.now(), frame))
-			
 		if not ret:
 			self.get_logger().error('Failed to capture image')
+		else:
+			self.img_queue.append((datetime.datetime.now(), frame))
 		
 	def destroy(self):
 		if hasattr(self, 'cam') and self.cam.isOpened():
