@@ -24,14 +24,12 @@ namespace utils {
 	std::string	get_default_path(void);
 }
 
-std::ostream&	operator<<(std::ostream& os, sensor_msgs::msg::Range);
-std::ostream&	operator<<(std::ostream& os, sensor_msgs::msg::NavSatFix);
+std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::Range&);
+std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::NavSatFix&);
 
 class HubNode : public rclcpp::Node {
 	
 	private:
-		
-		HubNode();
 
 		double							_cache_ttl; // Data time-to-live
 		double							_save_interval; // Seconds
@@ -47,6 +45,7 @@ class HubNode : public rclcpp::Node {
 		system_clock::time_point		_sim_start_time;
 
 		rclcpp::TimerBase::SharedPtr	_timer_save_files;
+		unsigned int					_nbr_camera_failure = 0;
 
 		using Range = sensor_msgs::msg::Range;
 		using NavSatFix = sensor_msgs::msg::NavSatFix;
@@ -71,11 +70,11 @@ class HubNode : public rclcpp::Node {
 		void	_setup_out_dir(void);
 
 		HubNode(const HubNode& model);
-		HubNode(system_clock::time_point time_start);
-		HubNode();
-
+		
 	public:
-
+		
+		HubNode();
+		HubNode(system_clock::time_point time_start);
 
 		virtual ~HubNode(void) throw();
 

@@ -53,7 +53,6 @@ HubNode::HubNode(system_clock::time_point time_start) :
 
 	if (_paths.parent_dir == "" && (_paths.parent_dir = utils::get_default_path()) == "")
 		throw (HubNode::VerboseException("Could not resolve the default out path ($HOME/data) using $HOME variable"));
-	_sim_start_time = system_clock::now();
 	_paths.main_dir = std::format("{0}/{1:%Y%m%d-%H%M}", _paths.parent_dir, _sim_start_time);
 	_paths.images_dir = _paths.main_dir + "/images";
 	this->_setup_out_dir();
@@ -79,16 +78,14 @@ HubNode::HubNode(system_clock::time_point time_start) :
 }
 
 void	HubNode::_range_callback(const sensor_msgs::msg::Range& msg) {
-	system_clock::time_point	timestamp(
-		std::chrono::seconds(msg.header.stamp.sec) + std::chrono::nanoseconds(msg.header.stamp.nanosec));
+	system_clock::time_point	timestamp = std::chrono::system_clock::from_time_t(msg.header.stamp.sec) + std::chrono::nanoseconds(msg.header.stamp.nanosec);
 
 	_range_data.push(timestamp, msg);
 }
 
 
 void	HubNode::_gps_callback(const sensor_msgs::msg::NavSatFix& msg) {
-	system_clock::time_point	timestamp(
-		std::chrono::seconds(msg.header.stamp.sec) + std::chrono::nanoseconds(msg.header.stamp.nanosec));
+	system_clock::time_point	timestamp = std::chrono::system_clock::from_time_t(msg.header.stamp.sec) + std::chrono::nanoseconds(msg.header.stamp.nanosec);
 
 	_gps_data.push(timestamp, msg);
 }
@@ -96,8 +93,12 @@ void	HubNode::_gps_callback(const sensor_msgs::msg::NavSatFix& msg) {
 void	HubNode::_save_files_callback(void) {
 	this->_send_save_images_request();
 
+	_range_data.cleanup();
+	_gps_data.cleanup();
 	(*_outfile_range) << _range_data;
+	_range_data.clear();
 	(*_outfile_gps) << _gps_data;
+	_gps_data.clear();
 }
 
 void	HubNode::_send_save_images_request(void) {
@@ -107,14 +108,18 @@ void	HubNode::_send_save_images_request(void) {
 	request->time = _save_interval;
 	
 	if (_pending_request_images) {
-		if (_pending_request_images->wait_for(0s) != std::future_status::ready)
-			RCLCPP_ERROR(this->get_logger(), "Request to save images timed out. Is the camera node running ?");
+		if (_pending_request_images->wait_for(0s) != std::future_status::ready) {
+			_nbr_camera_failure++;
+			if (_nbr_camera_failure < 3)
+				RCLCPP_ERROR(this->get_logger(), "Request to save images timed out. Is the camera node running ?");
+		}
 		_pending_request_images = nullptr;
 	}
 
 	auto res_save_files_callback = [this](rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedFuture future){
 		try {
 			auto response = future.get();
+			_nbr_camera_failure = 0;
 			if (response->result == response->PARTIAL_SUCCESS)
 				RCLCPP_WARN(this->get_logger(), "Camera node could not fulfill the timespan requirement. Some images will be missing.");
 			if (response->result == response->FAILURE)
@@ -163,12 +168,14 @@ void	HubNode::_setup_out_dir(void) {
 		throw (HubNode::OSException(std::format("{0}/gps", _paths.main_dir)));
 }
 
-std::ostream&	operator<<(std::ostream& os, sensor_msgs::msg::Range msg) {
+std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::Range& msg) {
 	os << msg.range;
+	return (os);
 }
 
-std::ostream&	operator<<(std::ostream& os, sensor_msgs::msg::NavSatFix msg) {
+std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::NavSatFix& msg) {
 	os << msg.latitude << ',' << msg.longitude << ',' << msg.position_covariance[0];
+	return (os);
 }
 
 HubNode::~HubNode(void) {

@@ -66,7 +66,11 @@ class GPSPublisher(ASerialPublisher):
 		return update
 	
 	def publish(self, data: NavSatFix):
+		"""
+			TODO: Use timestamp sent by device instead of current
+		"""
 		msg = NavSatFix(latitude=self.latitude, longitude = self.longitude)
+		msg.header.stamp = self.get_clock().now().to_msg()
 		msg.position_covariance[0] = self.hdop ** 2
 		msg.position_covariance[4] = self.hdop ** 2
 		msg.position_covariance[8] = (2 * self.hdop) ** 2
