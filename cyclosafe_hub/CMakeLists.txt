@@ -16,7 +16,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(cyclosafe_interfaces REQUIRED)
 
 include_directories(include)
-add_executable(hub src/hub.cpp)
+add_executable(hub src/Hub.cpp)
 
 ament_target_dependencies(hub
   rclcpp
