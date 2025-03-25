@@ -55,11 +55,11 @@ class GPSPublisher(ASerialPublisher):
 			words = line.decode("utf-8").split(',')
 			message_type = words[0]
 			if (message_type == "$GNGLL"):
-				self.latitude = float(words[1])
-				self.longitude = float(words[3])
+				self.latitude = float(words[1]) if words[1] != '' else float('NaN')
+				self.longitude = float(words[3]) if words[3] != '' else float('NaN')
 				update = True
 			elif (message_type == "$GNGSA"):
-				self.hdop = float(words[16])
+				self.hdop = float(words[16]) if words[16] != '' else float('NaN')
 				update = True
 		if len(lines) > 1:
 			self.buffer = b'\n'.join(lines[:-1])

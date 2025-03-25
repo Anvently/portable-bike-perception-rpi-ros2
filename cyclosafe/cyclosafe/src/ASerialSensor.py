@@ -6,6 +6,7 @@ from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import NavSatFix
 from typing import Any
 from abc import abstractmethod
+from rclpy.time import Time
 
 class ASerialPublisher(Node):
 	""" 
@@ -25,6 +26,8 @@ class ASerialPublisher(Node):
 			self.declare_parameter('port', default_port, ParameterDescriptor(description="device from which the serial data will be read"))
 			self.declare_parameter('baud', default_baud, ParameterDescriptor(description="serial interface baudrate"))
 			self.declare_parameter('period', 0.5, ParameterDescriptor(description="serial interface baudrate"))
+			# self.declare_parameter('start_time', self.get_clock().now(), ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."), True)
+			# self.start_time = Time(self.get_parameter('start_time').get_parameter_value().double_value)
 
 			self.pub = self.create_publisher(message_type, topic, 10)
 

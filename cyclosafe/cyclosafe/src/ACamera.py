@@ -9,6 +9,10 @@ from cyclosafe_interfaces.srv import SaveImages
 from enum import IntEnum
 import os, ctypes
 import datetime, cv2
+import time
+from rclpy.time import Time, S_TO_NS
+
+MS_TO_NS = (1000 * 1000)
 
 IMAGES_PATH = os.getenv("HOME") + "/data/images/"
 
@@ -23,11 +27,14 @@ class AImagePublisher(Node):
 		super().__init__('camera_publisher')
 
 		self.declare_parameter('queue_size', 20, ParameterDescriptor(description="Max number of images stored in memory."))
-		self.declare_parameter('resolution', [800, 600], ParameterDescriptor(description="Image resolution: [width, height]"), True)
+		self.declare_parameter('resolution', [800, 600], ParameterDescriptor(description="Image resolution: [width, height]"))
 		self.declare_parameter('interval', 0.5, ParameterDescriptor(description="Interval during each image"))
 		self.declare_parameter('compression', 95, ParameterDescriptor(description="Compression level [0-100]"))
-		self.declare_parameter('preview', True, ParameterDescriptor(description="Enable/Disable preview. Only before start"), True)
+		self.declare_parameter('preview', True, ParameterDescriptor(description="Enable/Disable preview. Only before start"))
+		self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
 		self.update_parameters()
+
+		self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
 
 		self.img_queue = deque(maxlen=self.queue_size)
 		self.bridge = CvBridge()
@@ -48,23 +55,27 @@ class AImagePublisher(Node):
 	def capture(self):
 		pass
 
+	def	get_current_timestamp(self) -> int:
+		"""Return the current time in ms from the beginning of the simulation"""
+		now: Time = self.get_clock().now()
+		return (int((now - self.start_time).nanoseconds / MS_TO_NS))
+
 	def save_files(self, request: SaveImages.Request, response : SaveImages.Response) -> SaveImages.Response:
 		try:
-
 			if (len(self.img_queue) == 0):
 				raise Exception("no image available")
-			now = datetime.datetime.now()
-			delta: datetime.datetime = now.timestamp() - self.img_queue[0][0].timestamp()
+			now = self.get_current_timestamp()
+			delta: int = now - self.img_queue[0][0]
 			if (delta >= request.time):
 				response.result = SaveFilesResult.SUCCESS
 			else:
 				response.result = SaveFilesResult.PARTIAL_SUCCESS
 
 			for i in range(0, len(self.img_queue)):
-				(img_time, img_data) = self.img_queue[i]
-				if (now.timestamp() - img_time.timestamp() > request.time):
+				(img_timestamp, img_data) = self.img_queue[i]
+				if (now - img_timestamp > request.time):
 					continue
-				path: str = f"{request.path}/{img_time.strftime('%m-%d_%H-%M-%S-%f')}.jpg"
+				path: str = f"{request.path}/{img_timestamp}.jpg"
 				if (os.path.isfile(path)):
 					continue
 				if (cv2.imwrite(path, cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, self.compression]) == False):
@@ -78,7 +89,7 @@ class AImagePublisher(Node):
 	def publish(self, encoding="rgb8"):
 		if (len(self.img_queue) > 0):
 			self.pub.publish(self.bridge.cv2_to_imgmsg(self.img_queue[-1][1], encoding))
-			self.get_logger().info(f"Published image: {self.img_queue[-1][1].nbytes / 1024 / 1024:.2f}MB")
+			self.get_logger().info(f"Published image: {self.img_queue[-1][1].nbytes / 1024 / 1024:.2f}MB at {self.img_queue[-1][0]}")
 
 	def update_parameters(self):
 		self.compression = self.get_parameter('compression').get_parameter_value().integer_value

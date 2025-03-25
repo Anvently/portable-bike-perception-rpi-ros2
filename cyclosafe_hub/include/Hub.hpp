@@ -13,6 +13,7 @@
 #include <TTLDeque.hpp>
 #include <ostream>
 #include <fstream>
+// #include <rclcpp/time.hpp>
 
 using namespace std::chrono_literals;
 using std::chrono::system_clock;
@@ -42,7 +43,7 @@ class HubNode : public rclcpp::Node {
 		std::ofstream*	_outfile_range;
 		std::ofstream*	_outfile_gps;
 
-		system_clock::time_point		_sim_start_time;
+		rclcpp::Time					_sim_start_time;
 
 		rclcpp::TimerBase::SharedPtr	_timer_save_files;
 		unsigned int					_nbr_camera_failure = 0;
@@ -74,7 +75,7 @@ class HubNode : public rclcpp::Node {
 	public:
 		
 		HubNode();
-		HubNode(system_clock::time_point time_start);
+		HubNode(const rclcpp::Time& time_start);
 
 		virtual ~HubNode(void) throw();
 

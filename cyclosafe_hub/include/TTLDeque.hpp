@@ -32,13 +32,15 @@ class TTLDeque {
 		
 	public:
 	
-		TTLDeque(std::chrono::milliseconds ttl, TimePoint start) : _ttl(ttl), _start(start) {
-			std::cout << "ttl=" << _time().count() << std::endl;
-		}
+		TTLDeque(std::chrono::milliseconds ttl, TimePoint start) : _ttl(ttl), _start(start) {}
 
 		TTLDeque(std::chrono::milliseconds ttl) : _ttl(ttl) {
 			_start = std::chrono::system_clock::now();
 			
+		}
+
+		void	setStartTime(const TimePoint& time) {
+			_start = time;
 		}
 
 		void	cleanup() {
@@ -55,7 +57,6 @@ class TTLDeque {
 		}
 		
 		void	push(const TimePoint& at,  const T& item) {
-			std::cout << "Adding date=" << std::format("{0:%Y%m%d-%H%M}", at) << std::endl;
 			_container.emplace_back(std::chrono::duration_cast<std::chrono::milliseconds>(at - _start), item);
 		}
 

@@ -31,29 +31,34 @@ namespace utils {
 
 }
 
-HubNode::HubNode() : HubNode(system_clock::now()) {}
+HubNode::HubNode() : HubNode(rclcpp::Time(0, 0, RCL_ROS_TIME)) {}
 
-HubNode::HubNode(system_clock::time_point time_start) :
+HubNode::HubNode(const rclcpp::Time& time_start) :
 	Node("hub_node"),
 	_sim_start_time(time_start),
 	_pending_request_images(nullptr),
-	_range_data(std::chrono::milliseconds(0), _sim_start_time),
-	_gps_data(std::chrono::milliseconds(0), _sim_start_time)
+	_range_data(std::chrono::milliseconds(0), std::chrono::system_clock::from_time_t(time_start.seconds()) + std::chrono::nanoseconds(time_start.nanoseconds())),
+	_gps_data(std::chrono::milliseconds(0), std::chrono::system_clock::from_time_t(time_start.seconds()) + std::chrono::nanoseconds(time_start.nanoseconds()))
 {
 
 	this->declare_parameter("cache_ttl", 30.f);
 	this->declare_parameter("save_interval", 2.f);
 	this->declare_parameter("save_path", "");
+	this->declare_parameter("start_time", this->now().seconds());
 	
 	_cache_ttl = this->get_parameter("cache_ttl").as_double();
 	_save_interval = this->get_parameter("save_interval").as_double();
 	_paths.parent_dir = this->get_parameter("save_path").as_string();
+	double received_time = this->get_parameter("start_time").as_double();
+	_sim_start_time = rclcpp::Time(int(received_time), 0);
 	_range_data.updateTTL(std::chrono::milliseconds(int(_cache_ttl * 1000)));
+	_range_data.setStartTime(std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds())));
 	_gps_data.updateTTL(std::chrono::milliseconds(int(_cache_ttl * 1000)));
+	_gps_data.setStartTime(std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds())));
 
 	if (_paths.parent_dir == "" && (_paths.parent_dir = utils::get_default_path()) == "")
 		throw (HubNode::VerboseException("Could not resolve the default out path ($HOME/data) using $HOME variable"));
-	_paths.main_dir = std::format("{0}/{1:%Y%m%d-%H%M}", _paths.parent_dir, _sim_start_time);
+	_paths.main_dir = std::format("{0}/{1:%Y%m%d-%H%M}", _paths.parent_dir, std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds())));
 	_paths.images_dir = _paths.main_dir + "/images";
 	this->_setup_out_dir();
 
@@ -72,7 +77,11 @@ HubNode::HubNode(system_clock::time_point time_start) :
 		throw HubNode::VerboseException("Failed to construct timer");
 
 	RCLCPP_INFO(this->get_logger(), std::format(
-		"Hub node initialized and started.\nOut path: {0}\nSave interval: {1}, Cache time-to-live: {2}", _paths.main_dir, _save_interval, _cache_ttl
+		"Hub node initialized and started.\nStart time received={0}\nOut path: {1}\nSave interval: {2}, Cache time-to-live: {3}",
+			_sim_start_time.seconds(),
+			_paths.main_dir,
+			_save_interval,
+			_cache_ttl
 	).c_str());
 
 }
@@ -105,7 +114,7 @@ void	HubNode::_send_save_images_request(void) {
 
 	auto request = std::make_shared<cyclosafe_interfaces::srv::SaveImages::Request>();
 	request->path = _paths.images_dir;
-	request->time = _save_interval;
+	request->time = static_cast<unsigned int>(_save_interval) * 1000U;
 	
 	if (_pending_request_images) {
 		if (_pending_request_images->wait_for(0s) != std::future_status::ready) {

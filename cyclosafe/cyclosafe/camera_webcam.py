@@ -4,6 +4,10 @@ from cyclosafe.src.ACamera import AImagePublisher
 import cv2, datetime
 
 class ImagePublisherDesktop(AImagePublisher):
+
+	def __init__(self):
+		super().__init__()
+
 	def init_camera(self):
 
 		self.get_logger().info(f'Starting webcam')
@@ -26,7 +30,7 @@ class ImagePublisherDesktop(AImagePublisher):
 		if not ret:
 			self.get_logger().error('Failed to capture image')
 		else:
-			self.img_queue.append((datetime.datetime.now(), frame))
+			self.img_queue.append((self.get_current_timestamp(), frame))
 		
 	def destroy(self):
 		if hasattr(self, 'cam') and self.cam.isOpened():

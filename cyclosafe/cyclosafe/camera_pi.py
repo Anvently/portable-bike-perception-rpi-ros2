@@ -19,7 +19,7 @@ class ImagePublisherPy(AImagePublisher):
 		self.cam.start()
 
 	def capture(self):
-		self.img_queue.append((datetime.datetime.now(), self.cam.capture_array()))
+		self.img_queue.append((self.get_current_timestamp(), self.cam.capture_array()))
 		
 	def destroy(self):
 		if hasattr(self, 'cam'):
