@@ -7,7 +7,6 @@
 #include <iostream>
 #include <ctime>
 #include <chrono>
-#include <format>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -62,13 +61,13 @@ HubNode::HubNode(const rclcpp::Time& time_start) :
 	if (_timer_save_files == nullptr)
 		throw HubNode::VerboseException("Failed to construct timer");
 
-	RCLCPP_INFO(this->get_logger(), std::format(
-		"Hub node initialized and started.\nStart time received={0}\nOut path: {1}\nSave interval: {2}, Cache time-to-live: {3}",
-			_sim_start_time.seconds(),
-			_paths.main_dir,
-			_save_interval,
-			_cache_ttl
-	).c_str());
+	RCLCPP_INFO(this->get_logger(), 
+			("Hub node initialized and started.\nStart time received=" + 
+			std::to_string(_sim_start_time.seconds()) + 
+			"\nOut path: " + _paths.main_dir + 
+			"\nSave interval: " + std::to_string(_save_interval) + 
+			", Cache time-to-live: " + std::to_string(_cache_ttl)).c_str()
+	);
 
 }
 
@@ -135,7 +134,12 @@ std::string	HubNode::_get_default_path(void) {
 	home = getenv("HOME");
 	if (home == NULL)
 		return "";
-	return( std::format("{0}/data/{1:%Y%m%d-%H%M}", home, std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds()))));
+	std::time_t time = std::chrono::system_clock::to_time_t(_sim_start_time.seconds());
+	std::tm* timeinfo = std::localtime(&time);
+	char buffer[80];
+	std::strftime(buffer, sizeof(buffer), "%Y%m%d-%H%M", timeinfo);
+	
+	return std::string(home) + "/data/" + buffer;
 	}
 
 void	HubNode::_setup_out_dir(void) {
@@ -144,7 +148,7 @@ void	HubNode::_setup_out_dir(void) {
 
 	if (stat(_paths.main_dir.c_str(), &file_stats) == 0) { // Check if path already given path exists
 		if (S_ISDIR(file_stats.st_mode) == false) // Check if it's a directory
-			throw (HubNode::VerboseException(std::format("{0}: not a directory", _paths.main_dir.c_str())));
+			throw (HubNode::VerboseException(_paths.main_dir + ": not a directory"));
 	} else if (mkdir(_paths.main_dir.c_str(), 0711)) // Create the working directory
 		throw (HubNode::OSException(_paths.main_dir));
 
@@ -163,11 +167,11 @@ void	HubNode::_setup_out_dir(void) {
 
 	_outfile_range = new std::ofstream("range", std::ios_base::app);
 	if (_outfile_range == nullptr)
-	throw (HubNode::OSException(std::format("{0}/range", _paths.main_dir)));
+	throw (HubNode::OSException(_paths.main_dir + "/range"));
 	
 	_outfile_gps = new std::ofstream("gps", std::ios_base::app);
 	if (_outfile_gps == nullptr)
-		throw (HubNode::OSException(std::format("{0}/gps", _paths.main_dir)));
+		throw (HubNode::OSException(_paths.main_dir + "/gps"));
 }
 
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::Range& msg) {

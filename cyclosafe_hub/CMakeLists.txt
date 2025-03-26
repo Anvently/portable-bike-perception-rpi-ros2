@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 3.8)
 project(cyclosafe_hub)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -g3)
+  add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 # find dependencies

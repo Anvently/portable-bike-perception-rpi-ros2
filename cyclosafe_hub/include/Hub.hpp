@@ -7,7 +7,6 @@
 #include <iostream>
 #include <ctime>
 #include <chrono>
-#include <format>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <TTLDeque.hpp>
@@ -88,9 +87,10 @@ class HubNode : public rclcpp::Node {
 			const std::string	message;
 			const int			error;
 		public:
-			OSException(const std::string& message) : message(std::format(
-				"{0}: {1} ({2})", message.c_str(), strerror(errno), errno)), error(errno) {
-			}
+			OSException(const std::string& message)
+				: message(message + ": " + strerror(errno) + " (" + std::to_string(errno)),
+				error(errno)
+				{}
 			virtual ~OSException(void) throw() {}
 			virtual const char*	what(void) const throw() {
 				return (message.c_str());
