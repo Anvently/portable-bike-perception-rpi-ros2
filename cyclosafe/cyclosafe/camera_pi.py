@@ -10,16 +10,33 @@ class ImagePublisherPy(AImagePublisher):
 	def init_camera(self):
 		self.cam = Picamera2()
 		self.bridge = CvBridge()
-		capture_config = self.cam.create_video_configuration(main={"size": (self.resolution[0], self.resolution[1]), "format": "RGB888"}, transform=Transform(vflip=True))
+		capture_config = self.cam.create_video_configuration(
+			main={
+				"size": (self.resolution[0], self.resolution[1]),
+				"format": "RGB888"
+			},
+			transform=Transform(vflip=True)
+		)
 		self.cam.configure(capture_config)
-		self.cam.start_preview(Preview.DRM)
+		if self.preview:
+			self.cam.start_preview(Preview.DRM)
 		self.count = 0
 		#self.cam.options["quality"] = self.quality
 		#self.cam.options["compress_level"] = 2
 		self.cam.start()
 
 	def capture(self):
-		self.img_queue.append((self.get_current_timestamp(), self.cam.capture_array()))
+		image = self.cam.capture_array()
+		# Vérification que l'image n'est pas vide
+		if image is None or image.size == 0:
+			self.get_logger().warn("Captured image is empty!")
+			return
+		
+		# Vérification des dimensions de l'image
+		self.get_logger().debug(f"Captured image shape: {image.shape}, dtype: {image.dtype}")
+		
+		# Ajouter l'image à la file d'attente
+		self.img_queue.append((self.get_current_timestamp(), image))
 		
 	def destroy(self):
 		if hasattr(self, 'cam'):

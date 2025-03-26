@@ -98,9 +98,28 @@ class AImagePublisher(Node):
 			# Récupérer l'image la plus récente
 			_, img_data = self.img_queue[-1]
 			
+			# Vérification supplémentaire
+			if img_data is None or img_data.size == 0:
+				self.get_logger().warn("Image data is empty before compression!")
+				return
+			
+			# Conversion de l'espace de couleur avec vérification
+			try:
+				bgr_img = cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR)
+			except cv2.error as e:
+				self.get_logger().error(f"Color conversion failed: {str(e)}")
+				return
+			
 			# Encoder l'image en JPEG avec le niveau de compression défini
 			encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.compression]
-			_, compressed_img = cv2.imencode('.jpg', cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), encode_param)
+			
+			# Vérification avant encodage
+			if bgr_img is None or bgr_img.size == 0:
+				self.get_logger().warn("Image is empty after color conversion!")
+				return
+			
+			_, compressed_img = cv2.imencode('.jpg', bgr_img, encode_param)
+			
 			# Créer un message CompressedImage
 			msg = CompressedImage()
 			msg.header.stamp = self.get_clock().now().to_msg()
