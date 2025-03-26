@@ -1,6 +1,6 @@
 from rclpy.node import Node, ParameterDescriptor
 from rcl_interfaces.msg import ParameterDescriptor
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import CompressedImage
 from std_srvs.srv import Trigger
 from cv_bridge import CvBridge
 from collections import deque
@@ -44,7 +44,7 @@ class AImagePublisher(Node):
 
 			self.init_camera()
 			
-			self.pub = self.create_publisher(Image, 'images', 10)
+			self.pub = self.create_publisher(Com, 'images', 10)
 			self.save_service = self.create_service(SaveImages, 'save_images', self.save_files)
 			self.timer = self.create_timer(0.2, self.routine)
 		
@@ -95,10 +95,22 @@ class AImagePublisher(Node):
 
 	def publish(self, encoding="rgb8"):
 		if (len(self.img_queue) > 0):
-			msg = self.bridge.cv2_to_imgmsg(self.img_queue[-1][1], encoding)
+			# Récupérer l'image la plus récente
+			_, img_data = self.img_queue[-1]
+			
+			# Encoder l'image en JPEG avec le niveau de compression défini
+			encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.compression]
+			_, compressed_img = cv2.imencode('.jpg', cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), encode_param)
+			
+			# Créer un message CompressedImage
+			msg = CompressedImage()
 			msg.header.stamp = self.get_clock().now().to_msg()
-			self.pub.publish()
-			self.get_logger().debug(f"Published image: {self.img_queue[-1][1].nbytes / 1024 / 1024:.2f}MB at {self.img_queue[-1][0]}")
+			msg.format = 'jpeg'
+			msg.data = compressed_img.tobytes()
+			
+			# Publier le message
+			self.pub.publish(msg)
+			self.get_logger().debug(f"Published compressed image: {len(msg.data) / 1024:.2f}KB at {self.img_queue[-1][0]}")
 
 	def update_parameters(self):
 		self.compression = self.get_parameter('compression').get_parameter_value().integer_value
