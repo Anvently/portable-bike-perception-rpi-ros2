@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable, ExecuteProcess
 from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 # from rclpy.time import Time
@@ -7,10 +7,14 @@ from launch.substitutions import TextSubstitution, LaunchConfiguration
 import datetime, time
 import os
 
+def str2bool(v):
+    return v.lower() in ("yes", "true", "t", "1")
 
 launch_args = [
     DeclareLaunchArgument('out_path', default_value=TextSubstitution(text=""), description="Path in which a data directory for this simulation will be created"),
     DeclareLaunchArgument('log_level', default_value=TextSubstitution(text="info"), description="Log level for all nodes"),
+    DeclareLaunchArgument('record', default_value=TextSubstitution(text="false"), description="Capture every topic in a bag"),
+    DeclareLaunchArgument('save', default_value=TextSubstitution(text="true"), description="If true, hub node won't be started and data will not be written. Use in with record=true in order to only record data from ROS perspective."),
 ]
 
 def setup_directory(parent_dir: str, time_start: float) -> str:
@@ -39,13 +43,22 @@ def setup_directory(parent_dir: str, time_start: float) -> str:
 def launch_setup(context):
     parent_dir = LaunchConfiguration('out_path').perform(context)
     log_level = LaunchConfiguration('log_level').perform(context)
+    record = str2bool(LaunchConfiguration('record').perform(context))
+    save = str2bool(LaunchConfiguration('save').perform(context))
     time_start = time.time()
 
     path = setup_directory(parent_dir, time_start)
     print(f"Simulation start time = {time_start}")
-    return [
-        SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs")),
-        Node(
+    ld = []
+    if record:
+        ld.extend([
+            ExecuteProcess(
+                cmd=['ros2', 'bag', 'record', '-a', '-o', os.path.join(path, "bag")],
+                output='screen'
+            )
+        ])
+    if save:
+        ld.extend([Node(
             package='cyclosafe_hub',
             executable='hub',
             namespace='',
@@ -56,7 +69,8 @@ def launch_setup(context):
                  'out_path': path}
             ],
             arguments=['--ros-args', '--log-level', log_level],
-        ),
+        )])
+    ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs")),
         Node(
             package='cyclosafe',
             executable='gps',
@@ -100,7 +114,8 @@ def launch_setup(context):
             ],
             arguments=['--ros-args', '--log-level', log_level],
 		),
-    ]
+    ])
+    return ld
 
 def generate_launch_description():
     opfunc = OpaqueFunction(function = launch_setup)
