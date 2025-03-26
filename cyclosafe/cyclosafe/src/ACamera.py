@@ -44,7 +44,7 @@ class AImagePublisher(Node):
 
 			self.init_camera()
 			
-			self.pub = self.create_publisher(Com, 'images', 10)
+			self.pub = self.create_publisher(CompressedImage, 'images', 10)
 			self.save_service = self.create_service(SaveImages, 'save_images', self.save_files)
 			self.timer = self.create_timer(0.2, self.routine)
 		
@@ -101,7 +101,6 @@ class AImagePublisher(Node):
 			# Encoder l'image en JPEG avec le niveau de compression défini
 			encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.compression]
 			_, compressed_img = cv2.imencode('.jpg', cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), encode_param)
-			
 			# Créer un message CompressedImage
 			msg = CompressedImage()
 			msg.header.stamp = self.get_clock().now().to_msg()
