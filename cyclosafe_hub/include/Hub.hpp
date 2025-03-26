@@ -19,12 +19,6 @@ using namespace std::chrono_literals;
 using std::chrono::system_clock;
 using std::placeholders::_1;
 
-
-namespace utils {
-
-	std::string	get_default_path(void);
-}
-
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::Range&);
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::NavSatFix&);
 
@@ -35,7 +29,6 @@ class HubNode : public rclcpp::Node {
 		double							_cache_ttl; // Data time-to-live
 		double							_save_interval; // Seconds
 		struct {
-			std::string	parent_dir; // outpath given as parameter. Ex: ~/data/
 			std::string	main_dir; // name of the run. Ex: ~/data/20240321-1318
 			std::string	images_dir;
 		}	_paths;
@@ -68,7 +61,8 @@ class HubNode : public rclcpp::Node {
 		void	_save_files_callback(void);
 		void	_send_save_images_request(void);
 
-		void	_setup_out_dir(void);
+		std::string	_get_default_path(void);
+		void		_setup_out_dir(void);
 
 		HubNode(const HubNode& model);
 		

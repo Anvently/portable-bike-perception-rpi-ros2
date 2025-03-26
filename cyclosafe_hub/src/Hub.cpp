@@ -18,19 +18,6 @@
 // using std::placeholders::_1;
 
 
-namespace utils {
-
-	std::string	get_default_path(void) {
-		const char*	home;
-
-		home = getenv("HOME");
-		if (home == NULL)
-			return "";
-		return std::format("{0}/data", home);
-	}
-
-}
-
 HubNode::HubNode() : HubNode(rclcpp::Time(0, 0, RCL_ROS_TIME)) {}
 
 HubNode::HubNode(const rclcpp::Time& time_start) :
@@ -43,12 +30,12 @@ HubNode::HubNode(const rclcpp::Time& time_start) :
 
 	this->declare_parameter("cache_ttl", 30.f);
 	this->declare_parameter("save_interval", 2.f);
-	this->declare_parameter("save_path", "");
+	this->declare_parameter("out_path", "");
 	this->declare_parameter("start_time", this->now().seconds());
 	
 	_cache_ttl = this->get_parameter("cache_ttl").as_double();
 	_save_interval = this->get_parameter("save_interval").as_double();
-	_paths.parent_dir = this->get_parameter("save_path").as_string();
+	_paths.main_dir = this->get_parameter("out_path").as_string();
 	double received_time = this->get_parameter("start_time").as_double();
 	_sim_start_time = rclcpp::Time(int(received_time), 0);
 	_range_data.updateTTL(std::chrono::milliseconds(int(_cache_ttl * 1000)));
@@ -56,9 +43,8 @@ HubNode::HubNode(const rclcpp::Time& time_start) :
 	_gps_data.updateTTL(std::chrono::milliseconds(int(_cache_ttl * 1000)));
 	_gps_data.setStartTime(std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds())));
 
-	if (_paths.parent_dir == "" && (_paths.parent_dir = utils::get_default_path()) == "")
+	if (_paths.main_dir == "" && (_paths.main_dir = this->_get_default_path()) == "")
 		throw (HubNode::VerboseException("Could not resolve the default out path ($HOME/data) using $HOME variable"));
-	_paths.main_dir = std::format("{0}/{1:%Y%m%d-%H%M}", _paths.parent_dir, std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds())));
 	_paths.images_dir = _paths.main_dir + "/images";
 	this->_setup_out_dir();
 
@@ -143,24 +129,31 @@ void	HubNode::_send_save_images_request(void) {
 
 }
 
+std::string	HubNode::_get_default_path(void) {
+	const char*	home;
+
+	home = getenv("HOME");
+	if (home == NULL)
+		return "";
+	return( std::format("{0}/data/{1:%Y%m%d-%H%M}", home, std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds()))));
+	}
+
 void	HubNode::_setup_out_dir(void) {
 	//check if out path exists
 	struct stat	file_stats;
 
-	if (stat(_paths.parent_dir.c_str(), &file_stats)) // Check if given path exists
-		throw (HubNode::OSException(_paths.parent_dir));
+	if (stat(_paths.main_dir.c_str(), &file_stats) == 0) { // Check if path already given path exists
+		if (S_ISDIR(file_stats.st_mode) == false) // Check if it's a directory
+			throw (HubNode::VerboseException(std::format("{0}: not a directory", _paths.main_dir.c_str())));
+	} else if (mkdir(_paths.main_dir.c_str(), 0711)) // Create the working directory
+		throw (HubNode::OSException(_paths.main_dir));
 
-	if (S_ISDIR(file_stats.st_mode) == false) // Check if it's a directory
-		throw (HubNode::VerboseException(std::format("{0}: not a directory", _paths.parent_dir.c_str())));
-
-	if (mkdir(_paths.main_dir.c_str(), 0711)) // Create the working directory
-		throw (HubNode::OSException(_paths.main_dir));	
-
-	// Create or update "latest" symbolic link
-	std::string	symlink_path = _paths.parent_dir + "/latest";
-	unlink(symlink_path.c_str());
-	symlink(_paths.main_dir.c_str(), symlink_path.c_str());
-	errno = 0; // discard any unlink() or symlink() error
+	errno = 0; // discard any previous error
+	// // Create or update "latest" symbolic link
+	// std::string	symlink_path = _paths.main_dir + "/latest";
+	// unlink(symlink_path.c_str());
+	// symlink(_paths.main_dir.c_str(), symlink_path.c_str());
+	// errno = 0; // discard any unlink() or symlink() error
 
 	if (chdir(_paths.main_dir.c_str())) // Change dir
 		throw (HubNode::OSException(_paths.main_dir));

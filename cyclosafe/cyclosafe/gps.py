@@ -42,7 +42,7 @@ Ex:
 class GPSPublisher(ASerialPublisher):
 	
 	def __init__(self):
-		super().__init__(NavSatFix, 'gps', '/dev/ttyACM0', 115200)
+		super().__init__('gps', NavSatFix, 'gps', '/dev/ttyACM0', 115200)
 		self.latitude = None
 		self.longitude = None
 		self.hdop = 5
@@ -75,7 +75,7 @@ class GPSPublisher(ASerialPublisher):
 		msg.position_covariance[4] = self.hdop ** 2
 		msg.position_covariance[8] = (2 * self.hdop) ** 2
 		msg.position_covariance_type = NavSatFix.COVARIANCE_TYPE_APPROXIMATED
-		self.get_logger().info(f"lat={msg.latitude}, lon={msg.longitude}, hdop={self.hdop}")
+		self.get_logger().debug(f"lat={msg.latitude}, lon={msg.longitude}, hdop={self.hdop}")
 		self.pub.publish(msg)
 
 def main(args=None):

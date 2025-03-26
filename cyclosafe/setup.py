@@ -21,7 +21,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'sensor = cyclosafe.sensor:main',
+            'sonar = cyclosafe.sonar:main',
 			'camera_pi = cyclosafe.camera_pi:main',
 			'camera_webcam = cyclosafe.camera_webcam:main',
 			'gpio = cyclosafe.gpio:main',

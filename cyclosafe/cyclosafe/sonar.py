@@ -1,32 +1,38 @@
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rcl_interfaces.msg import ParameterDescriptor
-from std_msgs.msg import String as StringMsg
+from sensor_msgs.msg import Range
 from cyclosafe.src.ASerialSensor import ASerialPublisher
 
-class SensorPublisher(ASerialPublisher):
+FOV = 2.0
+
+class SonarNode(ASerialPublisher):
 	
 	def __init__(self):
-			super().__init__(StringMsg, 'range', '/dev/ttyUSB0', 115200)
+			super().__init__('sonar', Range, 'range', '/dev/ttyUSB0', 57600)
 		
-	def parse(self) -> str:
+	def parse(self) -> int:
 		i = self.buffer.rfind(b'R')
 		if (i > -1 and (len(self.buffer) - i) >= 4):
-			value = self.buffer[i:i + 4].decode(('utf-8'))
+			value = int(self.buffer[i+1:i + 5].decode(('utf-8')))
 			return value
 		return None
 
-	def publish(self, data: str):
-		msg = StringMsg()
-		msg.data = data
+	def publish(self, data: int):
+		msg = Range()
+		msg.header.stamp = self.get_clock().now().to_msg()
+		msg.field_of_view = FOV
+		msg.range = float(data)
+		msg.max_range = msg.range
+		msg.min_range = msg.range
 		self.pub.publish(msg)
-		self.get_logger().info(f"Published : {data}")
+		self.get_logger().debug(f"Published : {data}")
 		
 
 def main(args=None):
 	try:
 		rclpy.init(args=args)
-		sensor_publisher = SensorPublisher()
+		sensor_publisher = SonarNode()
 		rclpy.spin(sensor_publisher)
 	
 	except (KeyboardInterrupt, ExternalShutdownException):

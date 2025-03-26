@@ -7,6 +7,9 @@ from sensor_msgs.msg import NavSatFix
 from typing import Any
 from abc import abstractmethod
 from rclpy.time import Time
+import logging
+
+MS_TO_NS = (1000 * 1000)
 
 class ASerialPublisher(Node):
 	""" 
@@ -15,8 +18,8 @@ class ASerialPublisher(Node):
 		Child class must reimplement: parse(), publish()
 	"""
 	
-	def __init__(self, message_type: Any, topic: str, default_port: str, default_baud: int):
-			super().__init__('sensor_publisher')	
+	def __init__(self, name: str, message_type: Any, topic: str, default_port: str, default_baud: int):
+			super().__init__(name)
 			self.port = default_port
 			self.baud = default_baud
 			self.period = None
@@ -26,13 +29,23 @@ class ASerialPublisher(Node):
 			self.declare_parameter('port', default_port, ParameterDescriptor(description="device from which the serial data will be read"))
 			self.declare_parameter('baud', default_baud, ParameterDescriptor(description="serial interface baudrate"))
 			self.declare_parameter('period', 0.5, ParameterDescriptor(description="serial interface baudrate"))
-			# self.declare_parameter('start_time', self.get_clock().now(), ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."), True)
-			# self.start_time = Time(self.get_parameter('start_time').get_parameter_value().double_value)
+			self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
+
+			self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
 
 			self.pub = self.create_publisher(message_type, topic, 10)
 
 			self.timer = self.create_timer(0, self.timer_callback)
 			self.count = 0
+			logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
+					level=logging.INFO,
+					datefmt='%Y-%m-%d %H:%M:%S')
+
+
+	def	get_current_timestamp(self) -> int:
+		"""Return the current time in ms from the beginning of the simulation"""
+		now: Time = self.get_clock().now()
+		return (int((now - self.start_time).nanoseconds / MS_TO_NS))
 
 	def update_parameters(self):
 		port = self.get_parameter('port').get_parameter_value().string_value

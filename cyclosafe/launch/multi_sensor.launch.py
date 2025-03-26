@@ -1,13 +1,50 @@
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable
 from launch_ros.actions import Node
+from launch.substitutions import TextSubstitution, LaunchConfiguration
 # from rclpy.time import Time
 # from rclpy.clock import Clock
-import time
+import datetime, time
+import os
 
-def generate_launch_description():
+
+launch_args = [
+    DeclareLaunchArgument('out_path', default_value=TextSubstitution(text=""), description="Path in which a data directory for this simulation will be created"),
+    DeclareLaunchArgument('log_level', default_value=TextSubstitution(text="info"), description="Log level for all nodes"),
+]
+
+def setup_directory(parent_dir: str, time_start: float) -> str:
+    if not parent_dir:
+        parent_dir = os.path.join(os.getenv("HOME", ""), "data")
+    
+    os.makedirs(parent_dir, exist_ok=True)
+    
+    path = os.path.join(parent_dir, time.strftime("%Y%m%d-%H%M%S", time.gmtime(time_start)))
+
+    try:
+        os.mkdir(path, 0o711) 
+    except FileExistsError:
+        raise Exception(f"Directory {path} already exists.")
+    latest_link = os.path.join(parent_dir, "latest")
+    try:
+        if os.path.islink(latest_link):
+            os.unlink(latest_link)
+        
+        os.symlink(path, latest_link)
+    except OSError as e:
+        print(f"Warning: Could not create symlink: {e}")
+    os.mkdir(f"{path}/logs", 511)
+    return (path)
+
+def launch_setup(context):
+    parent_dir = LaunchConfiguration('out_path').perform(context)
+    log_level = LaunchConfiguration('log_level').perform(context)
     time_start = time.time()
-    print(f"python start time = {time_start}")
-    return LaunchDescription([
+
+    path = setup_directory(parent_dir, time_start)
+    print(f"Simulation start time = {time_start}")
+    return [
+        SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs")),
         Node(
             package='cyclosafe_hub',
             executable='hub',
@@ -15,8 +52,10 @@ def generate_launch_description():
             output='screen',
             emulate_tty=True,
             parameters=[
-                { 'start_time': float(time_start)}
-            ]
+                { 'start_time': float(time_start),
+                 'out_path': path}
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
         ),
         Node(
             package='cyclosafe',
@@ -28,7 +67,8 @@ def generate_launch_description():
                 {'baud': 115200,
                  'port': '/dev/ttyACM0',
                  'start_time': float(time_start)}
-            ]
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
         ),
         Node(
             package='cyclosafe',
@@ -43,6 +83,27 @@ def generate_launch_description():
                  'compression': 95,
                  'preview': True,
                  'start_time': float(time_start)}
-            ]
-        )
-    ])
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
+        ),
+        Node(
+            package='cyclosafe',
+            executable='sonar',
+            namespace='',
+            output='screen',
+            emulate_tty=True,
+            parameters=[
+                {'baud': 57600,
+                 'port': '/dev/ttyUSB0',
+                 'period': 0.20,
+                 'start_time': float(time_start)}
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
+		),
+    ]
+
+def generate_launch_description():
+    opfunc = OpaqueFunction(function = launch_setup)
+    ld = LaunchDescription(launch_args)
+    ld.add_action(opfunc)
+    return ld

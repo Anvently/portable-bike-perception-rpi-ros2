@@ -26,25 +26,32 @@ class AImagePublisher(Node):
 	def __init__(self):
 		super().__init__('camera_publisher')
 
-		self.declare_parameter('queue_size', 20, ParameterDescriptor(description="Max number of images stored in memory."))
-		self.declare_parameter('resolution', [800, 600], ParameterDescriptor(description="Image resolution: [width, height]"))
-		self.declare_parameter('interval', 0.5, ParameterDescriptor(description="Interval during each image"))
-		self.declare_parameter('compression', 95, ParameterDescriptor(description="Compression level [0-100]"))
-		self.declare_parameter('preview', True, ParameterDescriptor(description="Enable/Disable preview. Only before start"))
-		self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
-		self.update_parameters()
+		try:
 
-		self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
+			self.declare_parameter('queue_size', 20, ParameterDescriptor(description="Max number of images stored in memory."))
+			self.declare_parameter('resolution', [800, 600], ParameterDescriptor(description="Image resolution: [width, height]"))
+			self.declare_parameter('interval', 0.5, ParameterDescriptor(description="Interval during each image"))
+			self.declare_parameter('compression', 95, ParameterDescriptor(description="Compression level [0-100]"))
+			self.declare_parameter('preview', True, ParameterDescriptor(description="Enable/Disable preview. Only before start"))
+			self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
+			self.update_parameters()
 
-		self.img_queue = deque(maxlen=self.queue_size)
-		self.bridge = CvBridge()
-		self.count = 0
+			self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
 
-		self.init_camera()
+			self.img_queue = deque(maxlen=self.queue_size)
+			self.bridge = CvBridge()
+			self.count = 0
 
-		self.pub = self.create_publisher(Image, 'images', 10)
-		self.save_service = self.create_service(SaveImages, 'save_images', self.save_files)
-		self.timer = self.create_timer(0.2, self.routine)
+			self.init_camera()
+			
+			self.pub = self.create_publisher(Image, 'images', 10)
+			self.save_service = self.create_service(SaveImages, 'save_images', self.save_files)
+			self.timer = self.create_timer(0.2, self.routine)
+		
+		except RuntimeError as e:
+			self.get_logger().error(f'Failed to init camera: {str(e)}')
+			raise e
+	
 		self.get_logger().info('Camera publisher node started')
 
 	@abstractmethod
@@ -88,8 +95,10 @@ class AImagePublisher(Node):
 
 	def publish(self, encoding="rgb8"):
 		if (len(self.img_queue) > 0):
-			self.pub.publish(self.bridge.cv2_to_imgmsg(self.img_queue[-1][1], encoding))
-			self.get_logger().info(f"Published image: {self.img_queue[-1][1].nbytes / 1024 / 1024:.2f}MB at {self.img_queue[-1][0]}")
+			msg = self.bridge.cv2_to_imgmsg(self.img_queue[-1][1], encoding)
+			msg.header.stamp = self.get_clock().now().to_msg()
+			self.pub.publish()
+			self.get_logger().debug(f"Published image: {self.img_queue[-1][1].nbytes / 1024 / 1024:.2f}MB at {self.img_queue[-1][0]}")
 
 	def update_parameters(self):
 		self.compression = self.get_parameter('compression').get_parameter_value().integer_value
@@ -111,4 +120,3 @@ class AImagePublisher(Node):
 			self.count += 1
 		except Exception as e:
 			self.get_logger().error(f"Failed to capture image: {str(e)}")
-			raise e

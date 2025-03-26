@@ -3,17 +3,19 @@ from rclpy.executors import ExternalShutdownException
 from cyclosafe.src.ACamera import AImagePublisher
 import cv2, datetime
 
+import rclpy.logging
+
 class ImagePublisherDesktop(AImagePublisher):
 
 	def __init__(self):
 		super().__init__()
+		
 
 	def init_camera(self):
 
 		self.get_logger().info(f'Starting webcam')
 		self.cam = cv2.VideoCapture(0, cv2.CAP_V4L2)
 		if not self.cam.isOpened():
-			self.get_logger().error(f'Failed to open camera')
 			raise RuntimeError(f'Failed to open camera')
 		self.get_logger().info(f'Webcam started')
 		self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, self.resolution[0])
@@ -44,6 +46,9 @@ def main(args=None):
 		rclpy.spin(image_pubisher)
 	
 	except (KeyboardInterrupt, ExternalShutdownException):
+		pass
+
+	except RuntimeError as e:
 		pass
 
 	finally:
