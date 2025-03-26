@@ -26,7 +26,7 @@ setup(
 			'camera_webcam = cyclosafe.camera_webcam:main',
 			'gpio = cyclosafe.gpio:main',
 			'gps = cyclosafe.gps:main',
-			'aggregator = cyclosafe.aggregator:main',
+			'image_viewer = cyclosafe.image_viewer:main'
         ],
     },
 )

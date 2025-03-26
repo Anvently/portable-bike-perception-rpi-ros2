@@ -44,7 +44,7 @@ class AImagePublisher(Node):
 
 			self.init_camera()
 			
-			self.pub = self.create_publisher(CompressedImage, 'images', 10)
+			self.pub = self.create_publisher(CompressedImage, 'images/compressed', 10)
 			self.save_service = self.create_service(SaveImages, 'save_images', self.save_files)
 			self.timer = self.create_timer(0.2, self.routine)
 		
