@@ -134,7 +134,7 @@ std::string	HubNode::_get_default_path(void) {
 	home = getenv("HOME");
 	if (home == NULL)
 		return "";
-	std::time_t time = std::chrono::system_clock::to_time_t(_sim_start_time.seconds());
+	std::time_t time = static_cast<time_t>(_sim_start_time.seconds());
 	std::tm* timeinfo = std::localtime(&time);
 	char buffer[80];
 	std::strftime(buffer, sizeof(buffer), "%Y%m%d-%H%M", timeinfo);
