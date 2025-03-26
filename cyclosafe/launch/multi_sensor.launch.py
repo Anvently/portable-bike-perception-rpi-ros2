@@ -108,12 +108,25 @@ def launch_setup(context):
             emulate_tty=True,
             parameters=[
                 {'baud': 57600,
-                 'port': '/dev/ttyUSB0',
+                 'port': '/dev/ttyUSB1',
                  'period': 0.20,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
 		),
+        Node(
+            package='rplidar_ros',
+            executable='rplidar_node',
+            name='rplidar_node',
+            parameters=[{'channel_type': 'serial',
+                         'serial_port': '/dev/ttyUSB0',
+                         'serial_baudrate': 460800,
+                         'frame_id': 'laser',
+                         'inverted': False,
+                         'angle_compensate': False,
+                         'scan_mode': 'Standard'}],
+            output='screen'
+        ),
     ])
     return ld
 
