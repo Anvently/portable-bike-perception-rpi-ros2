@@ -98,11 +98,6 @@ class AImagePublisher(Node):
 			# Récupérer l'image la plus récente
 			_, img_data = self.img_queue[-1]
 			
-			# Vérification supplémentaire
-			if img_data is None or img_data.size == 0:
-				self.get_logger().warn("Image data is empty before compression!")
-				return
-			
 			# Conversion de l'espace de couleur avec vérification
 			try:
 				bgr_img = cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR)
@@ -124,7 +119,7 @@ class AImagePublisher(Node):
 			msg = CompressedImage()
 			msg.header.stamp = self.get_clock().now().to_msg()
 			msg.format = 'jpeg'
-			msg.data = compressed_img.tobytes()
+			msg.data = bytes(compressed_img.tobytes())
 			
 			# Publier le message
 			self.pub.publish(msg)

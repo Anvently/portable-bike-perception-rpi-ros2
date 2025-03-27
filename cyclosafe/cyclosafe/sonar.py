@@ -4,7 +4,7 @@ from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import Range
 from cyclosafe.src.ASerialSensor import ASerialPublisher
 
-FOV = 2.0
+FOV = 0.3
 
 class SonarNode(ASerialPublisher):
 	
@@ -21,10 +21,12 @@ class SonarNode(ASerialPublisher):
 	def publish(self, data: int):
 		msg = Range()
 		msg.header.stamp = self.get_clock().now().to_msg()
+		msg.header.frame_id = 'sonar'
 		msg.field_of_view = FOV
-		msg.range = float(data)
+		msg.range = float(data / 1000)
 		msg.max_range = msg.range
 		msg.min_range = msg.range
+		msg.radiation_type = Range.ULTRASOUND
 		self.pub.publish(msg)
 		self.get_logger().debug(f"Published : {data}")
 		
