@@ -11,6 +11,7 @@ ttl check is done at each add
 */
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::Range& msg);
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::NavSatFix& msg);
+std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::LaserScan& msg);
 
 template <typename T>
 class TTLDeque {

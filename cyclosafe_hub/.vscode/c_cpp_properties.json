@@ -13,7 +13,7 @@
         {
             "name": "cpp-ros2",
             "includePath": [
-                "/opt/ros/jazzy/**",
+                "/opt/ros/jazzy/include/**",
                 "/home/npirard/ros_ws/install/*/include/**",
                 "include/**"
             ],

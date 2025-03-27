@@ -124,7 +124,8 @@ def launch_setup(context):
                          'frame_id': 'laser',
                          'inverted': False,
                          'angle_compensate': False,
-                         'scan_mode': 'Standard'}],
+                         'scan_mode': 'Standard',
+                         }],
             output='screen'
         ),
     ])

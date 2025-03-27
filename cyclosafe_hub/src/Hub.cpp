@@ -24,13 +24,14 @@ HubNode::HubNode(const rclcpp::Time& time_start) :
 	_sim_start_time(time_start),
 	_pending_request_images(nullptr),
 	_range_data(std::chrono::milliseconds(0), std::chrono::system_clock::from_time_t(time_start.seconds()) + std::chrono::nanoseconds(time_start.nanoseconds())),
-	_gps_data(std::chrono::milliseconds(0), std::chrono::system_clock::from_time_t(time_start.seconds()) + std::chrono::nanoseconds(time_start.nanoseconds()))
+	_gps_data(std::chrono::milliseconds(0), std::chrono::system_clock::from_time_t(time_start.seconds()) + std::chrono::nanoseconds(time_start.nanoseconds())),
+	_scan_data(std::chrono::milliseconds(0), std::chrono::system_clock::from_time_t(time_start.seconds()) + std::chrono::nanoseconds(time_start.nanoseconds()))
 {
 
 	this->declare_parameter("cache_ttl", 30.f);
 	this->declare_parameter("save_interval", 2.f);
 	this->declare_parameter("out_path", "");
-	this->declare_parameter("start_time", this->now().seconds());
+	this->declare_parameter("start_time", this->now().seconds());	
 	
 	_cache_ttl = this->get_parameter("cache_ttl").as_double();
 	_save_interval = this->get_parameter("save_interval").as_double();
@@ -41,6 +42,8 @@ HubNode::HubNode(const rclcpp::Time& time_start) :
 	_range_data.setStartTime(std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds())));
 	_gps_data.updateTTL(std::chrono::milliseconds(int(_cache_ttl * 1000)));
 	_gps_data.setStartTime(std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds())));
+	_scan_data.updateTTL(std::chrono::milliseconds(int(_cache_ttl * 1000)));
+	_scan_data.setStartTime(std::chrono::system_clock::from_time_t(int32_t(_sim_start_time.seconds())));
 
 	if (_paths.main_dir == "" && (_paths.main_dir = this->_get_default_path()) == "")
 		throw (HubNode::VerboseException("Could not resolve the default out path ($HOME/data) using $HOME variable"));
@@ -54,6 +57,10 @@ HubNode::HubNode(const rclcpp::Time& time_start) :
 	_sub_gps = this->create_subscription<sensor_msgs::msg::NavSatFix>("gps", 10, std::bind(&HubNode::_gps_callback, this, _1));
 	if (_sub_gps == nullptr)
 		throw HubNode::VerboseException("Failed to construct gps suscriber");
+
+	_sub_scan = this->create_subscription<sensor_msgs::msg::LaserScan>("scan", 10, std::bind(&HubNode::_scan_callback, this, _1));
+	if (_sub_scan == nullptr)
+		throw HubNode::VerboseException("Failed to construct scan suscriber");
 
 	_client_images = this->create_client<cyclosafe_interfaces::srv::SaveImages>("save_images");
 	
@@ -84,15 +91,24 @@ void	HubNode::_gps_callback(const sensor_msgs::msg::NavSatFix& msg) {
 	_gps_data.push(timestamp, msg);
 }
 
+void	HubNode::_scan_callback(const sensor_msgs::msg::LaserScan& msg) {
+	system_clock::time_point	timestamp = std::chrono::system_clock::from_time_t(msg.header.stamp.sec) + std::chrono::nanoseconds(msg.header.stamp.nanosec);
+
+	_scan_data.push(timestamp, msg);
+}
+
 void	HubNode::_save_files_callback(void) {
 	this->_send_save_images_request();
 
 	_range_data.cleanup();
 	_gps_data.cleanup();
+	_scan_data.cleanup();
 	(*_outfile_range) << _range_data;
 	_range_data.clear();
 	(*_outfile_gps) << _gps_data;
 	_gps_data.clear();
+	(*_outfile_scan) << _scan_data;
+	_scan_data.clear();
 }
 
 void	HubNode::_send_save_images_request(void) {
@@ -172,6 +188,10 @@ void	HubNode::_setup_out_dir(void) {
 	_outfile_gps = new std::ofstream("gps", std::ios_base::app);
 	if (_outfile_gps == nullptr)
 		throw (HubNode::OSException(_paths.main_dir + "/gps"));
+
+	_outfile_scan = new std::ofstream("scan", std::ios_base::app);
+	if (_outfile_scan == nullptr)
+		throw (HubNode::OSException(_paths.main_dir + "/scan"));
 }
 
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::Range& msg) {
@@ -181,6 +201,15 @@ std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::Range& msg) {
 
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::NavSatFix& msg) {
 	os << msg.latitude << ',' << msg.longitude << ',' << msg.position_covariance[0];
+	return (os);
+}
+
+std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::LaserScan& msg) {
+	os << msg.angle_min << ',' << msg.angle_max << ',' << msg.angle_increment
+		<< ',' << msg.scan_time;
+	for (auto it = msg.ranges.begin(); it != msg.ranges.end(); it++) {
+		os << ',' << *it;
+	}
 	return (os);
 }
 

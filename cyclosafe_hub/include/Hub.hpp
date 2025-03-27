@@ -3,6 +3,7 @@
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <cyclosafe_interfaces/srv/save_images.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <sensor_msgs/msg/laser_scan.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <iostream>
 #include <ctime>
@@ -20,6 +21,7 @@ using std::placeholders::_1;
 
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::Range&);
 std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::NavSatFix&);
+std::ostream&	operator<<(std::ostream& os, const sensor_msgs::msg::LaserScan&);
 
 class HubNode : public rclcpp::Node {
 	
@@ -34,6 +36,7 @@ class HubNode : public rclcpp::Node {
 		
 		std::ofstream*	_outfile_range;
 		std::ofstream*	_outfile_gps;
+		std::ofstream*	_outfile_scan;
 
 		rclcpp::Time					_sim_start_time;
 
@@ -42,9 +45,12 @@ class HubNode : public rclcpp::Node {
 
 		using Range = sensor_msgs::msg::Range;
 		using NavSatFix = sensor_msgs::msg::NavSatFix;
+		using LaserScan = sensor_msgs::msg::LaserScan;
 
 		rclcpp::Subscription<Range>::SharedPtr		_sub_range;
 		rclcpp::Subscription<NavSatFix>::SharedPtr	_sub_gps;
+		rclcpp::Subscription<LaserScan>::SharedPtr	_sub_scan;
+
 		rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedPtr	_client_images;
 
 		using SaveImagesFutureResponse = rclcpp::Client<cyclosafe_interfaces::srv::SaveImages>::SharedFutureAndRequestId;
@@ -52,10 +58,13 @@ class HubNode : public rclcpp::Node {
 
 		TTLDeque<Range>	_range_data;
 		TTLDeque<NavSatFix>	_gps_data;
+		TTLDeque<LaserScan>	_scan_data;
 
 		void	_range_callback(const sensor_msgs::msg::Range& msg);
 
 		void	_gps_callback(const sensor_msgs::msg::NavSatFix& msg);
+
+		void	_scan_callback(const sensor_msgs::msg::LaserScan& msg);
 
 		void	_save_files_callback(void);
 		void	_send_save_images_request(void);
