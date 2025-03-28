@@ -136,7 +136,6 @@ class AImagePublisher(Node):
 		if (hasattr(self, 'timer')):
 			self.timer.timer_period_ns = self.interval * 1000 * 1000 * 1000
 		self.resolution = self.get_parameter('resolution').get_parameter_value().integer_array_value
-		self.preview = self.get_parameter('preview').get_parameter_value().bool_value
 
 	def routine(self):
 		try:

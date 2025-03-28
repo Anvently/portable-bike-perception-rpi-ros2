@@ -118,7 +118,7 @@ def launch_setup(context):
         ),
         Node(
             package='cyclosafe',
-            executable='camera_webcam',
+            executable='camera_pi',
             namespace='',
             output='screen',
             emulate_tty=True,
