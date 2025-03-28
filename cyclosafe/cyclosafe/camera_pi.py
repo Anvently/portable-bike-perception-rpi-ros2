@@ -5,6 +5,7 @@ from libcamera import Transform
 from cv_bridge import CvBridge
 import datetime
 from cyclosafe.src.ACamera import AImagePublisher
+from typing import Any
 
 class ImagePublisherPy(AImagePublisher):
 	def init_camera(self):
@@ -25,7 +26,8 @@ class ImagePublisherPy(AImagePublisher):
 		#self.cam.options["compress_level"] = 2
 		self.cam.start()
 
-	def capture(self):
+	def capture(self) -> Any:
+		"""Return image array"""
 		image = self.cam.capture_array()
 		# Vérification que l'image n'est pas vide
 		if image is None or image.size == 0:
@@ -35,9 +37,8 @@ class ImagePublisherPy(AImagePublisher):
 		# Vérification des dimensions de l'image
 		self.get_logger().debug(f"Captured image shape: {image.shape}, dtype: {image.dtype}")
 		
-		# Ajouter l'image à la file d'attente
-		self.img_queue.append((self.get_current_timestamp(), image))
-		
+		return (image)
+
 	def destroy(self):
 		if hasattr(self, 'cam'):
 			self.cam.stop()

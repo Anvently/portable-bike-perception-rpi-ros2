@@ -75,7 +75,7 @@ class GPIOController(Node):
 			self.enable = False
 		else:
 			self.set_rgb(0, 255, 0)
-			self.enable = False
+			self.enable = True
 
 def main(args=None):
 	try:

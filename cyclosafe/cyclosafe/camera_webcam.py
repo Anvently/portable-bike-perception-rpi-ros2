@@ -23,9 +23,6 @@ class ImagePublisherDesktop(AImagePublisher):
 		self.cam.set(cv2.CAP_PROP_FPS, 30)
 		self.cam.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
-	def publish(self, encoding="bgr8"):
-		return super().publish("bgr8")
-
 	def capture(self):
 		self.cam.grab()
 		ret, frame = self.cam.retrieve()

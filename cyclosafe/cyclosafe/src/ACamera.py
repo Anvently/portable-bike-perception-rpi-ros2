@@ -11,6 +11,7 @@ import os, ctypes
 import datetime, cv2
 import time
 from rclpy.time import Time, S_TO_NS
+from typing import Tuple, Any
 
 MS_TO_NS = (1000 * 1000)
 
@@ -71,7 +72,7 @@ class AImagePublisher(Node):
 
 	def save_files(self, request: SaveImages.Request, response : SaveImages.Response) -> SaveImages.Response:
 		try:
-			if (len(self.img_queue) == 0):
+			if (self.queue_size < 1 or len(self.img_queue) == 0):
 				raise Exception("no image available")
 			now = self.get_current_timestamp()
 			delta: int = now - self.img_queue[0][0]
@@ -81,51 +82,50 @@ class AImagePublisher(Node):
 				response.result = SaveFilesResult.PARTIAL_SUCCESS
 
 			for i in range(0, len(self.img_queue)):
-				(img_timestamp, img_data) = self.img_queue[i]
+				(img_timestamp, compressed_img) = self.img_queue[i]
 				if (now - img_timestamp > request.time):
 					continue
 				path: str = f"{request.path}/{img_timestamp}.jpg"
 				if (os.path.isfile(path)):
 					continue
-				if (cv2.imwrite(path, cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, self.compression]) == False):
-					raise Exception("file creation failed, is th directory created ?")
+				# Écrire directement l'image compressée
+			with open(path, 'wb') as f:
+				f.write(compressed_img.tobytes())
 	
 		except Exception as e:
 			self.get_logger().error(f"SaveFiles service: Failed to save images: {str(e)}")
 			response.result = SaveFilesResult.FAILURE
 		return response
 
-	def publish(self, encoding="rgb8"):
-		if (len(self.img_queue) > 0):
-			# Récupérer l'image la plus récente
-			_, img_data = self.img_queue[-1]
-			
-			# Conversion de l'espace de couleur avec vérification
-			try:
-				bgr_img = cv2.cvtColor(img_data, cv2.COLOR_RGB2BGR)
-			except cv2.error as e:
-				self.get_logger().error(f"Color conversion failed: {str(e)}")
-				return
-			
-			# Encoder l'image en JPEG avec le niveau de compression défini
-			encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.compression]
-			
-			# Vérification avant encodage
-			if bgr_img is None or bgr_img.size == 0:
-				self.get_logger().warn("Image is empty after color conversion!")
-				return
-			
-			_, compressed_img = cv2.imencode('.jpg', bgr_img, encode_param)
-			
-			# Créer un message CompressedImage
-			msg = CompressedImage()
-			msg.header.stamp = self.get_clock().now().to_msg()
-			msg.format = 'jpeg'
-			msg.data = bytes(compressed_img.tobytes())
-			
-			# Publier le message
-			self.pub.publish(msg)
-			self.get_logger().debug(f"Published compressed image: {len(msg.data) / 1024:.2f}KB at {self.img_queue[-1][0]}")
+	def compress(self, image_array) -> Any:
+		# Conversion de l'espace de couleur avec vérification
+		try:
+			bgr_img = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
+		except cv2.error as e:
+			self.get_logger().error(f"Color conversion failed: {str(e)}")
+			return
+		
+		# Encoder l'image en JPEG avec le niveau de compression défini
+		encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.compression]
+		
+		# Vérification avant encodage
+		if bgr_img is None or bgr_img.size == 0:
+			self.get_logger().warn("Image is empty after color conversion!")
+			return
+		
+		_, compressed_img = cv2.imencode('.jpg', bgr_img, encode_param)
+		return (compressed_img)
+
+	def publish(self, img_compressed):
+		
+		msg = CompressedImage()
+		msg.header.stamp = self.get_clock().now().to_msg()
+		msg.format = 'jpeg'
+		msg.data = bytes(img_compressed.tobytes())
+	
+		# Publier le message
+		self.pub.publish(msg)
+		self.get_logger().debug(f"Published compressed image: {len(msg.data) / 1024:.2f}KB at {self.img_queue[-1][0]}")
 
 	def update_parameters(self):
 		self.compression = self.get_parameter('compression').get_parameter_value().integer_value
@@ -142,8 +142,11 @@ class AImagePublisher(Node):
 	def routine(self):
 		try:
 			self.update_parameters()
-			self.capture()
-			self.publish()
+			image_array = self.capture()
+			image_compressed = self.compress(image_array)
+			self.publish(image_compressed)
+			if (self.queue_size > 0):
+				self.img_queue.append((self.get_current_timestamp(), image_compressed))
 			self.count += 1
 		except Exception as e:
 			self.get_logger().error(f"Failed to capture image: {str(e)}")
