@@ -116,7 +116,7 @@ class AImagePublisher(Node):
 		_, compressed_img = cv2.imencode('.jpg', bgr_img, encode_param)
 		return (compressed_img)
 
-	def publish(self, img_compressed):
+	def publish(self, timestamp, img_compressed):
 		
 		msg = CompressedImage()
 		msg.header.stamp = self.get_clock().now().to_msg()
@@ -125,7 +125,7 @@ class AImagePublisher(Node):
 	
 		# Publier le message
 		self.pub.publish(msg)
-		self.get_logger().debug(f"Published compressed image: {len(msg.data) / 1024:.2f}KB at {self.img_queue[-1][0]}")
+		self.get_logger().debug(f"Published compressed image: {len(msg.data) / 1024:.2f}KB at {timestamp}")
 
 	def update_parameters(self):
 		self.compression = self.get_parameter('compression').get_parameter_value().integer_value
@@ -143,10 +143,11 @@ class AImagePublisher(Node):
 		try:
 			self.update_parameters()
 			image_array = self.capture()
+			timestamp = self.get_current_timestamp()
 			image_compressed = self.compress(image_array)
-			self.publish(image_compressed)
+			self.publish(timestamp, image_compressed)
 			if (self.queue_size > 0):
-				self.img_queue.append((self.get_current_timestamp(), image_compressed))
+				self.img_queue.append((timestamp, image_compressed))
 			self.count += 1
 		except Exception as e:
 			self.get_logger().error(f"Failed to capture image: {str(e)}")
