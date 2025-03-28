@@ -36,6 +36,8 @@ class AImagePublisher(Node):
 			self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
 			self.update_parameters()
 
+			self.preview = self.get_parameter('preview').get_parameter_value().bool_value
+
 			self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
 
 			self.img_queue = deque(maxlen=self.queue_size)
