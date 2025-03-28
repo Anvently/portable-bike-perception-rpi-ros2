@@ -143,12 +143,9 @@ class AImagePublisher(Node):
 		try:
 			self.update_parameters()
 			image_array = self.capture()
-			print("captured")
 			timestamp = self.get_current_timestamp()
 			image_compressed = self.compress(image_array)
-			print("compressed")
 			self.publish(timestamp, image_compressed)
-			print("published")
 			if (self.queue_size > 0):
 				self.img_queue.append((timestamp, image_compressed))
 			self.count += 1

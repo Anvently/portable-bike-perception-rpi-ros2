@@ -47,11 +47,14 @@ def launch_setup(context):
             parameters=[],
         ),
         Node(
-            package='cyclosafe',
-            executable='image_viewer',
+            package='rqt_image_view',
+            executable='rqt_image_view',
             output='screen',
             emulate_tty=True,
-            parameters=[]
+            parameters=[{
+                "image_transport": "compressed",
+                "topic": "images"
+            }]
 		),
         Node(
             package="tf2_ros",
