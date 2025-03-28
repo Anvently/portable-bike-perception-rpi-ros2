@@ -30,10 +30,13 @@ def setup_directory(parent_dir: str, time_start: float) -> str:
     
     path = os.path.join(parent_dir, time.strftime("%Y%m%d-%H%M%S", time.gmtime(time_start)))
 
-    try:
-        os.mkdir(path, 0o711) 
-    except FileExistsError:
-        raise Exception(f"Directory {path} already exists.")
+    while (1):
+        try:
+            os.mkdir(path, 0o711)
+            break
+        except FileExistsError:
+            path += "-2"
+
     latest_link = os.path.join(parent_dir, "latest")
     try:
         if os.path.islink(latest_link):
