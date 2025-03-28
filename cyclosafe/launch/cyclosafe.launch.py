@@ -6,6 +6,11 @@ from launch.substitutions import TextSubstitution, LaunchConfiguration
 # from rclpy.clock import Clock
 import datetime, time
 import os
+from typing import List, Tuple
+
+DFT_LIDAR_PORT = "/dev/ttyUSB0"
+DFT_GPS_PORT = "/dev/ttyACM0"
+DFT_SONAR_PORT = "/dev/ttyUSB1"
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -40,6 +45,31 @@ def setup_directory(parent_dir: str, time_start: float) -> str:
     os.mkdir(f"{path}/logs", 511)
     return (path)
 
+def read_port_by_id(hint: str) -> str:
+    try:
+        devices: List[str] = os.listdir("/dev/serial/by-id")
+        matches = [dev for dev in devices if dev.find(hint) != -1]
+        if len(matches) != 1:
+            return None
+        return (os.path.join('/dev/serial/by-id', os.readlink(os.path.join('/dev/serial/by-id', matches[0]))))
+    except Exception as e:
+        return None
+
+def resolve_port() -> Tuple[str, str, str]:
+    port_lidar: str = DFT_LIDAR_PORT
+    port_gps: str = DFT_GPS_PORT
+    port_sonar: str = DFT_SONAR_PORT
+
+    port = read_port_by_id('CP2102N')
+    if port: port_lidar = port
+    port = read_port_by_id('u-blox')
+    if port: port_gps = port
+    port = read_port_by_id('MaxBotix')
+    if port: port_sonar = port
+
+    return port_lidar, port_gps, port_sonar
+
+
 def launch_setup(context):
     parent_dir = LaunchConfiguration('out_path').perform(context)
     log_level = LaunchConfiguration('log_level').perform(context)
@@ -48,12 +78,14 @@ def launch_setup(context):
     time_start = time.time()
 
     path = setup_directory(parent_dir, time_start)
+    port_lidar, port_gps, port_sonar = resolve_port()
+    print(port_lidar, port_gps, port_sonar)
     print(f"Simulation start time = {time_start}")
     ld = []
     if record:
         ld.extend([
             ExecuteProcess(
-                cmd=['ros2', 'bag', 'record', '-a', '-o', '--compression-mode', 'file', '--compression-format', 'zstd', os.path.join(path, "bag")],
+                cmd=['ros2', 'bag', 'record', '-a', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
                 output='screen'
             )
         ])
@@ -79,7 +111,7 @@ def launch_setup(context):
             emulate_tty=True,
             parameters=[
                 {'baud': 115200,
-                 'port': '/dev/ttyACM0',
+                 'port': port_gps,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -93,7 +125,7 @@ def launch_setup(context):
             parameters=[
                {'queue_size': 40,
                  'resolution': [1200, 800],
-                 'interval': 0.25,
+                 'interval': 1.0,
                  'compression': 95,
                  'preview': True,
                  'start_time': float(time_start)}
@@ -108,7 +140,7 @@ def launch_setup(context):
             emulate_tty=True,
             parameters=[
                 {'baud': 57600,
-                 'port': '/dev/ttyUSB1',
+                 'port': port_sonar,
                  'period': 0.20,
                  'start_time': float(time_start)}
             ],
@@ -119,7 +151,7 @@ def launch_setup(context):
             executable='rplidar_node',
             name='rplidar_node',
             parameters=[{'channel_type': 'serial',
-                         'serial_port': '/dev/ttyUSB0',
+                         'serial_port': port_lidar,
                          'serial_baudrate': 460800,
                          'frame_id': 'laser',
                          'inverted': False,

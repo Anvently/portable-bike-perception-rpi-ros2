@@ -46,7 +46,7 @@ class AImagePublisher(Node):
 			
 			self.pub = self.create_publisher(CompressedImage, 'images/compressed', 10)
 			self.save_service = self.create_service(SaveImages, 'save_images', self.save_files)
-			self.timer = self.create_timer(0.2, self.routine)
+			self.timer = self.create_timer(self.interval, self.routine)
 		
 		except RuntimeError as e:
 			self.get_logger().error(f'Failed to init camera: {str(e)}')
