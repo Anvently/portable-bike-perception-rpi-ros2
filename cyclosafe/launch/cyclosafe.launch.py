@@ -8,9 +8,12 @@ import datetime, time
 import os
 from typing import List, Tuple
 
-DFT_LIDAR_PORT = "/dev/ttyUSB0"
+DFT_LIDAR_PORT = "/dev/ttyAMA2"
 DFT_GPS_PORT = "/dev/ttyACM0"
-DFT_SONAR_PORT = "/dev/ttyUSB1"
+DFT_SONAR1_PORT = "/dev/ttyUSB0"
+DFT_SONAR2_PORT = "/dev/ttyUSB1"
+DFT_SONAR3_PORT = "/dev/ttyACM0"
+DFT_SONAR4_PORT = "/dev/ttyACM1"
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -61,7 +64,7 @@ def read_port_by_id(hint: str) -> str:
 def resolve_port() -> Tuple[str, str, str]:
     port_lidar: str = DFT_LIDAR_PORT
     port_gps: str = DFT_GPS_PORT
-    port_sonar: str = DFT_SONAR_PORT
+    port_sonar: str = DFT_SONAR1_PORT
 
     port = read_port_by_id('CP2102N')
     if port: port_lidar = port
@@ -72,6 +75,20 @@ def resolve_port() -> Tuple[str, str, str]:
 
     return port_lidar, port_gps, port_sonar
 
+def resolve_port_sonar() -> Tuple[str, str, str]:
+    port_sonar2: str = DFT_SONAR2_PORT
+    port_sonar3: str = DFT_SONAR3_PORT
+    port_sonar4: str = DFT_SONAR4_PORT
+
+    port = read_port_by_id('MaxBotix')
+    if port: port_sonar2 = port
+    port = read_port_by_id('MaxBotix')
+    if port: port_sonar3 = port
+    port = read_port_by_id('MaxBotix')
+    if port: port_sonar4 = port
+
+    return port_sonar2, port_sonar3, port_sonar4
+
 
 def launch_setup(context):
     parent_dir = LaunchConfiguration('out_path').perform(context)
@@ -81,8 +98,9 @@ def launch_setup(context):
     time_start = time.time()
 
     path = setup_directory(parent_dir, time_start)
-    port_lidar, port_gps, port_sonar = resolve_port()
-    print(port_lidar, port_gps, port_sonar)
+    port_lidar, port_gps, port_sonar1 = resolve_port()
+    port_sonar2, port_sonar3, port_sonar4 = resolve_port_sonar()
+    print(port_lidar, port_gps, port_sonar1, port_sonar2, port_sonar3, port_sonar4)
     print(f"Simulation start time = {time_start}")
     ld = []
     if record:
@@ -106,19 +124,19 @@ def launch_setup(context):
             arguments=['--ros-args', '--log-level', log_level],
         )])
     ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs")),
-        Node(
-            package='cyclosafe',
-            executable='gps',
-            namespace='',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-                {'baud': 115200,
-                 'port': port_gps,
-                 'start_time': float(time_start)}
-            ],
-            arguments=['--ros-args', '--log-level', log_level],
-        ),
+        # Node(
+        #     package='cyclosafe',
+        #     executable='gps',
+        #     namespace='',
+        #     output='screen',
+        #     emulate_tty=True,
+        #     parameters=[
+        #         {'baud': 115200,
+        #          'port': port_gps,
+        #          'start_time': float(time_start)}
+        #     ],
+        #     arguments=['--ros-args', '--log-level', log_level],
+        # ),
         Node(
             package='cyclosafe',
             executable='camera_pi',
@@ -138,12 +156,54 @@ def launch_setup(context):
         Node(
             package='cyclosafe',
             executable='sonar',
-            namespace='',
+            namespace='sonar1',
             output='screen',
             emulate_tty=True,
             parameters=[
                 {'baud': 57600,
-                 'port': port_sonar,
+                 'port': port_sonar1,
+                 'period': 0.20,
+                 'start_time': float(time_start)}
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
+		),
+        Node(
+            package='cyclosafe',
+            executable='sonar',
+            namespace='sonar2',
+            output='screen',
+            emulate_tty=True,
+            parameters=[
+                {'baud': 57600,
+                 'port': port_sonar2,
+                 'period': 0.20,
+                 'start_time': float(time_start)}
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
+		),
+        Node(
+            package='cyclosafe',
+            executable='sonar',
+            namespace='sonar3',
+            output='screen',
+            emulate_tty=True,
+            parameters=[
+                {'baud': 57600,
+                 'port': port_sonar3,
+                 'period': 0.20,
+                 'start_time': float(time_start)}
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
+		),
+        Node(
+            package='cyclosafe',
+            executable='sonar',
+            namespace='sonar4',
+            output='screen',
+            emulate_tty=True,
+            parameters=[
+                {'baud': 57600,
+                 'port': port_sonar4,
                  'period': 0.20,
                  'start_time': float(time_start)}
             ],
