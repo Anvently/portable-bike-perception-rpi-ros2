@@ -144,11 +144,11 @@ def launch_setup(context):
             output='screen',
             emulate_tty=True,
             parameters=[
-               {'queue_size': 40,
-                 'resolution': [1200, 800],
+               {'queue_size': 10,
+                 'resolution': [800, 600],
                  'interval': 1.0,
                  'compression': 95,
-                 'preview': False,
+                 'preview': True,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
