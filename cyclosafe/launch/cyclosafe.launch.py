@@ -148,7 +148,7 @@ def launch_setup(context):
                  'resolution': [1200, 800],
                  'interval': 1.0,
                  'compression': 95,
-                 'preview': True,
+                 'preview': False,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
