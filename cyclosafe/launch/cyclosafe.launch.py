@@ -70,7 +70,7 @@ def resolve_port() -> Tuple[str, str, str]:
     if port: port_lidar = port
     port = read_port_by_id('u-blox')
     if port: port_gps = port
-    port = read_port_by_id('MaxBotix')
+    port = read_port_by_id('MaxBotix_MB1443')
     if port: port_sonar = port
 
     return port_lidar, port_gps, port_sonar
@@ -80,11 +80,11 @@ def resolve_port_sonar() -> Tuple[str, str, str]:
     port_sonar3: str = DFT_SONAR3_PORT
     port_sonar4: str = DFT_SONAR4_PORT
 
-    port = read_port_by_id('MaxBotix')
+    port = read_port_by_id('MaxBotix_MB1433')
     if port: port_sonar2 = port
-    port = read_port_by_id('MaxBotix')
+    port = read_port_by_id('MaxBotix_MB1423')
     if port: port_sonar3 = port
-    port = read_port_by_id('MaxBotix')
+    port = read_port_by_id('MaxBotix_MB1413')
     if port: port_sonar4 = port
 
     return port_sonar2, port_sonar3, port_sonar4
