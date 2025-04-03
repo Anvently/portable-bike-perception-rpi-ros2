@@ -145,10 +145,10 @@ def launch_setup(context):
             emulate_tty=True,
             parameters=[
                {'queue_size': 10,
-                 'resolution': [800, 600],
+                 'resolution': [600, 800],
                  'interval': 1.0,
                  'compression': 95,
-                 'preview': True,
+                 'preview': False,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
