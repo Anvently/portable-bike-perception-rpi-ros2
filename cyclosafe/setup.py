@@ -1,6 +1,12 @@
 from setuptools import setup, find_packages
+import os
 
 package_name = 'cyclosafe'
+
+# # Rendre le script gpio.sh exécutable
+# script_path = 'scripts/gpio.sh'
+# if os.path.exists(script_path):
+#     os.chmod(script_path, 0o755)
 
 setup(
     name=package_name,
