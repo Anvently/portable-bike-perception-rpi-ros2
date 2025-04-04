@@ -146,7 +146,7 @@ def launch_setup(context):
             parameters=[
                {'queue_size': 10,
                  'resolution': [600, 800],
-                 'interval': 1.0,
+                 'interval': 0.5,
                  'compression': 95,
                  'preview': False,
                  'start_time': float(time_start)}

@@ -98,22 +98,21 @@ class AImagePublisher(Node):
 		return response
 
 	def compress(self, image_array) -> Any:
-		# Conversion de l'espace de couleur avec vérification
-		try:
-			bgr_img = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
-		except cv2.error as e:
-			self.get_logger().error(f"Color conversion failed: {str(e)}")
-			return
+		# try:
+		# 	bgr_img = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
+		# except cv2.error as e:
+		# 	self.get_logger().error(f"Color conversion failed: {str(e)}")
+		# 	return
 		
 		# Encoder l'image en JPEG avec le niveau de compression défini
 		encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), self.compression]
 		
 		# Vérification avant encodage
-		if bgr_img is None or bgr_img.size == 0:
+		if image_array is None or image_array.size == 0:
 			self.get_logger().warn("Image is empty after color conversion!")
 			return
 		
-		_, compressed_img = cv2.imencode('.jpg', bgr_img, encode_param)
+		_, compressed_img = cv2.imencode('.jpg', image_array, encode_param)
 		return (compressed_img)
 
 	def publish(self, timestamp, img_compressed):
