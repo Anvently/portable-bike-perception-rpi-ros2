@@ -44,24 +44,50 @@ def launch_setup(context):
             executable='range_circle_transform',
             output='screen',
             emulate_tty=True,
-            parameters=[],
+            parameters=[{
+                "topic_list": ["sonar1/range", "sonar2/range", "sonar3/range", "sonar4/range"]
+            }],
         ),
         Node(
             package='rqt_image_view',
             executable='rqt_image_view',
             output='screen',
             emulate_tty=True,
-            parameters=[{
-                "image_transport": "compressed",
-                "topic": "images"
-            }]
+            parameters=[],
+            arguments=[
+                "images", "--ros-args", "--remap", "_image_transport:=compressed"
+            ]
 		),
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
             output="screen" ,
-            arguments=["0", "0", "0", "90", "0", "0", "sonar", "laser"]
+            arguments=["0.01", "0.05", "0", "0", "0", "0", "laser", "sonar1/range"]
         ),
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            output="screen" ,
+            arguments=["0.08", "0.05", "0", "0", "0", "0", "laser", "sonar2/range"]
+        ),
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            output="screen" ,
+            arguments=["0.155", "0.05", "0", "0", "0", "0", "laser", "sonar3/range"]
+        ),
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            output="screen" ,
+            arguments=["0.215", "0.05", "0", "0", "0", "0", "laser", "sonar4/range"]
+        ),
+        # Node(
+        #     package="tf2_ros",
+        #     executable="static_transform_publisher",
+        #     output="screen" ,
+        #     arguments=["0.", "0", "1", "0", "0", "0", "world", "laser"]
+        # ),
     ])
     return ld
 
