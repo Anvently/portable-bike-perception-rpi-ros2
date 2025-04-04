@@ -1,8 +1,10 @@
 #!/bin/bash
 
-LOG_FILE="/home/$USER/data/logs/on_off.log"
+LOG_DIR="/home/$USER/data/logs"
+LOG_FILE="$LOG_DIR/on_off.log"
 PYTHON_SCRIPT="/home/$USER/ros_ws/install/cyclosafe/share/cyclosafe/gpio.sh"
 
+mkdir -p "$LOG_DIR"
 python3 "$PYTHON_SCRIPT"
 
 # Vérifier si le retour est -1 ou -2
