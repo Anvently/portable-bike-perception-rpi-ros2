@@ -9,12 +9,7 @@ LED_B_GPIO = 9
 
 
 pi = pigpio.pi()
-
-def host_shutdown(GPIO, level, tick):
-	"""Shutdown host computer."""
-	print("Shutting down...")
-	time.sleep(0.5)
-	sys.exit(1)
+stop = False
 
 class GPIOController():
 	
@@ -25,7 +20,6 @@ class GPIOController():
 	"""
 
 	def __init__(self):
-		super().__init__('gpio_controller')
 		GPIOController.colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (0,255,255), (255,255,255)]
 		self.color_index = 0
 		pi.set_mode(LED_R_GPIO, pigpio.OUTPUT)
@@ -35,10 +29,8 @@ class GPIOController():
 		pi.set_PWM_range(LED_G_GPIO, 255)
 		pi.set_PWM_range(LED_B_GPIO, 255)
 		self.set_rgb(0,0,0)
-		pi.callback(BTN_TEST_GPIO, pigpio.FALLING_EDGE, self.button_callback)
 		self.pos = 0
 		self.enable = True
-		self.get_logger().info('gpio node started')
 
 	def set_rgb(self, r, g, b):
 		pi.set_PWM_dutycycle(LED_R_GPIO, r)
@@ -57,7 +49,7 @@ class GPIOController():
 			self.set_rgb(pos * 3, pos * 3, 0)
 
 	def routine(self):
-		while 1:
+		while stop == False:
 			if self.enable:
 				self.set_rgb(0, 0, 0)
 				self.enable = False
@@ -65,12 +57,22 @@ class GPIOController():
 				self.set_rgb(0, 127, 0)
 				self.enable = True
 			time.sleep(0.5)
+		gpio_controler.set_rgb(127, 127, 0)
+		sys.exit(1)
 		
+gpio_controler = GPIOController()
+
+def host_shutdown(GPIO, level, tick):
+	"""Shutdown host computer."""
+	print("Shutting down...")
+	global stop
+	gpio_controler.set_rgb(127, 127, 0)
+	stop = True
 
 def main(args=None):
+	global gpio_controler
 	pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
 	pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
-	gpio_controler = GPIOController()
 	gpio_controler.routine()
 	
 	sys.exit(0)
