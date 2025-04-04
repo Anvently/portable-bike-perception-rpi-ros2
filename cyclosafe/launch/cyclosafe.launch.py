@@ -162,7 +162,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar1,
-                 'period': 0.20,
+                 'period': 0.05,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -176,7 +176,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar2,
-                 'period': 0.20,
+                 'period': 0.05,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -190,7 +190,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar3,
-                 'period': 0.20,
+                 'period': 0.05,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -204,7 +204,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar4,
-                 'period': 0.20,
+                 'period': 0.05,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],

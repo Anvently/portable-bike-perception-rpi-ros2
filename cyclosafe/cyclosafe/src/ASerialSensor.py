@@ -35,7 +35,7 @@ class ASerialPublisher(Node):
 
 			self.pub = self.create_publisher(message_type, topic, 10)
 
-			self.timer = self.create_timer(0, self.timer_callback)
+			self.timer = self.create_timer(0, self.routine)
 			self.count = 0
 			logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
 					level=logging.INFO,
@@ -61,10 +61,13 @@ class ASerialPublisher(Node):
 			self.period = period
 			if (hasattr(self, 'timer')):
 				self.timer.timer_period_ns = self.period * 1000 * 1000 * 1000
-
-	def timer_callback(self):
+				if self.period < 0.2:
+					self.timer.callback = self.fast_routine
+	
+	def routine(self, update_parameters=True):
 		try:
-			self.update_parameters()
+			if update_parameters:
+				self.update_parameters()
 			if not self.serial:
 				self.serial: Serial = Serial(self.port, self.baud)
 				self.get_logger().info(f"listening on port {self.port}, baud={self.baud}")
@@ -80,7 +83,17 @@ class ASerialPublisher(Node):
 
 		except Exception as e:
 			self.get_logger().error(f"Exception while parsing: {str(e)}")
-	
+
+	def fast_routine(self):
+		i = 0
+		while True:
+			if i % 10 == 0:
+				self.routine(True)
+			else:
+				self.routine()
+			i += 1
+
+
 	@abstractmethod
 	def publish(self, data: Any):
 		raise Exception("Abstract method not implemented")
