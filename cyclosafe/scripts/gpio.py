@@ -1,8 +1,4 @@
-import rclpy
-from rclpy.node import Node
-from rclpy.executors import ExternalShutdownException
-from rcl_interfaces.msg import ParameterDescriptor
-import pigpio
+import pigpio, sys
 import os, time
 
 BTN_RST_GPIO = 16
@@ -18,10 +14,9 @@ def host_shutdown(GPIO, level, tick):
 	"""Shutdown host computer."""
 	print("Shutting down...")
 	time.sleep(0.5)
-	rclpy.shutdown()
-	os.system('sudo halt')
+	sys.exit(1)
 
-class GPIOController(Node):
+class GPIOController():
 	
 	"""
 		Mutliple tasks:
@@ -41,7 +36,6 @@ class GPIOController(Node):
 		pi.set_PWM_range(LED_B_GPIO, 255)
 		self.set_rgb(0,0,0)
 		pi.callback(BTN_TEST_GPIO, pigpio.FALLING_EDGE, self.button_callback)
-		self.create_timer(0.5, self.routine)
 		self.pos = 0
 		self.enable = True
 		self.get_logger().info('gpio node started')
@@ -62,34 +56,24 @@ class GPIOController(Node):
 			pos = self.pos - 170
 			self.set_rgb(pos * 3, pos * 3, 0)
 
-	def button_callback(self, GPIO, level, tick):
-		# self.color_index = (self.color_index + 1) % len(GPIOController.colors)
-		# self.set_rgb(*GPIOController.colors[self.color_index])
-		self.get_logger().info(f"button pushed: {GPIO}, {level}, {tick}")
-		rclpy.shutdown()	
-		self.enable = not self.enable
-
 	def routine(self):
-		if self.enable:
-			self.set_rgb(0, 0, 0)
-			self.enable = False
-		else:
-			self.set_rgb(0, 255, 0)
-			self.enable = True
+		while 1:
+			if self.enable:
+				self.set_rgb(0, 0, 0)
+				self.enable = False
+			else:
+				self.set_rgb(0, 127, 0)
+				self.enable = True
+			time.sleep(0.5)
+		
 
 def main(args=None):
-	try:
-		pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
-		pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
-		rclpy.init(args=args)
-		gpio_controler = GPIOController()
-		rclpy.spin(gpio_controler)
+	pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
+	pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
+	gpio_controler = GPIOController()
+	gpio_controler.routine()
 	
-	except (KeyboardInterrupt):
-		pass
-	except (ExternalShutdownException):
-		print("external shutdopwn")
-		sys.exit(1)
+	sys.exit(0)
 
 if __name__ == '__main__':
 	main()
