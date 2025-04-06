@@ -106,7 +106,7 @@ def launch_setup(context):
     if record:
         ld.extend([
             ExecuteProcess(
-                cmd=['ros2', 'bag', 'record', '-a', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
+                cmd=['ros2', 'bag', 'record', '-a', '-o', os.path.join(path, "bag")],
                 output='screen'
             )
         ])
