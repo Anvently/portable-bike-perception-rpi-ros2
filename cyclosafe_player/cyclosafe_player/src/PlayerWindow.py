@@ -1,13 +1,15 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
 							QPushButton, QSlider, QLabel, QFileDialog, QTreeWidget, 
-							QTreeWidgetItem, QComboBox, QCheckBox, QSizePolicy)
+							QTreeWidgetItem, QComboBox, QCheckBox, QSizePolicy,
+							QInputDialog, QListWidget, QColorDialog, QListWidgetItem)
 from PyQt5.QtWidgets import QTabWidget, QTextEdit, QScrollArea, QGridLayout
-from PyQt5.QtGui import QPixmap, QTransform
+from PyQt5.QtGui import QPixmap, QTransform, QColor
 from rclpy.node import Node
 from PyQt5.QtCore import Qt, QTimer
 import os, tempfile, shutil, subprocess
 from cyclosafe_player.src.BagReader import BagInfo, BagReader
 from rosidl_runtime_py.utilities import get_message
+from pyqtgraph import PlotWidget, InfiniteLine
 
 # Pour convertir CompressedImage en QImage pour l'affichage
 def compressed_image_to_qimage(self, msg):
@@ -30,6 +32,9 @@ def compressed_image_to_qimage(self, msg):
 	return q_img
 
 class RosbagPlayerWindow(QMainWindow):
+
+	colors = [QColor(255,0,0), QColor(0,255,0), QColor(0,0,255), QColor(255,255,0)]
+
 	"""Main application window for rosbag player."""
 	def __init__(self, node: Node, path: str = None):
 		super().__init__()
@@ -105,8 +110,9 @@ class RosbagPlayerWindow(QMainWindow):
 		# Main content area - two columns side by side
 		main_content = QHBoxLayout()
 
+		left_layout = QVBoxLayout()
 		# Left column with tabs
-		left_column_tabs = QTabWidget()
+		tab_widget = QTabWidget()
 
 		# --- Tab 1: Topic list ---
 		topic_list_widget = QWidget()
@@ -119,8 +125,32 @@ class RosbagPlayerWindow(QMainWindow):
 		self.topic_tree.itemChanged.connect(self.topic_selection_changed)
 		topic_list_layout.addWidget(self.topic_tree)
 
-		left_column_tabs.addTab(topic_list_widget, "Topics")
+		tab_widget.addTab(topic_list_widget, "Topics")
 
+		# --- Onglet "Graphique" pour les options de configuration ---
+		graph_options_tab = QWidget()
+		graph_options_layout = QVBoxLayout()
+		graph_options_tab.setLayout(graph_options_layout)
+
+		# Liste des courbes actuellement affichées
+		self.curve_list = QListWidget()
+		graph_options_layout.addWidget(self.curve_list)
+		self.curve_list.itemChanged.connect(self.curve_visibility_changed)
+
+		# Boutons d'ajout et de suppression
+		btn_layout = QHBoxLayout()
+		self.add_curve_button = QPushButton("+")
+		self.remove_curve_button = QPushButton("-")
+		self.remove_curve_button.clicked.connect(self.on_remove_curve)
+		self.add_curve_button.clicked.connect(self.on_add_curve)
+		btn_layout.addWidget(self.add_curve_button)
+		btn_layout.addWidget(self.remove_curve_button)
+		graph_options_layout.addLayout(btn_layout)
+
+		# Ajoute cet onglet au QTabWidget
+		tab_widget.addTab(graph_options_tab, "Graphique")
+
+		left_layout.addWidget(tab_widget)
 		# # --- Tab 2: Miniatures ---
 		# image_tab = QWidget()
 		# image_tab_layout = QVBoxLayout()
@@ -131,12 +161,13 @@ class RosbagPlayerWindow(QMainWindow):
 		self.image_preview_container = QWidget()
 		self.image_preview_layout = QVBoxLayout()
 		self.image_preview_container.setLayout(self.image_preview_layout)
+		left_layout.addWidget(self.image_preview_container)
 		# scroll_area.setWidget(self.image_preview_container)
 
 		# image_tab_layout.addWidget(scroll_area)
-		# left_column_tabs.addTab(image_tab, "Miniatures")
+		# tab_widget.addTab(image_tab, "Miniatures")
 
-		main_content.addWidget(left_column_tabs, 1)
+		main_content.addLayout(left_layout, 1)
 
 		
 		# Right column - Timeline
@@ -160,13 +191,18 @@ class RosbagPlayerWindow(QMainWindow):
 		timeline_layout.addWidget(self.duration_label)
 		
 		right_column.addLayout(timeline_layout)
-		right_column.addWidget(self.image_preview_container)
 		
-		# Add this space for future content (publishers status, etc.)
+		self.plot_widget = PlotWidget()
+		# On s'assure que le widget occupe toute la largeur
+		self.plot_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+		self.current_time_marker = InfiniteLine(pos=0, angle=90, movable=False, pen='w')  # couleur blanche
+		self.plot_widget.addItem(self.current_time_marker)
+		right_column.addWidget(self.plot_widget, 3)
+
+		# (Optionnel) Conserver un espace pour d'autres infos, par exemple :
 		placeholder = QWidget()
 		placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 		right_column.addWidget(placeholder)
-		
 		main_content.addLayout(right_column, 3)  # 3 est le stretch factor (donne plus d'espace)
 		
 		main_layout.addLayout(main_content)
@@ -179,7 +215,7 @@ class RosbagPlayerWindow(QMainWindow):
 		self.update_timer = QTimer()
 		self.update_timer.timeout.connect(self.update_ui)
 		self.update_timer.start(50)  # 50 ms update rate
-	
+
 	def open_bag(self, file_path: str = None):
 		"""Open a bag file and load its contents, with support for zstd compression."""
 		if file_path is None:
@@ -253,7 +289,14 @@ class RosbagPlayerWindow(QMainWindow):
 				item.setText(2, str(topic_data.message_count))
 				item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
 				item.setCheckState(0, Qt.Checked)
-			
+				if topic_name.startswith("/sonar"):
+					i = [x.isdigit() for x in topic_name].index(True)
+					id = int(topic_name[i]) - 1
+					if id < 0 or id > len(RosbagPlayerWindow.colors):
+						self.node.get_logger().warning(f"Invalid sonar index: {topic_name}")
+					else:
+						self.on_add_curve(topic_name, RosbagPlayerWindow.colors[id])
+
 			# Enable controls
 			self.play_button.setEnabled(True)
 			self.stop_button.setEnabled(True)
@@ -406,7 +449,7 @@ class RosbagPlayerWindow(QMainWindow):
 				transform = QTransform().rotate(270)
 				rotated_img = img.transformed(transform)
 
-				pixmap = QPixmap.fromImage(rotated_img).scaledToWidth(600, Qt.SmoothTransformation)
+				pixmap = QPixmap.fromImage(rotated_img).scaledToWidth(400, Qt.SmoothTransformation)
 
 				# Afficher ou mettre à jour l'image
 				if not hasattr(self, 'image_label'):
@@ -434,7 +477,7 @@ class RosbagPlayerWindow(QMainWindow):
 			self.is_playing = False
 			self.play_button.setText("Play")
 			self.bag_reader = None
-			self.status_bar.showMessage("Playback finished")
+			self.status_bar.showMessage("gpPlayback finished")
 	
 	def update_ui(self):
 		"""Update UI elements periodically."""
@@ -447,9 +490,10 @@ class RosbagPlayerWindow(QMainWindow):
 			self.timeline_slider.setValue(int(current_time * 100))
 			self.timeline_slider.blockSignals(False)
 
+			self.current_time_marker.setValue(current_time)
+
 	def keyPressEvent(self, event):
 		"""Handle keyboard shortcuts."""
-		print(event.key())
 		if event.key() == Qt.Key_Space:
 			self.toggle_playback()
 		elif event.key() == Qt.Key_Up:
@@ -462,8 +506,121 @@ class RosbagPlayerWindow(QMainWindow):
 			prev_index = max(current_index - 1, 0)
 			self.speed_combo.setCurrentIndex(prev_index)
 			self.change_playback_speed(self.speed_combo.currentText())
-		elif event.key() == Qt.Key_Left or event.key() == Qt.Key_Right:
-			# Reserved for future use
-			pass
+		elif event.key() == Qt.Key_Left:
+			current_value = self.timeline_slider.value()
+			self.timeline_slider.setValue(max(current_value - 100, 0))
+		elif event.key() == Qt.Key_Right:
+			current_value = self.timeline_slider.value()
+			self.timeline_slider.setValue(min(current_value + 100, self.timeline_slider.maximum()))
 
+	def on_add_curve(self, topic: str = None, color: QColor = None):
+		# Filtrer les topics de type Range
+		topics = [t for t, info in self.bag_info.topic_info.items() if info.msg_type == "sensor_msgs/msg/Range"]
+		if not topics:
+			self.status_bar.showMessage("Aucun topic Range disponible")
+			return
+
+		if topic == None or topic == False:
+			topic, ok = QInputDialog.getItem(self, "Ajouter une courbe", "Sélectionner un topic Range :", topics, 0, False)
+		elif topic not in topics:
+			self.node.get_logger().warning(f"Could not load topic {topic} on graph")
+			ok = False
+		else:
+			ok = True
+		if ok and topic:
+			# Sélection de la couleur avec QColorDialog
+			if color == None:
+				color = QColorDialog.getColor()
+			if not color.isValid():
+				# Si aucune couleur n'est choisie, on utilise une couleur par défaut (rouge)
+				color = Qt.red
+			else:
+				color = color.name()  # Récupère la valeur hexadécimale ex: "#RRGGBB"
+
+			data = self.load_topic_data(topic)
+			if not data:
+				self.status_bar.showMessage(f"Aucune donnée pour {topic}")
+				return
+			x_vals, y_vals = self.process_messages(data)
+			# Tracer la courbe avec la couleur choisie
+			curve_item = self.plot_widget.plot(x_vals, y_vals, pen=color, name=topic)
+			# Ajouter le topic à la liste des courbes affichées
+			self.curve_list.addItem(topic)
+			# Conserver la référence à la courbe pour pouvoir la supprimer ultérieurement
+			if not hasattr(self, 'curves'):
+				self.curves = {}
+			self.curves[topic] = curve_item
+
+			item = QListWidgetItem(topic)
+			item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+			item.setCheckState(Qt.Checked)
+			self.curve_list.addItem(item)
+
+
+	def on_remove_curve(self):
+		selected_items = self.curve_list.selectedItems()
+		if not selected_items:
+			return
+		for item in selected_items:
+			topic = item.text()
+			if hasattr(self, 'curves') and topic in self.curves:
+				self.plot_widget.removeItem(self.curves[topic])
+				del self.curves[topic]
+			row = self.curve_list.row(item)
+			self.curve_list.takeItem(row)
+
+	def curve_visibility_changed(self, item):
+		topic = item.text()
+		if hasattr(self, 'curves') and topic in self.curves:
+			curve_item = self.curves[topic]
+			if item.checkState() == Qt.Checked:
+				curve_item.setVisible(True)
+			else:
+				curve_item.setVisible(False)
+
+	def load_topic_data(self, topic):
+		"""
+		Lit intégralement les messages du topic donné (uniquement si de type Range)
+		et retourne une liste de tuples (temps_rel, range_value),
+		où temps_rel est le temps (en secondes) relatif au start_time du bag.
+		"""
+		import rosbag2_py
+		from rclpy.serialization import deserialize_message
+		from rosidl_runtime_py.utilities import get_message
+
+		# Vérifier le type du topic
+		topic_type_str = self.bag_info.topic_info[topic].msg_type
+		if topic_type_str != "sensor_msgs/msg/Range":
+			self.status_bar.showMessage(f"Topic {topic} n'est pas de type Range")
+			return []
+
+		msg_class = get_message(topic_type_str)
+
+		# Ouvrir le bag avec rosbag2_py
+		reader = rosbag2_py.SequentialReader()
+		storage_options = rosbag2_py._storage.StorageOptions(uri=self.working_path, storage_id='mcap')
+		converter_options = rosbag2_py._storage.ConverterOptions('', '')
+		reader.open(storage_options, converter_options)
+
+		data = []
+		start_time = self.bag_info.start_time  # en ns
+		# Lecture de tous les messages
+		while reader.has_next():
+			(tpc, raw_data, t) = reader.read_next()
+			if tpc == topic:
+				msg = deserialize_message(raw_data, msg_class)
+				# Calcul du temps relatif en secondes
+				rel_time = (t - start_time) / 1e9
+				# Ajout de la valeur range
+				data.append((rel_time, msg.range))
+		return data
+
+	def process_messages(self, data):
+		"""
+		À partir d'une liste de tuples (temps_rel, range_value),
+		retourne deux listes : x_vals (temps en secondes) et y_vals (valeur range).
+		"""
+		x_vals = [t for t, r in data]
+		y_vals = [r for t, r in data]
+		return x_vals, y_vals
 

@@ -17,7 +17,6 @@ def main(args=None):
 	node = rclpy.create_node('rosbag_player')
 	
 	signal.signal(signal.SIGINT, signal_handler)
-	print(args)
 	executor = rclpy.executors.SingleThreadedExecutor()
 	executor.add_node(node)
 	ros_thread = threading.Thread(target=executor.spin, daemon=True)
@@ -25,16 +24,20 @@ def main(args=None):
 
 	# Create and run Qt application
 	app = QApplication(sys.argv)
-	window = RosbagPlayerWindow(node, args[0])
+
+	bag_path = args[0] if args and len(args) > 0 else None
+
+	window = RosbagPlayerWindow(node, bag_path)
 	window.show()
 
 	exit_code = app.exec_()
 	
 	# Cleanup
-	if window.bag_reader:
+	if hasattr(window, 'bag_reader') and window.bag_reader:
 		window.bag_reader.stop()
 	window.cleanup_resources()
 	rclpy.shutdown()
+
 	sys.exit(exit_code)
 
 def main_cli():
@@ -46,8 +49,10 @@ def main_cli():
 	
 	i = 0
 	while i < len(custom_args):
+		# print("infinity")
 		if custom_args[i] == '--ros-args':
 			# Ajouter tous les arguments ROS à ros_args
+			i += 1
 			while i < len(custom_args) and not custom_args[i].startswith('--'):
 				ros_args.append(custom_args[i])
 				i += 1

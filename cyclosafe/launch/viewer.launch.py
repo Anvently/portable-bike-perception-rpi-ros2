@@ -26,9 +26,14 @@ def launch_setup(context):
     ld = []
     if bag != "":
         ld.extend([
-            ExecuteProcess(
-                cmd=['gnome-terminal', '--', 'ros2', 'bag', 'play', bag],
+            Node(
+                package="cyclosafe_player",
+                executable="player",
+                name="player",
                 output='screen',
+                arguments=[bag],
+                emulate_tty=True,
+                additional_env={'QT_QPA_PLATFORM': 'xcb'}
             )
         ])
     ld.extend(
@@ -48,16 +53,16 @@ def launch_setup(context):
                 "topic_list": ["sonar1/range", "sonar2/range", "sonar3/range", "sonar4/range"]
             }],
         ),
-        Node(
-            package='rqt_image_view',
-            executable='rqt_image_view',
-            output='screen',
-            emulate_tty=True,
-            parameters=[],
-            arguments=[
-                "images", "--ros-args", "--remap", "_image_transport:=compressed"
-            ]
-		),
+        # Node(
+        #     package='rqt_image_view',
+        #     executable='rqt_image_view',
+        #     output='screen',
+        #     emulate_tty=True,
+        #     parameters=[],
+        #     arguments=[
+        #         "images", "--ros-args", "--remap", "_image_transport:=compressed"
+        #     ]
+		# ),
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
@@ -94,5 +99,7 @@ def launch_setup(context):
 def generate_launch_description():
     opfunc = OpaqueFunction(function = launch_setup)
     ld = LaunchDescription(launch_args)
+    qt_env = SetEnvironmentVariable('QT_QPA_PLATFORM', 'xcb')
+    ld.add_action(qt_env)
     ld.add_action(opfunc)
     return ld
