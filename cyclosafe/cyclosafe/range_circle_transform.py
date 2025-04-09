@@ -36,7 +36,7 @@ class RangeCircleVisualizer(Node):
 		# Création d'un marker de type CYLINDER qui représentera notre cercle
 		marker = Marker()
 		marker.header.frame_id = topic
-		marker.header.stamp = self.get_clock().now().to_msg()
+		marker.header.stamp = msg.header.stamp
 		index = list(self.suscribers).index(topic)
 		
 		marker.id = index

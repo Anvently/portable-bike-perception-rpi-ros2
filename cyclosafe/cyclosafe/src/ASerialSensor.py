@@ -56,6 +56,8 @@ class ASerialPublisher(Node):
 			self.serial: Serial = Serial(self.port, self.baud)
 			self.buffer = bytes()
 			self.get_logger().info(f"listening on port {self.port}, baud={self.baud}")
+		if not self.serial:
+			return
 		period = self.get_parameter('period').get_parameter_value().double_value
 		if self.period != period:
 			self.period = period
@@ -78,7 +80,7 @@ class ASerialPublisher(Node):
 
 		except (serialutil.SerialException, OSError) as e:
 			self.get_logger().error(f"Failed to read from serial: {e.strerror}\nRetrying...")
-			self.timer.timer_period_ns = 2 * 1000 * 1000 * 1000
+			self.timer.timer_period_ns = 10 * 1000 * 1000 * 1000
 			self.serial = None
 
 		except Exception as e:

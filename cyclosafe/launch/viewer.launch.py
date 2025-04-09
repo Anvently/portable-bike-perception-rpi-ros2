@@ -36,6 +36,17 @@ def launch_setup(context):
                 additional_env={'QT_QPA_PLATFORM': 'xcb'}
             )
         ])
+    else:
+        ld.extend([Node(
+            package='rqt_image_view',
+            executable='rqt_image_view',
+            output='screen',
+            emulate_tty=True,
+            parameters=[],
+            arguments=[
+                "images", "--ros-args", "--remap", "_image_transport:=compressed"
+            ]
+		)])
     ld.extend(
         [Node(
             package='rviz2',
@@ -53,16 +64,6 @@ def launch_setup(context):
                 "topic_list": ["sonar1/range", "sonar2/range", "sonar3/range", "sonar4/range"]
             }],
         ),
-        # Node(
-        #     package='rqt_image_view',
-        #     executable='rqt_image_view',
-        #     output='screen',
-        #     emulate_tty=True,
-        #     parameters=[],
-        #     arguments=[
-        #         "images", "--ros-args", "--remap", "_image_transport:=compressed"
-        #     ]
-		# ),
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
