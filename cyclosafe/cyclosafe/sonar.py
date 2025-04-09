@@ -3,18 +3,26 @@ from rclpy.executors import ExternalShutdownException
 from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import Range
 from cyclosafe.src.ASerialSensor import ASerialPublisher
+from datetime import datetime
 
 FOV = 0.3
 
 class SonarNode(ASerialPublisher):
 	
+	last_message_stamp = datetime.now()
+
 	def __init__(self):
 			super().__init__('sonar', Range, 'range', '/dev/ttyUSB0', 57600)
 		
 	def parse(self) -> int:
 		i = self.buffer.rfind(b'R')
-		if (i > -1 and (len(self.buffer) - i) >= 4):
+		print(self.buffer)
+		if (i > -1 and (len(self.buffer) - i) >= 5):
 			value = int(self.buffer[i+1:i + 5].decode(('utf-8')))
+			print(value)
+			now = datetime.now()
+			print(f"interval={(now-self.last_message_stamp).microseconds}")
+			self.last_message_stamp = now
 			return value
 		return None
 

@@ -61,7 +61,7 @@ def launch_setup(context):
             output='screen',
             emulate_tty=True,
             parameters=[{
-                "topic_list": ["sonar1/range", "sonar2/range", "sonar3/range", "sonar4/range"]
+                "topic_list": ["sonar1/range", "sonar2/range", "sonar3/range", "sonar4/range", "sonar5/range"]
             }],
         ),
         Node(

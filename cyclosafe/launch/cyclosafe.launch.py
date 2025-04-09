@@ -125,7 +125,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar1,
-                 'period': 0.05,
+                 'period': 0.15,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -140,7 +140,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar2,
-                 'period': 0.05,
+                 'period': 0.15,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -155,7 +155,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar3,
-                 'period': 0.05,
+                 'period': 0.15,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -170,7 +170,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar4,
-                 'period': 0.05,
+                 'period': 0.15,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -185,7 +185,7 @@ def launch_setup(context):
             parameters=[
                 {'baud': 9600,
                  'port': port_sonar5,
-                 'period': 0.05,
+                 'period': 0.15,
                  'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
@@ -213,7 +213,7 @@ def launch_setup(context):
             parameters=[
                {'queue_size': 10,
                  'resolution': [600, 800],
-                 'interval': 0.5,
+                 'interval': 0.25,
                  'compression': 95,
                  'preview': False,
                  'start_time': float(time_start)}
