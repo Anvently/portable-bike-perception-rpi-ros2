@@ -16,12 +16,9 @@ class SonarNode(ASerialPublisher):
 		
 	def parse(self) -> int:
 		i = self.buffer.rfind(b'R')
-		print(self.buffer)
 		if (i > -1 and (len(self.buffer) - i) >= 5):
 			value = int(self.buffer[i+1:i + 5].decode(('utf-8')))
-			print(value)
 			now = datetime.now()
-			print(f"interval={(now-self.last_message_stamp).microseconds}")
 			self.last_message_stamp = now
 			return value
 		return None
