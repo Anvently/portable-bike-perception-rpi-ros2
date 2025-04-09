@@ -74,19 +74,25 @@ def launch_setup(context):
             package="tf2_ros",
             executable="static_transform_publisher",
             output="screen" ,
-            arguments=["0.08", "0.05", "0", "0", "0", "0", "laser", "sonar2/range"]
+            arguments=["0.08", "0.05", "0", "0", "0", "0", "laser", "sonar3/range"]
         ),
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
             output="screen" ,
-            arguments=["0.155", "0.05", "0", "0", "0", "0", "laser", "sonar3/range"]
+            arguments=["0.155", "0.05", "0", "0", "0", "0", "laser", "sonar2/range"]
         ),
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
             output="screen" ,
             arguments=["0.215", "0.05", "0", "0", "0", "0", "laser", "sonar4/range"]
+        ),
+        Node(
+            package="tf2_ros",
+            executable="static_transform_publisher",
+            output="screen" ,
+            arguments=["0.125", "0.05", "0", "0", "0", "0", "laser", "sonar5/range"]
         ),
         # Node(
         #     package="tf2_ros",

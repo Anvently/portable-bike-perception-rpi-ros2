@@ -91,6 +91,7 @@ def launch_setup(context):
     path = setup_directory(parent_dir, time_start)
     port_lidar, port_gps, port_sonar1 = resolve_port()
     port_sonar2, port_sonar3, port_sonar4 = resolve_port_sonar()
+    port_sonar5 = "/dev/ttyS0"
     print(port_lidar, port_gps, port_sonar1, port_sonar2, port_sonar3, port_sonar4)
     print(f"Simulation start time = {time_start}")
     ld = []
@@ -169,6 +170,21 @@ def launch_setup(context):
             parameters=[
                 {'baud': 57600,
                  'port': port_sonar4,
+                 'period': 0.05,
+                 'start_time': float(time_start)}
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
+		)])
+    if os.path.exists(port_sonar5):
+        ld.extend([Node(
+            package='cyclosafe',
+            executable='sonar',
+            namespace='sonar5',
+            output='screen',
+            emulate_tty=True,
+            parameters=[
+                {'baud': 9600,
+                 'port': port_sonar5,
                  'period': 0.05,
                  'start_time': float(time_start)}
             ],
