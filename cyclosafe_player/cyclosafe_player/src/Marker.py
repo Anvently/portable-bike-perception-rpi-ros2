@@ -92,7 +92,7 @@ class MarkerCategory:
 		self.name = name
 		self._color = QColor(color).name() if not isinstance(color, str) else color
 		self._visible = visible
-		self.markers = []
+		self.markers = {}
 		self.type = type
 		if MarkerCategory.tree_widget:
 			self._tree_insert_category_widget()
@@ -100,17 +100,23 @@ class MarkerCategory:
 		
 	def add_marker(self, stamp: float, description: str = "", detail = None,
 				   color = None, display_label = True):
+
+		"""If a marker with the same stamp already exists in the the category, it will not be added but not
+		exception will be raised"""
+
 		if color == None:
 			color = self._color
+		if stamp in self.markers:
+			return
 		marker = Marker(self, stamp, description, detail, color, self._visible, display_label)
-		self.markers.append(marker)
+		self.markers[marker.stamp] = marker
 		self.widget.setText(3, str(len(self.markers)))
 		self._tree_insert_marker_widget(marker)
 	
 	def remove_marker(self, marker):
 		if marker in self.markers:
 			marker.hide()
-			self.markers.remove(marker)
+			del self.markers[marker.stamp]
 			self._tree_remove_marker_widget(marker)
 			self.widget.setText(3, str(len(self.markers)))
 
@@ -124,7 +130,7 @@ class MarkerCategory:
 			raise Exception("No tree assigned to MarkerCategory")
 		if self.widget == None:
 			self._tree_insert_category_widget()
-		for marker in self.markers:
+		for _, marker in self.markers.items():
 			self._tree_insert_marker_widget(marker)
 
 	def _tree_insert_category_widget(self):
@@ -167,7 +173,7 @@ class MarkerCategory:
 	@visible.setter
 	def visible(self, value: bool):
 		self._visible = value
-		for marker in self.markers:
+		for _, marker in self.markers.items():
 			marker.show() if value == True else marker.hide()
 
 	@property
@@ -177,14 +183,14 @@ class MarkerCategory:
 	@color.setter
 	def color(self, value):
 		self._color = value
-		for marker in self.markers:
+		for _, marker in self.markers.items():
 			marker.setColor(value)
 
 	def cleanup(self):
-		for marker in self.markers:
+		for _, marker in self.markers.items():
 			marker.hide()
 			self._tree_remove_marker_widget(marker)
-		self.markers  = []
+		self.markers = {}
 		if MarkerCategory.tree_widget and self.widget != None:
 			self._tree_remove_category_widget()
 

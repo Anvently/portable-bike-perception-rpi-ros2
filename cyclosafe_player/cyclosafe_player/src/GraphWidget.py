@@ -10,7 +10,7 @@ import rosbag2_py
 from rclpy.serialization import deserialize_message
 from rclpy.node import Node
 from rosidl_runtime_py.utilities import get_message
-import json
+import json, os
 from datetime import datetime
 from typing import List, Tuple, Any, Dict
 from cyclosafe_player.src.PeakDetection import detect_peaks, Peak
@@ -19,7 +19,7 @@ from cyclosafe_player.src.Marker import Marker, MarkerCategory, MarkerCategoryEn
 def find_peak_in_category(category: MarkerCategory, time: float, tolerance = 0.0) -> Marker:
 	if category.type != MarkerCategoryEnum.Peak:
 		raise Exception("Invalid category type")
-	for marker in category.markers:
+	for _, marker in category.markers.items():
 		peak: Peak = marker.detail
 		if peak.start_time - tolerance <= time <= peak.start_time + peak.duration + tolerance:
 			return marker
@@ -245,6 +245,20 @@ class SonarGraphWidget(QWidget):
 		self.detect_peaks_button.clicked.connect(self.on_detect_peaks)
 		peak_detector_layout.addWidget(self.detect_peaks_button)
 
+		csv_tool_group = QGroupBox("Importer/exporter en csv")
+		csv_tool_layout = QVBoxLayout()
+		csv_tool_group.setLayout(csv_tool_layout)
+
+		# Paramètres de l'outil
+		csv_params_form = QFormLayout()
+
+		self.csv_import_button = QPushButton("Importer csv")
+		self.csv_import_button.clicked.connect(self.on_import_csv)
+		csv_tool_layout.addWidget(self.csv_import_button)
+		self.csv_export_button = QPushButton("Exporter csv")
+		self.csv_export_button.clicked.connect(self.on_export_csv)
+		csv_tool_layout.addWidget(self.csv_export_button)
+
 		# Cadre pour afficher les résultats d'analyse
 		results_group = QGroupBox("Résultats de l'analyse")
 		results_layout = QVBoxLayout()
@@ -258,6 +272,7 @@ class SonarGraphWidget(QWidget):
 
 		# Ajouter les groupes à l'onglet
 		tools_layout.addWidget(peak_detector_group)
+		tools_layout.addWidget(csv_tool_group)
 		tools_layout.addWidget(results_group)
 
 		# Espace vertical pour d'éventuels futurs outils
@@ -354,6 +369,7 @@ class SonarGraphWidget(QWidget):
 
 	def set_bag_info(self, bag_path, bag_info):
 		"""Set the bag file information and path."""
+		
 		self.bag_path = bag_path
 		self.bag_info = bag_info
 		for _, category in self.marker_categories.items():
@@ -361,7 +377,18 @@ class SonarGraphWidget(QWidget):
 		self.marker_categories.clear()
 		self.clear_all_curves()
 		
+		marker_maker = lambda: OvertakeMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, self)()
+		self.marker_categories['Dépassement'] = MarkerCategory("Dépassement", Qt.red, True, MarkerCategoryEnum.Overtake,
+												marker_maker)
+		self.marker_categories['Croisement'] = MarkerCategory("Croisement", Qt.magenta, True, MarkerCategoryEnum.Oncoming,
+												marker_maker)
+
 		self.load_sonar_data()
+
+		self.base_dir = os.path.dirname(bag_path)
+		self.dft_markers_path = os.path.join(self.base_dir, "marker_export.json")
+		if os.path.exists(self.dft_markers_path):
+			self.on_import_markers(self.dft_markers_path)
 
 		# Auto-add sonar topics with default colors
 		for sonar in self.sonar_datas:
@@ -375,12 +402,6 @@ class SonarGraphWidget(QWidget):
 		self.handle_peak_detection_results(self.peaks)
 		self.populate_sonar_list()
 		self.update_sonar_analysis_tab()
-
-		marker_maker = lambda: OvertakeMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, self)()
-		self.marker_categories['Dépassement'] = MarkerCategory("Dépassement", Qt.red, True, MarkerCategoryEnum.Overtake,
-												marker_maker)
-		self.marker_categories['Croisement'] = MarkerCategory("Croisement", Qt.magenta, True, MarkerCategoryEnum.Oncoming,
-												marker_maker)
 
 	def clear_all_curves(self):
 		"""Clear all curves from the plot."""
@@ -716,12 +737,15 @@ class SonarGraphWidget(QWidget):
 				item.marker.display_peak_region()
 			self.marker_details_text.setText(str(item.marker))
 
-	def on_import_markers(self):
+	def on_import_markers(self, dft_file_path = None):
 		"""Import markers from a JSON file."""
-		file_path, _ = QFileDialog.getOpenFileName(
-			self, "Importer des marqueurs", "", "Fichiers JSON (*.json)"
-		)
-		
+		if not dft_file_path:
+			file_path, _ = QFileDialog.getOpenFileName(
+				self, "Importer des marqueurs", "", "Fichiers JSON (*.json)"
+			)
+		else:
+			file_path = dft_file_path
+	
 		if not file_path:
 			return
 			
@@ -732,14 +756,18 @@ class SonarGraphWidget(QWidget):
 			# Import marker types and markers
 			for category_data in data.get('marker_categories', []):
 				type_name = category_data.get('name')
-				if type_name and not type_name in self.marker_categories:
-					marker_category = MarkerCategory(
-						type_name,
-						category_data.get('color', '#FF0000'),
-						category_data.get('visible', True),
-						category_data.get('type', MarkerCategoryEnum.User)
-					)
-					
+				if type_name:
+					if not type_name in self.marker_categories:
+						marker_category = MarkerCategory(
+							type_name,
+							category_data.get('color', '#FF0000'),
+							category_data.get('visible', True),
+							category_data.get('type', MarkerCategoryEnum.User)
+						)
+						self.marker_categories[type_name] = marker_category
+					else:
+						marker_category = self.marker_categories[type_name]
+
 					# Import markers for this type
 					for marker_data in category_data.get('markers', []):
 						timestamp = marker_data.get('timestamp', 0.0)
@@ -749,10 +777,9 @@ class SonarGraphWidget(QWidget):
 						display_label = marker_data.get('display_label', True)
 						marker_category.add_marker(timestamp, description, detail, color,  display_label)
 					
-					self.marker_categories[type_name] = marker_category
-			
-			QMessageBox.information(self, "Import réussi", 
-								f"Marqueurs importés avec succès depuis {file_path}")
+			if not dft_file_path:
+				QMessageBox.information(self, "Import réussi", 
+									f"Marqueurs importés avec succès depuis {file_path}")
 								
 		except Exception as e:
 			QMessageBox.critical(self, "Erreur d'import", 
@@ -768,7 +795,7 @@ class SonarGraphWidget(QWidget):
 			return
 		
 		# Generate default filename with timestamp
-		default_filename = f"markers_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+		default_filename = self.dft_markers_path or f"markers_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
 		
 		file_path, _ = QFileDialog.getSaveFileName(
 			self, "Exporter les marqueurs", default_filename, "Fichiers JSON (*.json)"
@@ -792,7 +819,7 @@ class SonarGraphWidget(QWidget):
 					'markers': []
 				}
 				
-				for marker in marker_category.markers:
+				for _, marker in marker_category.markers.items():
 					category_data['markers'].append({
 						'timestamp': marker.stamp,
 						'description': marker.description,
@@ -892,3 +919,9 @@ class SonarGraphWidget(QWidget):
 		widgets['textbox'].setVisible(info != None)
 		widgets['textbox'].setText(info if info != None else "")
 		widgets['button'].click()
+
+	def on_export_csv(self):
+		pass
+
+	def on_import_csv(self):
+		pass
