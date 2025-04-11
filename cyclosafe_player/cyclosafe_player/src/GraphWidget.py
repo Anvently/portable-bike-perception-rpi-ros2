@@ -1,11 +1,11 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
 							QListWidget, QListWidgetItem, QInputDialog, 
 							QColorDialog, QLabel, QTabWidget, QTreeWidget,
-							QTreeWidgetItem, QFileDialog, QMessageBox, QGroupBox, QFormLayout,
-							QDoubleSpinBox, QTextEdit)
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QColor
-from pyqtgraph import PlotWidget, InfiniteLine, mkPen
+							QScrollArea, QFileDialog, QMessageBox, QGroupBox, QFormLayout,
+							QDoubleSpinBox, QTextEdit, QCheckBox)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QBrush
+from pyqtgraph import PlotWidget, InfiniteLine
 import rosbag2_py
 from rclpy.serialization import deserialize_message
 from rclpy.node import Node
@@ -14,7 +14,16 @@ import json
 from datetime import datetime
 from typing import List, Tuple, Any, Dict
 from cyclosafe_player.src.PeakDetection import detect_peaks, Peak
-from cyclosafe_player.src.Marker import Marker, MarkerCategory, MarkerCategoryEnum
+from cyclosafe_player.src.Marker import Marker, MarkerCategory, MarkerCategoryEnum, GenericMarkerDialog, OvertakeMarkerDialog
+
+def find_peak_in_category(category: MarkerCategory, time: float, tolerance = 0.0) -> Marker:
+	if category.type != MarkerCategoryEnum.Peak:
+		raise Exception("Invalid category type")
+	for marker in category.markers:
+		peak: Peak = marker.detail
+		if peak.start_time - tolerance <= time <= peak.start_time + peak.duration + tolerance:
+			return marker
+	return None
 
 class SonarDatas:
 	# Define default colors for sonar graphs
@@ -33,6 +42,7 @@ class SonarDatas:
 			if idx != None: self.color = SonarDatas.DEFAULT_COLORS[idx]
 			else: self.color = SonarDatas.DEFAULT_COLORS[SonarDatas.nbr_instance % len(SonarDatas.DEFAULT_COLORS)]
 		self.datas: List[Tuple[float, float]] = []
+		self.highlight: bool = True
 		SonarDatas.nbr_instance += 1
 
 	def get_sonar_index(topic_name) -> int:
@@ -43,7 +53,6 @@ class SonarDatas:
 		except:
 			pass
 		return None
-	
 
 class SonarGraphWidget(QWidget):
 	"""Widget for displaying sonar data from ROS bag files as graphs."""
@@ -57,6 +66,9 @@ class SonarGraphWidget(QWidget):
 		self.marker_categories: Dict[str, MarkerCategory] = {}  # Dictionary of marker types by name
 		self.marker_lines = {}  # List to track marker line objects on the plot
 		self.sonar_datas: Dict[str, SonarDatas] = {}
+		self.peaks: Dict[str, List[Peak]] = {}
+		self.previous_selected_marker = None
+		self.current_peaks: Dict[str, Marker] = {}
 		self.init_ui()
 	
 	def init_ui(self):
@@ -123,7 +135,7 @@ class SonarGraphWidget(QWidget):
 		markers_tab.setLayout(markers_layout)
 		
 		# Marker types tree
-		markers_layout.addWidget(QLabel("Types de marqueurs:"))
+		markers_layout.addWidget(QLabel("Catégories de marqueurs:"))
 		self.marker_tree = QTreeWidget()
 		self.marker_tree.setHeaderLabels(["Type", "Couleur", "Visible", "Nombre"])
 		self.marker_tree.setColumnWidth(0, 150)
@@ -133,9 +145,9 @@ class SonarGraphWidget(QWidget):
 		
 		# Marker type controls
 		type_controls = QHBoxLayout()
-		self.add_type_button = QPushButton("Nouveau type")
+		self.add_type_button = QPushButton("Nouvelle catégorie")
 		self.add_type_button.clicked.connect(self.on_add_marker_category)
-		self.remove_type_button = QPushButton("Supprimer type")
+		self.remove_type_button = QPushButton("Supprimer catégorie")
 		self.remove_type_button.clicked.connect(self.on_remove_marker_category)
 		self.change_color_button = QPushButton("Changer couleur")
 		self.change_color_button.clicked.connect(self.on_change_marker_color)
@@ -173,6 +185,7 @@ class SonarGraphWidget(QWidget):
 		parent_tab_widget.addTab(markers_tab, "Marqueurs")
 
 		MarkerCategory.link_tree(self.marker_tree)
+		MarkerCategory.dft_new_marker_handler = lambda: GenericMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, self)()
 
 		# --- Tab 3: Outils ---
 		tools_tab = QWidget()
@@ -180,7 +193,7 @@ class SonarGraphWidget(QWidget):
 		tools_tab.setLayout(tools_layout)
 
 		# Groupbox pour l'outil de détection de pics
-		peak_detector_group = QGroupBox("Détection de pics (sonar)")
+		peak_detector_group = QGroupBox("Détection de pics")
 		peak_detector_layout = QVBoxLayout()
 		peak_detector_group.setLayout(peak_detector_layout)
 
@@ -251,7 +264,94 @@ class SonarGraphWidget(QWidget):
 		tools_layout.addStretch()
 
 		parent_tab_widget.addTab(tools_tab, "Outils")
-	
+
+		 # --- Tab 4: Analyse ---
+		analysis_tab = QWidget()
+		analysis_layout = QVBoxLayout()
+		analysis_tab.setLayout(analysis_layout)
+
+		# Zone de défilement principale
+		scroll_area = QScrollArea()
+		scroll_area.setWidgetResizable(True)
+		scroll_content = QWidget()
+		self.analysis_content_layout = QVBoxLayout(scroll_content)
+		scroll_area.setWidget(scroll_content)
+		analysis_layout.addWidget(scroll_area)
+
+		# Dictionnaire pour stocker les widgets liés à chaque sonar
+		self.sonar_analysis_widgets = {}
+
+		# Ajouter un espace extensible à la fin
+		self.analysis_content_layout.addStretch()
+
+		parent_tab_widget.addTab(analysis_tab, "Analyse")
+
+	def update_sonar_analysis_tab(self):
+		"""Met à jour l'onglet d'analyse avec les sonars actuels."""
+		# Supprimer les widgets existants
+		for widgets in self.sonar_analysis_widgets.values():
+			widgets['group'].deleteLater()
+		
+		self.sonar_analysis_widgets.clear()
+		
+		# Créer des sections pour chaque sonar dans le dictionnaire
+		for sonar_name in self.sonar_datas.keys():
+			# Créer un groupe pour ce sonar
+			group = QWidget()
+			group_layout = QVBoxLayout(group)
+			group_layout.setContentsMargins(5, 5, 5, 5)
+			
+			# En-tête avec checkbox et bouton de dévoilement
+			header = QWidget()
+			header_layout = QHBoxLayout(header)
+			header_layout.setContentsMargins(0, 0, 0, 0)
+			
+			# Checkbox pour activer/désactiver la mise en évidence
+			highlight_checkbox = QCheckBox("Mettre en évidence")
+			highlight_checkbox.setObjectName(f"highlight_{sonar_name}")
+			highlight_checkbox.setCheckState(Qt.CheckState.Checked)
+			highlight_checkbox.stateChanged.connect(
+				lambda state, name=sonar_name: self.on_sonar_highlight_changed(name, state)
+			)
+			
+			# Bouton pour afficher/masquer les détails
+			toggle_button = QPushButton(f"Sonar: {sonar_name}")
+			toggle_button.setCheckable(True)
+			toggle_button.setChecked(False)
+			
+			header_layout.addWidget(highlight_checkbox)
+			header_layout.addWidget(toggle_button, 1)  # Le bouton prend le reste de la place
+			
+			# Contenu (TextEdit) - caché par défaut
+			info_textbox = QTextEdit()
+			info_textbox.setReadOnly(True)
+			info_textbox.setMinimumHeight(100)
+			info_textbox.setMaximumHeight(150)
+			info_textbox.setVisible(False)
+			
+			# Ajouter à la disposition principale
+			group_layout.addWidget(header)
+			group_layout.addWidget(info_textbox)
+			
+			# Connecter le bouton pour afficher/masquer
+			toggle_button.clicked.connect(
+				lambda checked, tb=info_textbox: tb.setVisible(checked)
+			)
+			
+			# Stocker les références aux widgets
+			self.sonar_analysis_widgets[sonar_name] = {
+				'checkbox': highlight_checkbox,
+				'textbox': info_textbox,
+				'group': group,
+				'button': toggle_button
+			}
+			
+			# Ajouter le groupe au layout principal
+			self.analysis_content_layout.insertWidget(
+				self.analysis_content_layout.count() - 1,
+				group
+			)
+
 	def set_bag_info(self, bag_path, bag_info):
 		"""Set the bag file information and path."""
 		self.bag_path = bag_path
@@ -266,9 +366,22 @@ class SonarGraphWidget(QWidget):
 		# Auto-add sonar topics with default colors
 		for sonar in self.sonar_datas:
 			self.add_curve(sonar, False)
-
+			self.peaks[sonar] = detect_peaks(self.sonar_datas[sonar].datas, 
+				threshold_drop=3.0,
+				min_duration_sec=0.3, 
+				recovery_tolerance_sec=0.1,
+				feedback_handler=self.results_text_edit.setText)
+			
+		self.handle_peak_detection_results(self.peaks)
 		self.populate_sonar_list()
-	
+		self.update_sonar_analysis_tab()
+
+		marker_maker = lambda: OvertakeMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, self)()
+		self.marker_categories['Dépassement'] = MarkerCategory("Dépassement", Qt.red, True, MarkerCategoryEnum.Overtake,
+												marker_maker)
+		self.marker_categories['Croisement'] = MarkerCategory("Croisement", Qt.magenta, True, MarkerCategoryEnum.Oncoming,
+												marker_maker)
+
 	def clear_all_curves(self):
 		"""Clear all curves from the plot."""
 		self.plot_widget.clear()
@@ -306,15 +419,6 @@ class SonarGraphWidget(QWidget):
 			
 		if not ok or not topic:
 			return
-			
-		# # Handle color selection
-		# if color is None:
-		# 	color = QColorDialog.getColor()
-		# 	if not color.isValid():
-		# 		color = Qt.red
-		
-		# # Use the chosen or default color
-		# color_name = color if isinstance(color, str) else color.name()
 		
 		self.add_curve(topic)
 	
@@ -330,7 +434,9 @@ class SonarGraphWidget(QWidget):
 		x_vals, y_vals = self.process_messages(sonar_data.datas)
 		
 		# Plot the curve with the chosen color
-		curve_item = self.plot_widget.plot(x_vals, y_vals, pen=sonar_data.color, name=topic)
+		curve_item = self.plot_widget.plot(x_vals, y_vals, pen=sonar_data.color,
+									name=topic,symbol='o', symbolSize=1,
+									symbolBrush=sonar_data.color)
 		if not visible:
 			curve_item.setVisible(False)
 
@@ -370,6 +476,26 @@ class SonarGraphWidget(QWidget):
 	def update_current_time(self, time_seconds):
 		"""Update the position of the current time marker."""
 		self.current_time_marker.setValue(time_seconds)
+		for sonar, _ in self.sonar_datas.items():
+			category_name = f"{sonar}_peaks"
+			previous_peak_marker: Marker = self.current_peaks.get(category_name, None)
+	
+			if previous_peak_marker and ((previous_peak_marker.detail.start_time + previous_peak_marker.detail.duration) < time_seconds):
+				if previous_peak_marker.category.visible == False:
+					previous_peak_marker.hide()
+				previous_peak_marker.clear_peak_visualization()
+				self.current_peaks[category_name] = None
+				self.update_sonar_info(sonar, "")
+	
+			if self.current_peaks.get(category_name, None) == None and self.sonar_datas[sonar].highlight == True:
+				peak_marker = find_peak_in_category(self.marker_categories[category_name], time_seconds, 0.25)
+				if peak_marker:
+					peak_marker.show()
+					peak_marker.display_peak_region()
+					self.update_sonar_info(sonar, str(peak_marker))
+
+				self.current_peaks[category_name] = peak_marker
+
 	
 	def load_sonar_data(self):
 		"""
@@ -441,6 +567,7 @@ class SonarGraphWidget(QWidget):
 		self.marker_categories[name] = MarkerCategory(name, color, visible, type)
 
 	def remove_marker_category(self, name):
+		self.previous_selected_marker = None
 		if not name in self.marker_categories:
 			return
 		category: MarkerCategory = self.marker_categories[name]
@@ -500,7 +627,14 @@ class SonarGraphWidget(QWidget):
 			if not ok or not type_name:
 				return
 		
-		# Get timestamp (default to current marker position)
+		timestamp, description, detail = self.marker_categories[type_name].new_marker_handler()
+			
+		# Add marker
+		if timestamp:
+			self.marker_categories[type_name].add_marker(timestamp, description, detail)
+	
+	
+	def generic_add_marker_handler(self):
 		current_time = self.current_time_marker.value()
 		timestamp, ok = QInputDialog.getDouble(self, "Timestamp", 
 											"Temps (secondes):", 
@@ -514,13 +648,38 @@ class SonarGraphWidget(QWidget):
 											"Description du marqueur:")
 		if not ok:
 			description = f"Marqueur à {timestamp:.2f}s"
+		
+		return timestamp, description, None
+
+	def overtake_add_marker_handler(self):
+		current_time = self.current_time_marker.value()
+		timestamp, ok = QInputDialog.getDouble(self, "Timestamp", 
+											"Temps (secondes):", 
+											current_time, 0, 
+											self.bag_info.duration if self.bag_info else 999999, 2)
+		if not ok:
+			return
 			
-		# Add marker
-		self.marker_categories[type_name].add_marker(timestamp, description)
-	
-	
+		car_color, ok = QInputDialog.getText(self, "Couleur", 
+											"Couleur du véhicule:")
+		
+		#Remplacer car_type par une liste de choix contenant: "Voiture", "Camionnette", "Camion", "Bus", "Moto", "Vélo", "Autre"
+		car_type, ok = QInputDialog.getText(self, "Type", 
+											"Type du véhicule:")
+		
+		#Remplacer car_type par une liste de choix contenant: "Ligne nette", "Lignes éparses", "Amats de points", "Points isolés"
+		lidar_shape = QInputDialog.getText(self, "Forme", 
+											"Forme du nuage de points:")
+
+		detail = {"type": car_type, "couleur": car_color, "forme": lidar_shape}
+		description = f"{car_type} {car_color}"
+		
+		return timestamp, description, detail
+
+
 	def on_remove_marker(self):
 		"""Remove the selected marker."""
+		self.previous_selected_marker = None
 		selected_items = self.marker_tree.selectedItems()
 		if not selected_items:
 			return
@@ -537,18 +696,25 @@ class SonarGraphWidget(QWidget):
 		if column == 2 and item.parent() is None:  # Visibility column for type
 			category = item.category
 			category.visible = (item.checkState(2) == Qt.Checked)
+		if column == 1:
+			color = item.marker.color if item.parent() != None else item.category.color
+			item.setBackground(1, QBrush(QColor(color)))
 	
 	def marker_tree_item_selected(self):
+		if self.previous_selected_marker:
+			if self.previous_selected_marker.category.visible == False:
+				self.previous_selected_marker.hide()
+			self.previous_selected_marker.clear_peak_visualization()
 		selected_item = self.marker_tree.selectedItems()
 		if selected_item:
 			item = selected_item[0]
 			if item.parent() == None:
 				return
-			marker = item.marker
-			text = f"stamp={marker.stamp}\ndescription={marker.description}\n"
-			if marker.detail != None and hasattr(marker.detail, "__str__"):
-				text += str(marker.detail)
-			self.marker_details_text.setText(text)
+			self.previous_selected_marker = item.marker
+			item.marker.show()
+			if item.marker.category.type == MarkerCategoryEnum.Peak:
+				item.marker.display_peak_region()
+			self.marker_details_text.setText(str(item.marker))
 
 	def on_import_markers(self):
 		"""Import markers from a JSON file."""
@@ -562,15 +728,11 @@ class SonarGraphWidget(QWidget):
 		try:
 			with open(file_path, 'r') as f:
 				data = json.load(f)
-				
-			# Clear existing markers
-			self.marker_categories = {}
-			self.marker_tree.clear()
 			
 			# Import marker types and markers
 			for category_data in data.get('marker_categories', []):
 				type_name = category_data.get('name')
-				if type_name:
+				if type_name and not type_name in self.marker_categories:
 					marker_category = MarkerCategory(
 						type_name,
 						category_data.get('color', '#FF0000'),
@@ -598,7 +760,9 @@ class SonarGraphWidget(QWidget):
 	
 	def on_export_markers(self):
 		"""Export markers to a JSON file."""
-		if not self.marker_categories:
+		export_categories = {k: v for k, v in self.marker_categories.items() if v.visible}
+
+		if not export_categories:
 			QMessageBox.information(self, "Aucun marqueur", 
 								"Aucun marqueur à exporter.")
 			return
@@ -619,7 +783,7 @@ class SonarGraphWidget(QWidget):
 				'marker_categories': []
 			}
 			
-			for type_name, marker_category in self.marker_categories.items():
+			for type_name, marker_category in export_categories.items():
 				category_data = {
 					'name': type_name,
 					'color': marker_category.color,
@@ -660,7 +824,7 @@ class SonarGraphWidget(QWidget):
 			item = QListWidgetItem(topic)
 			item.setData(Qt.ItemDataRole.UserRole, topic)
 			item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-			item.setCheckState(Qt.CheckState.Unchecked)
+			item.setCheckState(Qt.CheckState.Checked)
 			self.sonar_list.addItem(item)
 
 	def on_detect_peaks(self):
@@ -703,11 +867,12 @@ class SonarGraphWidget(QWidget):
 		if not results or len(results) == 0:
 			return
 		results_text = ""
-		for topic, peaks in results.items():
+		self.peaks = results
+		for topic, peaks in self.peaks.items():
 			marker_category = f"{topic}_peaks"
 			if marker_category in self.marker_categories:
 				self.remove_marker_category(marker_category)
-			self.add_marker_category(marker_category, self.sonar_datas[topic].color, True, MarkerCategoryEnum.Peak)
+			self.add_marker_category(marker_category, self.sonar_datas[topic].color, False, MarkerCategoryEnum.Peak)
 			category:MarkerCategory = self.marker_categories[marker_category]
 			for peak in peaks:
 				category.add_marker(peak.start_time, "{:.2f}".format(peak.mean), peak, None, False)
@@ -715,3 +880,15 @@ class SonarGraphWidget(QWidget):
 
 		self.results_text_edit.setText(results_text)
 
+	def on_sonar_highlight_changed(self, sonar_name: str, state: int):
+		"""Gère le changement d'état de la checkbox pour mettre en évidence un sonar."""
+		self.sonar_datas[sonar_name].highlight = (state == Qt.CheckState.Checked)
+
+	def update_sonar_info(self, sonar_name, info: str):
+		"""Met à jour la visibilité de l'information d'un sonar."""
+		widgets = self.sonar_analysis_widgets.get(sonar_name, None)
+		if widgets == None:
+			return
+		widgets['textbox'].setVisible(info != None)
+		widgets['textbox'].setText(info if info != None else "")
+		widgets['button'].click()

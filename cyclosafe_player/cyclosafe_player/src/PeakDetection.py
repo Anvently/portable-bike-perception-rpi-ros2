@@ -16,13 +16,14 @@ class Peak:
 			self.values.append(range)
 		self.duration = time - self.start_time
 
-	def evaluate(self):
+	def evaluate(self, end_time):
 		np_array = np.array(self.values)
 		self.min = np_array.min()
 		self.max = np_array.max()
 		self.mean = np_array.mean()
 		self.std_dev = np_array.std()
 		self.sample_count = len(self.values)
+		self.duration = end_time - self.start_time
 
 	def __str__(self):
 		return f"duration={self.duration}\nmean={self.mean}\nstd dev={self.std_dev}\nmin={self.min}\nmax={self.max}\nsamples={self.sample_count}"
@@ -52,7 +53,8 @@ def detect_peaks(sonar_data, threshold_drop=3.0, min_duration_sec=0.3, recovery_
 		return []
 		
 	baseline =	5.0
-	
+	min_peak_drop = 4.5
+
 	peaks = []
 	current_peak: Peak = None
 	in_recovery = False
@@ -62,19 +64,20 @@ def detect_peaks(sonar_data, threshold_drop=3.0, min_duration_sec=0.3, recovery_
 	
 	for i, (time, range_val) in enumerate(sonar_data):
 		# Début potentiel d'un pic
-		if range_val < threshold_drop and current_peak is None:
+		if range_val < min_peak_drop and current_peak is None:
 			current_peak = Peak(time, range_val)
-		
+			# current_peak = Peak(sonar_data[i - 1][0] if i != 0 else sonar_data[i][0], range_val)
+
 		# Pendant un pic potentiel
 		elif current_peak is not None:
-			if range_val < threshold_drop:
+			if range_val < min_peak_drop:
 				# Toujours dans le pic, ajouter la valeur
 				current_peak.add_sample(time, range_val)
 				
 				# Si on était en période de rétablissement temporaire, on ne l'est plus
 				in_recovery = False
 				
-			elif range_val >= threshold_drop:  # range_val >= threshold_drop
+			elif range_val >= min_peak_drop:  # range_val >= min_peak_drop
 				if not in_recovery:
 					# Début d'une période de rétablissement potentielle
 					in_recovery = True
@@ -83,8 +86,9 @@ def detect_peaks(sonar_data, threshold_drop=3.0, min_duration_sec=0.3, recovery_
 				# Vérifier si la durée de rétablissement dépasse la tolérance
 				if in_recovery and (time - recovery_start_time) > recovery_tolerance_sec:
 					if current_peak.duration >= min_duration_sec:
-						current_peak.evaluate()
-						peaks.append(current_peak)
+						current_peak.evaluate(recovery_start_time)
+						if current_peak.min <= threshold_drop:
+							peaks.append(current_peak)
 					
 					# Réinitialiser pour chercher le prochain pic
 					current_peak = None
@@ -101,8 +105,9 @@ def detect_peaks(sonar_data, threshold_drop=3.0, min_duration_sec=0.3, recovery_
 	
 	# Gérer le cas où on est encore dans un pic à la fin des données
 	if current_peak is not None:
-		current_peak.evaluate()
-		peaks.append(current_peak)
+		current_peak.evaluate(sonar_data[-1][0])
+		if current_peak.min <= threshold_drop:
+			peaks.append(current_peak)
 	
 	return peaks
 
@@ -128,3 +133,4 @@ def analyze_multiple_sonars(sonars_data):
 		}
 		
 	return results
+

@@ -51,7 +51,7 @@ class RosbagPlayerWindow(QMainWindow):
 		
 	def init_ui(self):
 		self.setWindowTitle("ROS Bag Player")
-		self.setGeometry(100, 100, 600, 400)
+		self.setGeometry(100, 100, 1200, 800)
 		
 		# Main widget and layout
 		central_widget = QWidget()
