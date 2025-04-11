@@ -11,11 +11,10 @@ from rclpy.serialization import deserialize_message
 from rclpy.node import Node
 from rosidl_runtime_py.utilities import get_message
 import json
-import os
 from datetime import datetime
 from typing import List, Tuple, Any, Dict
-from enum import IntEnum
 from cyclosafe_player.src.PeakDetection import detect_peaks, Peak
+from cyclosafe_player.src.Marker import Marker, MarkerCategory, MarkerCategoryEnum
 
 class SonarDatas:
 	# Define default colors for sonar graphs
@@ -46,72 +45,6 @@ class SonarDatas:
 		return None
 	
 
-class MarkerCategoryEnum(IntEnum):
-	User = 0
-	Peak = 0
-
-class MarkerCategory:
-	"""Class to represent a type of marker with its color and visibility state."""
-
-	def __init__(self, parent_tree: QTreeWidget, plot_widget: PlotWidget, name, color=Qt.red, visible=True, type=MarkerCategoryEnum.User):
-		parent_tree
-		self.name = name
-		self.color = color if isinstance(color, str) else color.name()
-		self.visible = visible
-		self.markers: List[Marker] = []
-		self.type = type
-		self.plot_widget = plot_widget
-		self.widget = QTreeWidgetItem(parent_tree)
-		self.widget.setText(0, self.name)
-		self.widget.setText(1, self.color)
-		self.widget.setText(3, str(0))
-		self.widget.setFlags(self.widget.flags() | Qt.ItemIsUserCheckable)
-		self.widget.setCheckState(2, Qt.Checked if self.visible else Qt.Unchecked)
-		self.widget.category = self
-	
-	def append_item(self, stamp: float, description: str = "", detail = None, color = None):
-		self.markers.append(Marker(self, stamp, description, detail, color))
-		self.widget.setText(3, str(len(self.markers)))
-	
-	def remove_item(self, item):
-		if item in self.markers:
-			self.plot_widget.removeItem(item.line)
-			self.widget.removeChild(item.widget)
-			self.markers.remove(item)
-			self.widget.setText(3, str(len(self.markers)))
-
-	# def show(self):
-		# for item in self.markers:
-			# 
-
-class Marker:
-	def __init__(self, category: MarkerCategory, stamp: float, description = "",  detail = None, color: QColor = None, display_label = False):
-		self.stamp = stamp
-		self.description = description
-		self.detail = None
-		self.category = category
-		self.color = category.color if not color else color
-		self.widget = QTreeWidgetItem(self.category.widget)
-		self.widget.setText(0, f"{self.stamp:.2f}s")
-		self.widget.setText(1, description)
-		self.widget.marker = self
-
-		if display_label:
-			self.line: InfiniteLine = InfiniteLine(
-				pos=self.stamp, 
-				angle=90, 
-				movable=False, 
-				pen=mkPen(color=self.color, width=1, style=Qt.DashLine),
-				label=description,
-				labelOpts={'position': 0.9, 'color': self.color, 'fill': (0, 0, 0, 30)})
-		else:
-			self.line: InfiniteLine = InfiniteLine(
-				pos=self.stamp, 
-				angle=90, 
-				movable=False, 
-				pen=mkPen(color=self.color, width=1, style=Qt.DashLine))
-		self.category.plot_widget.addItem(self.line)
-
 class SonarGraphWidget(QWidget):
 	"""Widget for displaying sonar data from ROS bag files as graphs."""
 
@@ -121,7 +54,7 @@ class SonarGraphWidget(QWidget):
 		self.bag_path = None
 		self.bag_info = None
 		self.curves = {}
-		self.marker_categories = {}  # Dictionary of marker types by name
+		self.marker_categories: Dict[str, MarkerCategory] = {}  # Dictionary of marker types by name
 		self.marker_lines = {}  # List to track marker line objects on the plot
 		self.sonar_datas: Dict[str, SonarDatas] = {}
 		self.init_ui()
@@ -155,6 +88,8 @@ class SonarGraphWidget(QWidget):
 		controls_layout.addWidget(self.plot_widget, 3)  # Give the plot more space
 		
 		main_layout.addLayout(controls_layout)
+
+		Marker.link_plot(self.plot_widget)
 	
 	def init_tab_ui(self, parent_tab_widget: QTabWidget):
 		"""Initialize the tabs for curve and marker controls."""
@@ -236,6 +171,8 @@ class SonarGraphWidget(QWidget):
 		markers_layout.addWidget(self.marker_details_text)
 		
 		parent_tab_widget.addTab(markers_tab, "Marqueurs")
+
+		MarkerCategory.link_tree(self.marker_tree)
 
 		# --- Tab 3: Outils ---
 		tools_tab = QWidget()
@@ -319,6 +256,9 @@ class SonarGraphWidget(QWidget):
 		"""Set the bag file information and path."""
 		self.bag_path = bag_path
 		self.bag_info = bag_info
+		for _, category in self.marker_categories.items():
+			category.cleanup()
+		self.marker_categories.clear()
 		self.clear_all_curves()
 		
 		self.load_sonar_data()
@@ -332,13 +272,14 @@ class SonarGraphWidget(QWidget):
 	def clear_all_curves(self):
 		"""Clear all curves from the plot."""
 		self.plot_widget.clear()
+		for _, category in self.marker_categories.items():
+			category.visible = False
 		self.curves = {}
 		self.curve_list.clear()
 		# Re-add the time marker after clearing
 		self.current_time_marker = InfiniteLine(pos=0, angle=90, movable=False, pen='w')
 		self.plot_widget.addItem(self.current_time_marker)
 		# Re-draw any visible markers
-		self.update_marker_display()
 	
 	def on_add_curve(self, topic=None, color=None):
 		"""Add a curve to the plot."""
@@ -466,45 +407,7 @@ class SonarGraphWidget(QWidget):
 				rel_time = (t - start_time) / 1e9
 				# Add range value
 				self.sonar_datas[tpc].datas.append((rel_time, msg.range))
-				
 
-	# def load_topic_data(self, topic):
-	# 	"""
-	# 	Read all messages from the given topic (only if Range type)
-	# 	and return a list of tuples (rel_time, range_value),
-	# 	where rel_time is the time (in seconds) relative to the bag's start_time.
-	# 	"""
-	# 	if not self.bag_info or not self.bag_path:
-	# 		return []
-			
-	# 	# Verify topic type
-	# 	topic_type_str = self.bag_info.topic_info[topic].msg_type
-	# 	if topic_type_str != "sensor_msgs/msg/Range":
-	# 		self.node.get_logger().warning(f"Topic {topic} is not of type Range")
-	# 		return []
-		
-	# 	msg_class = get_message(topic_type_str)
-		
-	# 	# Open the bag with rosbag2_py
-	# 	reader = rosbag2_py.SequentialReader()
-	# 	storage_options = rosbag2_py._storage.StorageOptions(uri=self.bag_path, storage_id='mcap')
-	# 	converter_options = rosbag2_py._storage.ConverterOptions('', '')
-	# 	reader.open(storage_options, converter_options)
-		
-	# 	data = []
-	# 	start_time = self.bag_info.start_time  # in ns
-		
-	# 	# Read all messages
-	# 	while reader.has_next():
-	# 		(tpc, raw_data, t) = reader.read_next()
-	# 		if tpc == topic:
-	# 			msg = deserialize_message(raw_data, msg_class)
-	# 			# Calculate relative time in seconds
-	# 			rel_time = (t - start_time) / 1e9
-	# 			# Add range value
-	# 			data.append((rel_time, msg.range))
-				
-	# 	return data
 	
 	def process_messages(self, data):
 		"""
@@ -532,9 +435,18 @@ class SonarGraphWidget(QWidget):
 				color = Qt.red
 				
 			# Create new marker type
-			self.marker_categories[type_name] = MarkerCategory(self.marker_tree, self.plot_widget, type_name, color, visible=True)
+			self.add_marker_category(type_name, color)
 
-	
+	def add_marker_category(self, name, color, visible=True, type: MarkerCategoryEnum = MarkerCategoryEnum.User):
+		self.marker_categories[name] = MarkerCategory(name, color, visible, type)
+
+	def remove_marker_category(self, name):
+		if not name in self.marker_categories:
+			return
+		category: MarkerCategory = self.marker_categories[name]
+		category.cleanup()
+		del self.marker_categories[name]
+
 	def on_remove_marker_category(self):
 		"""Remove the selected marker type."""
 		selected_items = self.marker_tree.selectedItems()
@@ -545,13 +457,7 @@ class SonarGraphWidget(QWidget):
 			# Only process top-level items (marker types)
 			if item.parent() is None:
 				type_name = item.text(0)
-				if type_name in self.marker_categories:
-					self.
-					del self.marker_categories[type_name]
-		
-		# Update tree and display
-		self.update_marker_tree()
-		self.update_marker_display()
+				self.remove_marker_category(type_name)
 	
 	def on_change_marker_color(self):
 		"""Change the color of the selected marker type."""
@@ -562,15 +468,13 @@ class SonarGraphWidget(QWidget):
 		for item in selected_items:
 			# Only process top-level items (marker types)
 			if item.parent() is None:
-				type_name = item.text(0)
-				if type_name in self.marker_categories:
-					color = QColorDialog.getColor()
-					if color.isValid():
-						self.marker_categories[type_name].color = color.name()
-						# Update tree display
-						item.setText(1, color.name())
-						# Update markers on plot
-						self.update_marker_display()
+				category: MarkerCategory = item.category
+				color = QColorDialog.getColor()
+				if color.isValid():
+					category.color = color.name()
+					item.setText(1, color.name())
+					category.visible = False
+					category.visible = True
 	
 	def on_add_marker(self):
 		"""Add a new marker at the current time or a specified time."""
@@ -612,11 +516,8 @@ class SonarGraphWidget(QWidget):
 			description = f"Marqueur à {timestamp:.2f}s"
 			
 		# Add marker
-		self.marker_categories[type_name].markers.append((timestamp, description, None))
-		
-		# Update tree and display
-		self.update_marker_tree()
-		self.update_marker_display()
+		self.marker_categories[type_name].add_marker(timestamp, description)
+	
 	
 	def on_remove_marker(self):
 		"""Remove the selected marker."""
@@ -627,23 +528,15 @@ class SonarGraphWidget(QWidget):
 		for item in selected_items:
 			# Only process child items (markers)
 			if item.parent() is not None:
-				type_name = item.parent().text(0)
-				if type_name in self.marker_categories:
-					marker_index = item.parent().indexOfChild(item)
-					if 0 <= marker_index < len(self.marker_categories[type_name].markers):
-						del self.marker_categories[type_name].markers[marker_index]
-		
-		# Update tree and display
-		self.update_marker_tree()
-		self.update_marker_display()
+				marker: Marker = item.marker
+				category: MarkerCategory = marker.category
+				category.remove_marker(marker)
 	
 	def marker_tree_item_changed(self, item, column):
 		"""Handle changes in the marker tree."""
 		if column == 2 and item.parent() is None:  # Visibility column for type
-			type_name = item.text(0)
-			if type_name in self.marker_categories:
-				self.marker_categories[type_name].visible = (item.checkState(2) == Qt.Checked)
-				self.update_marker_display()
+			category = item.category
+			category.visible = (item.checkState(2) == Qt.Checked)
 	
 	def marker_tree_item_selected(self):
 		selected_item = self.marker_tree.selectedItems()
@@ -651,60 +544,12 @@ class SonarGraphWidget(QWidget):
 			item = selected_item[0]
 			if item.parent() == None:
 				return
-			text = f"stamp={item.timestamp}\ndescription={item.description}\n"
-			if item.detail != None and hasattr(item.detail, "__str__"):
-				text += str(item.detail)
+			marker = item.marker
+			text = f"stamp={marker.stamp}\ndescription={marker.description}\n"
+			if marker.detail != None and hasattr(marker.detail, "__str__"):
+				text += str(marker.detail)
 			self.marker_details_text.setText(text)
 
-	def update_marker_tree(self):
-		"""Update the marker tree display."""
-		self.marker_tree.clear()
-		
-		for type_name, marker_category in self.marker_categories.items():
-			type_item = QTreeWidgetItem(self.marker_tree)
-			type_item.setText(0, type_name)
-			type_item.setText(1, marker_category.color)
-			type_item.setText(3, str(len(marker_category.markers)))
-			type_item.setFlags(type_item.flags() | Qt.ItemIsUserCheckable)
-			type_item.setCheckState(2, Qt.Checked if marker_category.visible else Qt.Unchecked)
-			# Add marker children
-			self.results_text_edit.setText(f"Adding markers for {type_name}")
-			for timestamp, description, detail in marker_category.markers:
-				marker_item = QTreeWidgetItem(type_item)
-				marker_item.setText(0, f"{timestamp:.2f}s")
-				marker_item.setText(1, description)
-				marker_item.timestamp = timestamp
-				marker_item.description = description
-				marker_item.detail = detail
-		self.marker_tree.itemWidget()
-			
-	
-	def update_marker_display(self):
-		"""Update the display of markers on the plot."""
-		# Remove all existing marker lines
-		for type in self.marker_lines:
-			for line in self.marker_lines[type]:
-				self.plot_widget.removeItem(line)
-		self.marker_lines = {}
-		
-		# Add lines for visible marker types
-		for type_name, marker_category in self.marker_categories.items():
-			self.marker_lines[type_name] = []
-			if marker_category.visible:
-				for timestamp, description, _ in marker_category.markers:
-					# Create a vertical line at the marker position
-					line = InfiniteLine(
-						pos=timestamp, 
-						angle=90, 
-						movable=False, 
-						pen=mkPen(color=marker_category.color, width=1, style=Qt.DashLine),
-						label=description,
-						labelOpts={'position': 0.9, 'color': marker_category.color, 'fill': (0, 0, 0, 30)}
-					)
-					self.plot_widget.addItem(line)
-					self.marker_lines[type_name].append(line)
-			self.results_text_edit.setText(f"Adding marker lines for {type_name}")
-	
 	def on_import_markers(self):
 		"""Import markers from a JSON file."""
 		file_path, _ = QFileDialog.getOpenFileName(
@@ -720,29 +565,29 @@ class SonarGraphWidget(QWidget):
 				
 			# Clear existing markers
 			self.marker_categories = {}
+			self.marker_tree.clear()
 			
 			# Import marker types and markers
-			for type_data in data.get('marker_categories', []):
-				type_name = type_data.get('name')
+			for category_data in data.get('marker_categories', []):
+				type_name = category_data.get('name')
 				if type_name:
 					marker_category = MarkerCategory(
 						type_name,
-						type_data.get('color', '#FF0000'),
-						type_data.get('visible', True)
+						category_data.get('color', '#FF0000'),
+						category_data.get('visible', True),
+						category_data.get('type', MarkerCategoryEnum.User)
 					)
 					
 					# Import markers for this type
-					for marker_data in type_data.get('markers', []):
+					for marker_data in category_data.get('markers', []):
 						timestamp = marker_data.get('timestamp', 0.0)
 						description = marker_data.get('description', '')
 						detail = marker_data.get('detail', None)
-						marker_category.markers.append((timestamp, description, detail))
+						color = marker_data.get('color', None)
+						display_label = marker_data.get('display_label', True)
+						marker_category.add_marker(timestamp, description, detail, color,  display_label)
 					
 					self.marker_categories[type_name] = marker_category
-			
-			# Update display
-			self.update_marker_tree()
-			self.update_marker_display()
 			
 			QMessageBox.information(self, "Import réussi", 
 								f"Marqueurs importés avec succès depuis {file_path}")
@@ -775,21 +620,24 @@ class SonarGraphWidget(QWidget):
 			}
 			
 			for type_name, marker_category in self.marker_categories.items():
-				type_data = {
+				category_data = {
 					'name': type_name,
 					'color': marker_category.color,
 					'visible': marker_category.visible,
+					'type': marker_category.type,
 					'markers': []
 				}
 				
-				for timestamp, description, detail in marker_category.markers:
-					type_data['markers'].append({
-						'timestamp': timestamp,
-						'description': description,
-						'detail': detail
+				for marker in marker_category.markers:
+					category_data['markers'].append({
+						'timestamp': marker.stamp,
+						'description': marker.description,
+						'detail': marker.detail,
+						'color': marker.color,
+						'display_label': marker.display_label
 					})
 				
-				data['marker_categories'].append(type_data)
+				data['marker_categories'].append(category_data)
 			
 			# Write to file
 			with open(file_path, 'w') as f:
@@ -857,15 +705,13 @@ class SonarGraphWidget(QWidget):
 		results_text = ""
 		for topic, peaks in results.items():
 			marker_category = f"{topic}_peaks"
-			if not marker_category in self.marker_categories:
-				self.marker_categories[marker_category] = MarkerCategory(marker_category, self.sonar_datas[topic].color, True, MarkerCategoryEnum.Peak)
-			else:
-				self.marker_categories[marker_category].markers = []
+			if marker_category in self.marker_categories:
+				self.remove_marker_category(marker_category)
+			self.add_marker_category(marker_category, self.sonar_datas[topic].color, True, MarkerCategoryEnum.Peak)
+			category:MarkerCategory = self.marker_categories[marker_category]
 			for peak in peaks:
-				self.marker_categories[marker_category].markers.append((peak.start_time, "{:.2f}".format(peak.mean), peak))
+				category.add_marker(peak.start_time, "{:.2f}".format(peak.mean), peak, None, False)
 			results_text += f"{topic}: {len(peaks)} pics détectés\n"
 
-		self.update_marker_tree()
-		self.update_marker_display()
 		self.results_text_edit.setText(results_text)
 
