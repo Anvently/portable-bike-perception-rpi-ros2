@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
 							QListWidget, QListWidgetItem, QInputDialog, 
 							QColorDialog, QLabel, QTabWidget, QTreeWidget,
 							QScrollArea, QFileDialog, QMessageBox, QGroupBox, QFormLayout,
-							QDoubleSpinBox, QTextEdit, QCheckBox)
+							QDoubleSpinBox, QTextEdit, QCheckBox, QPlainTextEdit)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush
 from pyqtgraph import PlotWidget, InfiniteLine
@@ -251,6 +251,10 @@ class SonarGraphWidget(QWidget):
 
 		# Paramètres de l'outil
 		csv_params_form = QFormLayout()
+		self.csv_format = QPlainTextEdit()
+		self.csv_format.setPlainText("0$bag=bag,1$time=temps,2,3$type=type,4$color=couleur,5$distance=distance,9$shape=forme,10$distance=distance,11,12,13$distance_sonar1,20$distance_sonar2,27$distance_sonar3,34$distance_sonar4,41$distance_sonar5")
+		csv_params_form.addRow("Format", self.csv_format)
+		csv_tool_layout.addLayout(csv_params_form)
 
 		self.csv_import_button = QPushButton("Importer csv")
 		self.csv_import_button.clicked.connect(self.on_import_csv)
