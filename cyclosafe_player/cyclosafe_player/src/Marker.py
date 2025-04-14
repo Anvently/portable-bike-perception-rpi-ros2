@@ -50,7 +50,7 @@ class OvertakeMarkerDialog(GenericMarkerDialog):
 		self.distance = QDoubleSpinBox()
 		self.distance.setRange(0, 5.0)
 		self.distance.setDecimals(2)
-		self.distance.setValue(1.5 if not instance else instance.detail['distance'])
+		self.distance.setValue(1.5 if not instance else float((instance.detail['distance'])))
 		self.form.addRow("Distance (mètres):", self.distance)
 
 		self.color_input = QLineEdit()

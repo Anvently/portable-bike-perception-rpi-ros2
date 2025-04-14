@@ -26,14 +26,38 @@ DEFAULT_CSV_FORMAT = \
     "3$vehicle=type de véhicule,\n" \
     "4$color=couleur,\n" \
     "5$type=direction,\n" \
-    "6$distance=distance,\n" \
-    "10$shape=forme,\n" \
-    "11$distance=distance_lidar,\n" \
-    "14$sonar1.mean=sonar1 distance,\n" \
-    "21$sonar2.mean=sonar2 distance,\n" \
-    "28$sonar3.mean=sonar3 distance,\n" \
-    "35$sonar4.mean=sonar4 distance,\n" \
-    "42$sonar5.mean=sonar5 distance"
+    "7$shape=forme,\n" \
+    "8$distance=distance,\n" \
+    "10$sonar1.mean=sonar1 mean distance,\n" \
+    "11$sonar1.std_dev=sonar1 std dev,\n" \
+    "12$sonar1.min=sonar1 min,\n" \
+    "13$sonar1.sample_count=sonar1 sample count,\n" \
+    "14$sonar1.duration=sonar1 duration,\n" \
+	"15$sonar1.delta=sonar1 delta,\n" \
+    "16$sonar2.mean=sonar2 mean distance,\n" \
+    "17$sonar2.std_dev=sonar2 std dev,\n" \
+    "18$sonar2.min=sonar2 min,\n" \
+    "19$sonar2.sample_count=sonar2 sample count,\n" \
+    "20$sonar2.duration=sonar2 duration,\n" \
+	"21$sonar2.delta=sonar2 delta,\n" \
+    "22$sonar3.mean=sonar3 mean distance,\n" \
+    "23$sonar3.std_dev=sonar3 std dev,\n" \
+    "24$sonar3.min=sonar3 min,\n" \
+    "25$sonar3.sample_count=sonar3 sample count,\n" \
+    "26$sonar3.duration=sonar3 duration,\n" \
+	"27$sonar3.delta=sonar3 delta,\n" \
+    "28$sonar4.mean=sonar4 mean distance,\n" \
+    "29$sonar4.std_dev=sonar4 std dev,\n" \
+    "30$sonar4.min=sonar4 min,\n" \
+    "31$sonar4.sample_count=sonar4 sample count,\n" \
+    "32$sonar4.duration=sonar4 duration,\n" \
+	"33$sonar4.delta=sonar4 delta,\n" \
+    "34$sonar5.mean=sonar5 mean distance,\n" \
+    "35$sonar5.std_dev=sonar5 std dev,\n" \
+    "36$sonar5.min=sonar5 min,\n" \
+    "37$sonar5.sample_count=sonar5 sample count,\n" \
+    "38$sonar5.duration=sonar5 duration,\n" \
+	"39$sonar5.delta=sonar5 delta"
 
 def find_peak_in_category(category: MarkerCategory, time: float, tolerance = 0.0) -> Marker:
 	if category.type != MarkerCategoryEnum.Peak:
@@ -296,7 +320,6 @@ class SonarGraphWidget(QWidget):
 		# Zone de texte pour afficher les résultats
 		self.results_text_edit = QTextEdit()
 		self.results_text_edit.setReadOnly(True)  # En lecture seule
-		self.results_text_edit.setMinimumHeight(150)  # Hauteur minimale
 		results_layout.addWidget(self.results_text_edit)
 
 		# Ajouter les groupes à l'onglet
@@ -426,7 +449,8 @@ class SonarGraphWidget(QWidget):
 				min_duration_sec=0.3, 
 				recovery_tolerance_sec=0.1,
 				feedback_handler=self.results_text_edit.setText)
-			
+		
+		self.results_text_edit.setText("Peak detection parameters: threshold=3.0, min_duration=0.3, recovery_tolerance=0.1\n")
 		self.handle_peak_detection_results(self.peaks)
 		self.populate_sonar_list()
 		self.update_sonar_analysis_tab()
@@ -895,7 +919,7 @@ class SonarGraphWidget(QWidget):
 			sonar_data = self.sonar_datas[sonar_topic].datas
 			
 			# Lancer la détection
-			self.results_text_edit.setText(f"Starting peak detection for {sonar_topic}")
+			self.results_text_edit.setText(f"Starting peak detection for {sonar_topic} with threshold={threshold}, min_duration={min_duration}, recovery_tolerance={recovery_tolerance}")
 			peaks = detect_peaks(sonar_data, 
 								threshold_drop=threshold,
 								min_duration_sec=min_duration, 
@@ -908,7 +932,7 @@ class SonarGraphWidget(QWidget):
 	def handle_peak_detection_results(self, results: Dict[str, List[Peak]]):
 		if not results or len(results) == 0:
 			return
-		results_text = ""
+		results_text = self.results_text_edit.toPlainText()
 		self.peaks = results
 		for topic, peaks in self.peaks.items():
 			marker_category = f"{topic}_peaks"
@@ -973,11 +997,17 @@ class SonarGraphWidget(QWidget):
 
 							sonar, peak_attr = attr.split('.')
 							idx = get_sonar_index(sonar) + 1
-							peak_marker = find_peak_in_category(self.marker_categories[f"/sonar{idx}/range_peaks"], time)
+							sonar_peak_category = f"/sonar{idx}/range_peaks"
+							if not sonar_peak_category in self.marker_categories:
+								continue
+							peak_marker = find_peak_in_category(self.marker_categories[sonar_peak_category], time)
 							if peak_marker:
 								if not peak_attr:
 									peak_attr = "distance"
-								row[mapping['label']] = getattr(peak_marker.detail, peak_attr)
+								elif peak_attr == "delta":
+									row[mapping['label']] = peak_marker.detail.mean - float(marker.detail["distance"])
+								else:
+									row[mapping['label']] = getattr(peak_marker.detail, peak_attr)
 						else:
 							raise Exception(f"Invalid token: {attr}")
 					writer.writerow(row)
@@ -986,7 +1016,6 @@ class SonarGraphWidget(QWidget):
 
 		except Exception as e:
 			self.results_text_edit.setText(f"Erreur lors de l'export en csv: {str(e)}")
-			raise e
 
 	def on_import_csv(self):
 		try:
@@ -1019,7 +1048,9 @@ class SonarGraphWidget(QWidget):
 								time = float(value)
 							elif attr == 'type':
 								direction = value
-							elif attr != 'bag' and not attr.startswith('sonar'):  # Ignorer bag car c'est une valeur constante
+							elif attr == 'distance':
+								detail[attr] = float(value)
+							elif attr != 'bag' and not attr.startswith('sonar'):
 								detail[attr] = value
 					
 					if time is not None and direction is not None:
