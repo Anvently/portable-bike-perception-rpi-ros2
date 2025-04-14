@@ -942,13 +942,13 @@ class SonarGraphWidget(QWidget):
 			bag_name = datetime.fromtimestamp(time.nanoseconds * 1e-9).strftime('%Y%m%d-%H%M')
 			markers = {**self.marker_categories[OVERTAKE_CATEGORY_NAME].markers, **self.marker_categories[ONCOMING_CATEGORY_NAME].markers}
 
-			file_path, _ = QFileDialog.getSaveFileName(self, "Exporter CSV", "bag_name.csv", "CSV (*.csv)")
+			file_path, _ = QFileDialog.getSaveFileName(self, "Exporter CSV", f"{bag_name}.csv", "CSV (*.csv)")
 			if not file_path:
 				return
 
 			with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
 				headers = []
-				for idx in range(0, max(format_mapping.keys())):
+				for idx in range(0, max(format_mapping.keys()) + 1):
 					if idx in format_mapping:
 						headers.append(format_mapping[idx]['label'] if 'label' in format_mapping[idx] else format_mapping[idx]['attr'])
 					else:
@@ -985,7 +985,8 @@ class SonarGraphWidget(QWidget):
 				self.results_text_edit.setText(f"Export de {file_path} réussi.")
 
 		except Exception as e:
-			self.results_text_edit.setText(f"Erreur d'export: Erreur lors de l'export depuis csv: {str(e)}")
+			self.results_text_edit.setText(f"Erreur lors de l'export en csv: {str(e)}")
+			raise e
 
 	def on_import_csv(self):
 		try:
