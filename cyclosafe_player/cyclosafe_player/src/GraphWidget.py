@@ -15,6 +15,25 @@ from datetime import datetime
 from typing import List, Tuple, Any, Dict
 from cyclosafe_player.src.PeakDetection import detect_peaks, Peak
 from cyclosafe_player.src.Marker import Marker, MarkerCategory, MarkerCategoryEnum, GenericMarkerDialog, OvertakeMarkerDialog
+from cyclosafe_player.src.Csv import parse_csv_format
+import csv
+
+OVERTAKE_CATEGORY_NAME = "Dépassement"
+ONCOMING_CATEGORY_NAME = "Croisement"
+DEFAULT_CSV_FORMAT = \
+    "0$bag=bag,\n" \
+    "1$time=temps,\n" \
+    "3$vehicle=type de véhicule,\n" \
+    "4$color=couleur,\n" \
+    "5$type=direction,\n" \
+    "6$distance=distance,\n" \
+    "10$shape=forme,\n" \
+    "11$distance=distance_lidar,\n" \
+    "14$sonar1.mean=sonar1 distance,\n" \
+    "21$sonar2.mean=sonar2 distance,\n" \
+    "28$sonar3.mean=sonar3 distance,\n" \
+    "35$sonar4.mean=sonar4 distance,\n" \
+    "42$sonar5.mean=sonar5 distance"
 
 def find_peak_in_category(category: MarkerCategory, time: float, tolerance = 0.0) -> Marker:
 	if category.type != MarkerCategoryEnum.Peak:
@@ -24,6 +43,15 @@ def find_peak_in_category(category: MarkerCategory, time: float, tolerance = 0.0
 		if peak.start_time - tolerance <= time <= peak.start_time + peak.duration + tolerance:
 			return marker
 	return None
+
+def get_sonar_index(topic_name) -> int:
+		try:
+			i = [x.isdigit() for x in topic_name].index(True)
+			idx = int(topic_name[i]) - 1
+			return idx
+		except:
+			pass
+		return None
 
 class SonarDatas:
 	# Define default colors for sonar graphs
@@ -38,21 +66,14 @@ class SonarDatas:
 		if color:
 			self.color = color
 		else:
-			idx = SonarDatas.get_sonar_index(topic_name)
+			idx = get_sonar_index(topic_name)
 			if idx != None: self.color = SonarDatas.DEFAULT_COLORS[idx]
 			else: self.color = SonarDatas.DEFAULT_COLORS[SonarDatas.nbr_instance % len(SonarDatas.DEFAULT_COLORS)]
 		self.datas: List[Tuple[float, float]] = []
 		self.highlight: bool = True
 		SonarDatas.nbr_instance += 1
 
-	def get_sonar_index(topic_name) -> int:
-		try:
-			i = [x.isdigit() for x in topic_name].index(True)
-			idx = int(topic_name[i]) - 1
-			return idx
-		except:
-			pass
-		return None
+	
 
 class SonarGraphWidget(QWidget):
 	"""Widget for displaying sonar data from ROS bag files as graphs."""
@@ -137,6 +158,7 @@ class SonarGraphWidget(QWidget):
 		# Marker types tree
 		markers_layout.addWidget(QLabel("Catégories de marqueurs:"))
 		self.marker_tree = QTreeWidget()
+		self.marker_tree.setSortingEnabled(True)
 		self.marker_tree.setHeaderLabels(["Type", "Couleur", "Visible", "Nombre"])
 		self.marker_tree.setColumnWidth(0, 150)
 		self.marker_tree.itemChanged.connect(self.marker_tree_item_changed)
@@ -160,9 +182,12 @@ class SonarGraphWidget(QWidget):
 		marker_controls = QHBoxLayout()
 		self.add_marker_button = QPushButton("Ajouter marqueur")
 		self.add_marker_button.clicked.connect(self.on_add_marker)
+		self.edit_marker_button = QPushButton("Modifier marqueur")
+		self.edit_marker_button.clicked.connect(self.on_edit_marker)
 		self.remove_marker_button = QPushButton("Supprimer marqueur")
 		self.remove_marker_button.clicked.connect(self.on_remove_marker)
 		marker_controls.addWidget(self.add_marker_button)
+		marker_controls.addWidget(self.edit_marker_button)
 		marker_controls.addWidget(self.remove_marker_button)
 		markers_layout.addLayout(marker_controls)
 		
@@ -185,7 +210,7 @@ class SonarGraphWidget(QWidget):
 		parent_tab_widget.addTab(markers_tab, "Marqueurs")
 
 		MarkerCategory.link_tree(self.marker_tree)
-		MarkerCategory.dft_new_marker_handler = lambda: GenericMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, self)()
+		MarkerCategory.dft_new_marker_handler = lambda instance: GenericMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, instance, self)()
 
 		# --- Tab 3: Outils ---
 		tools_tab = QWidget()
@@ -252,7 +277,7 @@ class SonarGraphWidget(QWidget):
 		# Paramètres de l'outil
 		csv_params_form = QFormLayout()
 		self.csv_format = QPlainTextEdit()
-		self.csv_format.setPlainText("0$bag=bag,1$time=temps,2,3$type=type,4$color=couleur,5$distance=distance,9$shape=forme,10$distance=distance,11,12,13$distance_sonar1,20$distance_sonar2,27$distance_sonar3,34$distance_sonar4,41$distance_sonar5")
+		self.csv_format.setPlainText(DEFAULT_CSV_FORMAT)
 		csv_params_form.addRow("Format", self.csv_format)
 		csv_tool_layout.addLayout(csv_params_form)
 
@@ -381,11 +406,10 @@ class SonarGraphWidget(QWidget):
 		self.marker_categories.clear()
 		self.clear_all_curves()
 		
-		marker_maker = lambda: OvertakeMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, self)()
-		self.marker_categories['Dépassement'] = MarkerCategory("Dépassement", Qt.red, True, MarkerCategoryEnum.Overtake,
-												marker_maker)
-		self.marker_categories['Croisement'] = MarkerCategory("Croisement", Qt.magenta, True, MarkerCategoryEnum.Oncoming,
-												marker_maker)
+		self.marker_categories[OVERTAKE_CATEGORY_NAME] = MarkerCategory(OVERTAKE_CATEGORY_NAME, Qt.red, True, MarkerCategoryEnum.Overtake,
+												lambda instance: OvertakeMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, "Ajouter un dépassement", instance, self)())
+		self.marker_categories[ONCOMING_CATEGORY_NAME] = MarkerCategory(ONCOMING_CATEGORY_NAME, Qt.magenta, True, MarkerCategoryEnum.Oncoming,
+												lambda instance: OvertakeMarkerDialog(self.current_time_marker.value(), self.bag_info.duration, "Ajouter un croisement", instance, self)())
 
 		self.load_sonar_data()
 
@@ -624,7 +648,6 @@ class SonarGraphWidget(QWidget):
 				color = QColorDialog.getColor()
 				if color.isValid():
 					category.color = color.name()
-					item.setText(1, color.name())
 					category.visible = False
 					category.visible = True
 	
@@ -652,55 +675,43 @@ class SonarGraphWidget(QWidget):
 			if not ok or not type_name:
 				return
 		
-		timestamp, description, detail = self.marker_categories[type_name].new_marker_handler()
+		timestamp, description, detail = self.marker_categories[type_name].new_marker_handler(None)
 			
 		# Add marker
 		if timestamp:
-			self.marker_categories[type_name].add_marker(timestamp, description, detail)
-	
-	
-	def generic_add_marker_handler(self):
-		current_time = self.current_time_marker.value()
-		timestamp, ok = QInputDialog.getDouble(self, "Timestamp", 
-											"Temps (secondes):", 
-											current_time, 0, 
-											self.bag_info.duration if self.bag_info else 999999, 2)
-		if not ok:
+			if not isinstance(timestamp, float):
+				QMessageBox.warning(self, "Erreur", 
+							"Timestamp invalide.")
+				return
+			if not self.marker_categories[type_name].add_marker(timestamp, description, detail):
+				QMessageBox.warning(self, "Erreur", 
+							"Il existe déjà un marqueur pour cette catégorie au temps indiqué.")
+
+	def on_edit_marker(self):
+		"""Add a new marker at the current time or a specified time."""
+		selected_items = self.marker_tree.selectedItems()
+		type_name = None
+		
+		if len(selected_items) != 1 or selected_items[0].parent() == None:
 			return
-			
-		# Get description
-		description, ok = QInputDialog.getText(self, "Description", 
-											"Description du marqueur:")
-		if not ok:
-			description = f"Marqueur à {timestamp:.2f}s"
-		
-		return timestamp, description, None
 
-	def overtake_add_marker_handler(self):
-		current_time = self.current_time_marker.value()
-		timestamp, ok = QInputDialog.getDouble(self, "Timestamp", 
-											"Temps (secondes):", 
-											current_time, 0, 
-											self.bag_info.duration if self.bag_info else 999999, 2)
-		if not ok:
-			return
-			
-		car_color, ok = QInputDialog.getText(self, "Couleur", 
-											"Couleur du véhicule:")
+		item = selected_items[0]
 		
-		#Remplacer car_type par une liste de choix contenant: "Voiture", "Camionnette", "Camion", "Bus", "Moto", "Vélo", "Autre"
-		car_type, ok = QInputDialog.getText(self, "Type", 
-											"Type du véhicule:")
-		
-		#Remplacer car_type par une liste de choix contenant: "Ligne nette", "Lignes éparses", "Amats de points", "Points isolés"
-		lidar_shape = QInputDialog.getText(self, "Forme", 
-											"Forme du nuage de points:")
-
-		detail = {"type": car_type, "couleur": car_color, "forme": lidar_shape}
-		description = f"{car_type} {car_color}"
-		
-		return timestamp, description, detail
-
+		timestamp, description, detail = item.marker.category.new_marker_handler(item.marker)
+		if timestamp:
+			category = item.marker.category
+			if timestamp != item.marker.stamp and timestamp in category.markers:
+				QMessageBox.warning(self, "Erreur", 
+							"Il existe déjà un marqueur pour cette catégorie au temps indiqué.")
+				return
+			if not isinstance(timestamp, float):
+				QMessageBox.warning(self, "Erreur", 
+							"Timestamp invalide.")
+				return
+			category.remove_marker(item.marker.stamp)
+			item = None
+			category.add_marker(timestamp, description, detail)
+				
 
 	def on_remove_marker(self):
 		"""Remove the selected marker."""
@@ -714,7 +725,7 @@ class SonarGraphWidget(QWidget):
 			if item.parent() is not None:
 				marker: Marker = item.marker
 				category: MarkerCategory = marker.category
-				category.remove_marker(marker)
+				category.remove_marker(marker.stamp)
 	
 	def marker_tree_item_changed(self, item, column):
 		"""Handle changes in the marker tree."""
@@ -925,7 +936,110 @@ class SonarGraphWidget(QWidget):
 		widgets['button'].click()
 
 	def on_export_csv(self):
-		pass
+		try:
+			format_mapping = parse_csv_format(self.csv_format.toPlainText())
+			time = self.bag_info.starting_time
+			bag_name = datetime.fromtimestamp(time.nanoseconds * 1e-9).strftime('%Y%m%d-%H%M')
+			markers = {**self.marker_categories[OVERTAKE_CATEGORY_NAME].markers, **self.marker_categories[ONCOMING_CATEGORY_NAME].markers}
+
+			file_path, _ = QFileDialog.getSaveFileName(self, "Exporter CSV", "bag_name.csv", "CSV (*.csv)")
+			if not file_path:
+				return
+
+			with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+				headers = []
+				for idx in range(0, max(format_mapping.keys())):
+					if idx in format_mapping:
+						headers.append(format_mapping[idx]['label'] if 'label' in format_mapping[idx] else format_mapping[idx]['attr'])
+					else:
+						headers.append(f"__empty_col_{idx}__")
+				
+				writer = csv.DictWriter(csvfile, fieldnames=headers)
+				writer.writerow({header: ("" if header.startswith("__empty_col_") else header) for header in headers})
+				
+				for time, marker in markers.items():
+					row = {}
+					for idx, mapping in format_mapping.items():
+						attr = mapping['attr']
+						if attr == 'time':
+							row[mapping['label']] = time
+						elif attr == 'bag':
+							row[mapping['label']] = bag_name
+						elif attr == 'type':
+							row[mapping['label']] = OVERTAKE_CATEGORY_NAME if marker.category.type == MarkerCategoryEnum.Overtake else ONCOMING_CATEGORY_NAME
+						elif attr in marker.detail:
+							row[mapping['label']] = marker.detail[attr] if type(marker.detail) == dict else getattr(marker.detail, attr)
+						elif attr.startswith("sonar"):
+
+							sonar, peak_attr = attr.split('.')
+							idx = get_sonar_index(sonar) + 1
+							peak_marker = find_peak_in_category(self.marker_categories[f"/sonar{idx}/range_peaks"], time)
+							if peak_marker:
+								if not peak_attr:
+									peak_attr = "distance"
+								row[mapping['label']] = getattr(peak_marker.detail, peak_attr)
+						else:
+							raise Exception(f"Invalid token: {attr}")
+					writer.writerow(row)
+
+				self.results_text_edit.setText(f"Export de {file_path} réussi.")
+
+		except Exception as e:
+			self.results_text_edit.setText(f"Erreur d'export: Erreur lors de l'export depuis csv: {str(e)}")
 
 	def on_import_csv(self):
-		pass
+		try:
+			format_mapping = parse_csv_format(self.csv_format.toPlainText())
+			
+			file_path, _ = QFileDialog.getOpenFileName(self, "Importer CSV", "", "CSV (*.csv)")
+			if not file_path:
+				return
+			
+			column_to_attr = {}
+			for idx, mapping in format_mapping.items():
+				column_to_attr[idx] = mapping['attr']
+			
+			with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
+				reader = csv.reader(csvfile)
+				headers = next(reader)
+				
+				markers_to_add = []
+				for row in reader:
+					time = None
+					direction = None
+					detail = {"vehicle": "", "color": "", "distance": float('nan'), "shape": ""}
+					
+
+					for idx, value in enumerate(row):
+						if idx in format_mapping and value.strip():
+							attr = format_mapping[idx]['attr']
+							
+							if attr == 'time':
+								time = float(value)
+							elif attr == 'type':
+								direction = value
+							elif attr != 'bag' and not attr.startswith('sonar'):  # Ignorer bag car c'est une valeur constante
+								detail[attr] = value
+					
+					if time is not None and direction is not None:
+						if direction == OVERTAKE_CATEGORY_NAME:
+							category = OVERTAKE_CATEGORY_NAME
+						elif direction == ONCOMING_CATEGORY_NAME:
+							category = ONCOMING_CATEGORY_NAME
+						else:
+							raise Exception(f"Direction inconnue at line {idx}: {direction}")
+						
+						if time < 0 or time > self.bag_info.duration:
+							raise Exception(f"Invalid time at line {idx} : {time}")
+						
+						markers_to_add.append((time, category, detail))
+			
+			for time, category, detail in markers_to_add:
+				self.marker_categories[category].add_marker(time, f"{detail['vehicle']} {detail['color']}".strip(), detail)
+			
+			self.results_text_edit.setText(f"Import réussi : {len(markers_to_add)} marqueurs ont été importés avec succès.")
+							
+		except Exception as e:
+			self.results_text_edit.setText(f"Erreur d'import: Erreur lors de l'import depuis csv: {str(e)}")
+
+

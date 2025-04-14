@@ -64,4 +64,4 @@ def main_cli():
 	main(custom_only)
 
 if __name__ == "__main__":
-	main()
+	main_cli()

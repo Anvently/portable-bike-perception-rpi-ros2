@@ -6,20 +6,21 @@ from pyqtgraph import PlotWidget, InfiniteLine, mkPen, LinearRegionItem
 from enum import IntEnum
 
 class GenericMarkerDialog(QDialog):
-	def __init__(self, current_time, max_time, parent=None):
+	def __init__(self, current_time, max_time, instance = None, parent=None):
 		super().__init__(parent)
-		self.setWindowTitle("Ajouter un marqueur")
+		self.setWindowTitle("Ajouter un marqueur" if not instance else "Editer un marqueur")
 		self.layout = QVBoxLayout()
 		self.form = QFormLayout()
 
 		self.time_input = QDoubleSpinBox()
 		self.time_input.setRange(0, max_time)
 		self.time_input.setDecimals(2)
-		self.time_input.setValue(current_time)
+		self.time_input.setValue(current_time if not instance else instance.stamp)
 		self.form.addRow("Temps (secondes):", self.time_input)
 
 		self.description_input = QLineEdit()
 		self.description_input.setPlaceholderText("Description du marqueur")
+		self.description_input.setText("" if not instance else instance.description)
 		self.form.addRow("Description:", self.description_input)
 
 		self.layout.addLayout(self.form)
@@ -42,38 +43,48 @@ class GenericMarkerDialog(QDialog):
 		return None, None, None
 
 class OvertakeMarkerDialog(GenericMarkerDialog):
-	def __init__(self, current_time, max_time, parent=None):
-		super().__init__(current_time, max_time, parent)
-		self.setWindowTitle("Ajouter un dépassement")
+	def __init__(self, current_time, max_time, title, instance = None, parent=None):
+		super().__init__(current_time, max_time, instance, parent)
+		self.setWindowTitle(title)
 
 		self.distance = QDoubleSpinBox()
 		self.distance.setRange(0, 5.0)
 		self.distance.setDecimals(2)
-		self.distance.setValue(1.5)
+		self.distance.setValue(1.5 if not instance else instance.detail['distance'])
 		self.form.addRow("Distance (mètres):", self.distance)
 
 		self.color_input = QLineEdit()
+		self.color_input.setText("" if not instance else instance.detail['color'])
 		self.form.addRow("Couleur du véhicule:", self.color_input)
 
 		self.type_input = QComboBox()
 		self.type_input.addItems(["Voiture", "Camionnette", "Camion", "Bus", "Moto", "Vélo", "Autre"])
+		self.type_input.setCurrentText("" if not instance else instance.detail['vehicle'])
 		self.form.addRow("Type du véhicule:", self.type_input)
 
 		self.shape_input = QComboBox()
 		self.shape_input.addItems(["Ligne nette", "Lignes éparses", "Amats de points", "Points isolés"])
+		self.shape_input.setCurrentText("" if not instance else instance.detail['shape'])
 		self.form.addRow("Forme du nuage de points:", self.shape_input)
 
 	def get_data(self):
 		timestamp = self.time_input.value()
 		description = self.description_input.text() or f"{self.type_input.currentText()} {self.color_input.text()}"
 		detail = {
-			"type": self.type_input.currentText(),
-			"couleur": self.color_input.text(),
-			"forme": self.shape_input.currentText(),
-			"distance": self.distance.text()
+			"vehicle": self.type_input.currentText(),
+			"color": self.color_input.text(),
+			"shape": self.shape_input.currentText(),
+			"distance": float(self.distance.text())
 		}
 		return timestamp, description, detail
 
+class NumericTreeWidgetItem(QTreeWidgetItem):
+	def __lt__(self, other):
+		column = self.treeWidget().sortColumn()
+		try:
+			return float(self.text(column)) < float(other.text(column))
+		except ValueError:
+			return self.text(column) < other.text(column)
 
 class MarkerCategoryEnum(IntEnum):
 	User = 0
@@ -99,24 +110,26 @@ class MarkerCategory:
 		self.new_marker_handler = new_marker_handler or MarkerCategory.dft_new_marker_handler
 		
 	def add_marker(self, stamp: float, description: str = "", detail = None,
-				   color = None, display_label = True):
+				   color = None, display_label = True) -> bool:
 
 		"""If a marker with the same stamp already exists in the the category, it will not be added but not
-		exception will be raised"""
+		exception will be raised and False will be returned"""
 
 		if color == None:
 			color = self._color
 		if stamp in self.markers:
-			return
+			return False
 		marker = Marker(self, stamp, description, detail, color, self._visible, display_label)
 		self.markers[marker.stamp] = marker
 		self.widget.setText(3, str(len(self.markers)))
 		self._tree_insert_marker_widget(marker)
-	
-	def remove_marker(self, marker):
-		if marker in self.markers:
+		return True
+
+	def remove_marker(self, stamp):
+		if stamp in self.markers:
+			marker = self.markers[stamp]
 			marker.hide()
-			del self.markers[marker.stamp]
+			del self.markers[stamp]
 			self._tree_remove_marker_widget(marker)
 			self.widget.setText(3, str(len(self.markers)))
 
@@ -153,9 +166,9 @@ class MarkerCategory:
 	def _tree_insert_marker_widget(self, marker):
 		if (MarkerCategory.tree_widget == None):
 			raise Exception("No tree assigned to MarkerCategory")
-		marker.widget = QTreeWidgetItem(self.widget)
+		marker.widget = NumericTreeWidgetItem(self.widget)
 		marker.widget.marker = marker
-		marker.widget.setText(0, f"{marker.stamp:.2f}s")
+		marker.widget.setText(0, f"{marker.stamp:.2f}")
 		marker.widget.setText(1, marker.description)
 	
 	def _tree_remove_marker_widget(self, marker):

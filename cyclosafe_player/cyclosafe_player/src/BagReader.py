@@ -34,6 +34,8 @@ class BagInfo:
 				'msg_type': topic_metadata.type,
 				'message_count': 0  # Will count below
 			})
+
+		self.starting_time = reader.get_metadata().starting_time
 			
 		start_time = None
 		end_time = None
