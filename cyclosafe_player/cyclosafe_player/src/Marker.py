@@ -88,9 +88,9 @@ class NumericTreeWidgetItem(QTreeWidgetItem):
 
 class MarkerCategoryEnum(IntEnum):
 	User = 0
-	Peak = 0
-	Overtake = 0
-	Oncoming = 0
+	Peak = 1
+	Overtake = 2
+	Oncoming = 3
 
 class MarkerCategory:
 	"""Class to represent a type of marker with its color and visibility state."""
