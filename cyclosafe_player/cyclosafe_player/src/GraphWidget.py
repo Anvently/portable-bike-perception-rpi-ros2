@@ -87,6 +87,7 @@ class SonarDatas:
 
 	def __init__(self, topic_name:str, color:QColor = None):
 		self.topic_name = topic_name
+		# self.sonar_name = 
 		if color:
 			self.color = color
 		else:

@@ -69,16 +69,16 @@ def resolve_port() -> Tuple[str, str, str]:
     if port: port_lidar = port
     port = read_port_by_id('u-blox')
     if port: port_gps = port
-    port_sonar = read_port_by_id('MaxBotix_MB1443')
 
-    return port_lidar, port_gps, port_sonar
+    return port_lidar, port_gps
 
 def resolve_port_sonar() -> Tuple[str, str, str]:
+    port_sonar1 = read_port_by_id('MaxBotix_MB1443')
     port_sonar2 = read_port_by_id('MaxBotix_MB1433')
     port_sonar3 = read_port_by_id('MaxBotix_MB1423')
     port_sonar4 = read_port_by_id('MaxBotix_MB1413')
 
-    return port_sonar2, port_sonar3, port_sonar4
+    return port_sonar1, port_sonar2, port_sonar3, port_sonar4
 
 
 def launch_setup(context):
@@ -89,9 +89,14 @@ def launch_setup(context):
     time_start = time.time()
 
     path = setup_directory(parent_dir, time_start)
-    port_lidar, port_gps, port_sonar1 = resolve_port()
-    port_sonar2, port_sonar3, port_sonar4 = resolve_port_sonar()
-    port_sonar5 = "/dev/ttyS0"
+    port_lidar, port_gps = resolve_port()
+    port_sonar1 = "/dev/ttyS0"
+    port_sonar2 = "/dev/ttyAMA3"
+    port_sonar3, port_sonar4, port_sonar5 = None
+    # port_sonar1, port_sonar2, port_sonar3, port_sonar4 = resolve_port_sonar()
+    # port_sonar5 = "/dev/ttyS0"
+
+    port_sonar5 = None
     print(port_lidar, port_gps, port_sonar1, port_sonar2, port_sonar3, port_sonar4)
     print(f"Simulation start time = {time_start}")
     ld = []
