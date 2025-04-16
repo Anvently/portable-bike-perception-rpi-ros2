@@ -2,7 +2,7 @@ import rclpy
 from rclpy.executors import ExternalShutdownException
 from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import Range
-from cyclosafe.src.ASerialSensor import ASerialPublisher
+from cyclosafe.sonar import ASerialPublisher
 from datetime import datetime
 
 FOV = 0.3
@@ -16,8 +16,8 @@ class SonarNode(ASerialPublisher):
 		
 	def parse(self) -> int:
 		i = self.buffer.rfind(b'R')
-		if (i > -1 and (len(self.buffer) - i) >= 5):
-			value = int(self.buffer[i+1:i + 5].decode(('utf-8')))
+		if (i > -1 and (len(self.buffer) - i) >= 4):
+			value = int(self.buffer[i+1:i + 4].decode(('utf-8')))
 			now = datetime.now()
 			self.last_message_stamp = now
 			return value

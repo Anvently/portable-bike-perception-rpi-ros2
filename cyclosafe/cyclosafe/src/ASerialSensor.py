@@ -30,6 +30,18 @@ class ASerialPublisher(Node):
 			self.declare_parameter('baud', default_baud, ParameterDescriptor(description="serial interface baudrate"))
 			self.declare_parameter('period', 0.5, ParameterDescriptor(description="serial interface baudrate"))
 			self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
+			self.declare_parameter('unit', "mm", ParameterDescriptor(description="Unit of data sent by sensor. Accept 'mm', 'm' or 'in'"))
+			self.unit = self.get_parameter('unit').get_parameter_value().string_value
+			match self.unit:
+				case 'mm':
+					self.factor = 0.001
+				case 'm':
+					self.factor = 1
+				case 'in':
+					self.factor = 0.0254
+				case _:
+					raise Exception(f"Invalid unit {self.unit}, accepts: 'mm', 'm' or 'in'")
+
 
 			self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
 

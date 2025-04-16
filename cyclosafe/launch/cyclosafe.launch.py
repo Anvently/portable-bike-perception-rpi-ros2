@@ -87,16 +87,16 @@ def launch_setup(context):
     record = str2bool(LaunchConfiguration('record').perform(context))
     save = str2bool(LaunchConfiguration('save').perform(context))
     time_start = time.time()
-
+    print("plouf")
     path = setup_directory(parent_dir, time_start)
+    print("pouet")
     port_lidar, port_gps = resolve_port()
     port_sonar1 = "/dev/ttyS0"
     port_sonar2 = "/dev/ttyAMA3"
-    port_sonar3, port_sonar4, port_sonar5 = None
+    port_sonar3, port_sonar4, port_sonar5 = None, None, None
     # port_sonar1, port_sonar2, port_sonar3, port_sonar4 = resolve_port_sonar()
     # port_sonar5 = "/dev/ttyS0"
 
-    port_sonar5 = None
     print(port_lidar, port_gps, port_sonar1, port_sonar2, port_sonar3, port_sonar4)
     print(f"Simulation start time = {time_start}")
     ld = []
@@ -120,37 +120,39 @@ def launch_setup(context):
             ],
             arguments=['--ros-args', '--log-level', log_level],
         )])
-    if port_sonar1:
+    if port_sonar1 and os.path.exists(port_sonar1):
         ld.extend([Node(
             package='cyclosafe',
-            executable='sonar',
+            executable='sonar_rs232',
             namespace='sonar1',
             output='screen',
             emulate_tty=True,
-            parameters=[
-                {'baud': 57600,
+            parameters=[{
+                'baud': 9600,
                  'port': port_sonar1,
-                 'period': 0.2,
-                 'start_time': float(time_start)}
-            ],
+                 'period': 0.15,
+                 'start_time': float(time_start),
+                 'unit': 'in'
+            }],
             arguments=['--ros-args', '--log-level', log_level],
 		)])
-    if port_sonar2:
+    if port_sonar2 and os.path.exists(port_sonar2):
         ld.extend([Node(
             package='cyclosafe',
-            executable='sonar',
+            executable='sonar_rs232',
             namespace='sonar2',
             output='screen',
             emulate_tty=True,
-            parameters=[
-                {'baud': 57600,
-                 'port': port_sonar2,
-                 'period': 0.2,
-                 'start_time': float(time_start)}
-            ],
+            parameters=[{
+                    'baud': 9600,
+                    'port': port_sonar2,
+                    'period': 0.15,
+                    'start_time': float(time_start),
+                    'unit': 'in'
+            }],
             arguments=['--ros-args', '--log-level', log_level],
 		)])
-    if port_sonar3:
+    if port_sonar3 and os.path.exists(port_sonar3):
         ld.extend([Node(
             package='cyclosafe',
             executable='sonar',
@@ -165,7 +167,7 @@ def launch_setup(context):
             ],
             arguments=['--ros-args', '--log-level', log_level],
 		)])
-    if port_sonar4:
+    if port_sonar4 and os.path.exists(port_sonar4):
         ld.extend([Node(
             package='cyclosafe',
             executable='sonar',
@@ -180,7 +182,7 @@ def launch_setup(context):
             ],
             arguments=['--ros-args', '--log-level', log_level],
 		)])
-    if os.path.exists(port_sonar5):
+    if port_sonar5 and os.path.exists(port_sonar5):
         ld.extend([Node(
             package='cyclosafe',
             executable='sonar',

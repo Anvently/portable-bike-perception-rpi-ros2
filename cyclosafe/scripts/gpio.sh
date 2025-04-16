@@ -27,7 +27,7 @@ else
 fi
 
 systemctl stop cyclosafed.service
-sleep 3
+sleep 5
 
 systemctl is-active --quiet service && (echo "[WARNING] $(date) - Shutdown while service still active" | tee -a "$LOG_FILE")
 
