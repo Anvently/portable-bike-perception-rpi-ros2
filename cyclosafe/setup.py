@@ -19,6 +19,7 @@ setup(
 		('share/' + package_name, ['launch/cyclosafe.launch.py', 'launch/test_config.launch.py', 'launch/viewer.launch.py']),
         ('share/' + package_name, ['launch/view.rviz', ]),
 		('share/' + package_name, ['scripts/gpio.py', 'scripts/gpio.sh']),
+		('share/' + package_name, ['scripts/gps_time.py', 'scripts/gps_time.sh']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

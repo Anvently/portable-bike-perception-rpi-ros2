@@ -51,13 +51,13 @@ class GPSPublisher(ASerialPublisher):
 	
 	def __init__(self):
 		super().__init__('gps', NavSatInfo, 'gps', '/dev/ttyACM0', 115200)
-		self.latitude = None
-		self.longitude = None
-		self.hdop = None
-		self.pdop = None
-		self.ground_speed = None # km/h
+		self.latitude = float('NaN')
+		self.longitude = float('NaN')
+		self.hdop = float('NaN')
+		self.pdop = float('NaN')
+		self.ground_speed = float('NaN') # km/h
 		self.active_sat = 0
-		self.altitude = None
+		self.altitude = float('NaN')
 		self.status = NavSatStatus(status=NavSatStatus.STATUS_UNKNOWN)
 
 	def parse(self) -> bool:
@@ -112,7 +112,7 @@ class GPSPublisher(ASerialPublisher):
 		msg = NavSatInfo(
 			latitude=self.latitude, longitude = self.longitude, altitude = self.altitude,
 			hdop = self.hdop, pdop = self.pdop,
-			actives_sat = self.active_sat, status = self.status
+			ground_speed = self.ground_speed, actives_sat = self.active_sat, status = self.status
 		)
 		msg.header.stamp = self.get_clock().now().to_msg()
 		self.get_logger().debug(
