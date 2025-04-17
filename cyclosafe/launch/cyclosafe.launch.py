@@ -120,6 +120,21 @@ def launch_setup(context):
             ],
             arguments=['--ros-args', '--log-level', log_level],
         )])
+    if port_gps and os.path.exists(port_gps):
+        ld.extend([Node(
+            package='cyclosafe',
+            executable='gps',
+            namespace='',
+            output='screen',
+            emulate_tty=True,
+            parameters=[{
+                'baud': 115200,
+                 'port': port_gps,
+                 'period': 1.0,
+                 'start_time': float(time_start),
+            }],
+            arguments=['--ros-args', '--log-level', log_level],
+		)])
     if port_sonar1 and os.path.exists(port_sonar1):
         ld.extend([Node(
             package='cyclosafe',
