@@ -36,6 +36,7 @@ setup(
 			'gps = cyclosafe.gps:main',
 			'image_viewer = cyclosafe.image_viewer:main',
 			'range_circle_transform = cyclosafe.range_circle_transform:main',
+			'sonar_sr04 = cyclosafe.sonar_sr04:main',
         ],
     },
 )

@@ -167,6 +167,18 @@ def launch_setup(context):
             ],
             arguments=['--ros-args', '--log-level', log_level],
 		)])
+    ld.extend([Node(
+            package='cyclosafe',
+            executable='sonar_sr04',
+            namespace='sonar3',
+            output='screen',
+            emulate_tty=True,
+            parameters=[
+                {'period': 0.1,
+                 'start_time': float(time_start)}
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
+		)])
     if port_sonar4 and os.path.exists(port_sonar4):
         ld.extend([Node(
             package='cyclosafe',

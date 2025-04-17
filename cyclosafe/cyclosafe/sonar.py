@@ -1,6 +1,5 @@
 import rclpy
 from rclpy.executors import ExternalShutdownException
-from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import Range
 from cyclosafe.src.ASerialSensor import ASerialPublisher
 from datetime import datetime

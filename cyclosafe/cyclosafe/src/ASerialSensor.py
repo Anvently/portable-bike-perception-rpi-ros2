@@ -1,9 +1,6 @@
-import rclpy
 from rclpy.node import Node
-from rclpy.executors import ExternalShutdownException
 from serial import Serial, serialutil
 from rcl_interfaces.msg import ParameterDescriptor
-from sensor_msgs.msg import NavSatFix
 from typing import Any
 from abc import abstractmethod
 from rclpy.time import Time
@@ -31,6 +28,9 @@ class ASerialPublisher(Node):
 			self.declare_parameter('period', 0.5, ParameterDescriptor(description="serial interface baudrate"))
 			self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
 			self.declare_parameter('unit', "mm", ParameterDescriptor(description="Unit of data sent by sensor. Accept 'mm', 'm' or 'in'"))
+			self.period = self.get_parameter('period').get_parameter_value().double_value
+			self.port = self.get_parameter('port').get_parameter_value().string_value
+			self.baud = self.get_parameter('baud').get_parameter_value().integer_value
 			self.unit = self.get_parameter('unit').get_parameter_value().string_value
 			match self.unit:
 				case 'mm':
@@ -58,33 +58,13 @@ class ASerialPublisher(Node):
 		"""Return the current time in ms from the beginning of the simulation"""
 		now: Time = self.get_clock().now()
 		return (int((now - self.start_time).nanoseconds / MS_TO_NS))
-
-	def update_parameters(self):
-		port = self.get_parameter('port').get_parameter_value().string_value
-		baud = self.get_parameter('baud').get_parameter_value().integer_value
-		if (port != self.port or baud != self.baud):
-			self.port = port
-			self.baud = baud
-			self.serial: Serial = Serial(self.port, self.baud)
-			self.buffer = bytes()
-			self.get_logger().info(f"listening on port {self.port}, baud={self.baud}")
-		if not self.serial:
-			return
-		period = self.get_parameter('period').get_parameter_value().double_value
-		if self.period != period:
-			self.period = period
-			if (hasattr(self, 'timer')):
-				self.timer.timer_period_ns = self.period * 1000 * 1000 * 1000
-				if self.period < 0.2:
-					self.timer.callback = self.fast_routine
 	
-	def routine(self, update_parameters=True):
+	def routine(self):
 		try:
-			if update_parameters:
-				self.update_parameters()
 			if not self.serial:
 				self.serial: Serial = Serial(self.port, self.baud)
 				self.get_logger().info(f"listening on port {self.port}, baud={self.baud}")
+				self.timer.timer_period_ns = self.period * 1000 * 1000 * 1000
 			data = self.read()
 			if data:
 				self.buffer = bytes()
@@ -97,16 +77,6 @@ class ASerialPublisher(Node):
 
 		except Exception as e:
 			self.get_logger().error(f"Exception while parsing: {str(e)}")
-
-	def fast_routine(self):
-		i = 0
-		while True:
-			if i % 10 == 0:
-				self.routine(True)
-			else:
-				self.routine()
-			i += 1
-
 
 	@abstractmethod
 	def publish(self, data: Any):

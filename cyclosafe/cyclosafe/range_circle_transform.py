@@ -1,4 +1,5 @@
 import rclpy
+import rclpy.qos
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import Range
 from rclpy.executors import ExternalShutdownException
@@ -31,7 +32,8 @@ class RangeCircleVisualizer(Node):
 		# Création du publisher pour les markers RViz
 		for topic in self.topic_list:
 			self.suscribers[topic] = self.create_subscription(Range, topic, partial(self.range_callback, topic=topic), 10)
-		
+			self.get_logger().info(f"Suscribed to topic {topic}")
+
 	def range_callback(self, msg: Range, topic: str):
 		# print(msg, msg.range, type(msg.range))
 		# Création d'un marker de type CYLINDER qui représentera notre cercle
@@ -63,6 +65,7 @@ class RangeCircleVisualizer(Node):
 			marker.points.append(point)
 			
 		# Publier le marker
+		# self.get_logger(f"published")
 		self.publisher.publish(marker)
 		
 
