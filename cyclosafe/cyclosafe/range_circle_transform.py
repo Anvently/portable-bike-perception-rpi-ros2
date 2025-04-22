@@ -47,8 +47,8 @@ class RangeCircleVisualizer(Node):
 		marker.action = Marker.ADD
 
 		# Taille des points
-		marker.scale.x = 0.02
-		marker.scale.y = 0.02
+		marker.scale.x = 0.04
+		marker.scale.y = 0.04
 		
 		marker.color = RangeCircleVisualizer.colors[index]
 		num_points = 1000  # Nombre de points dans le cercle

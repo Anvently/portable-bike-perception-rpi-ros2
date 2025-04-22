@@ -420,7 +420,7 @@ class SonarGraphWidget(QWidget):
 				group
 			)
 
-	def set_bag_info(self, bag_path, bag_info):
+	def set_bag_info(self, bag_path, bag_info, original_path = None):
 		"""Set the bag file information and path."""
 		
 		self.bag_path = bag_path
@@ -437,7 +437,7 @@ class SonarGraphWidget(QWidget):
 
 		self.load_sonar_data()
 
-		self.base_dir = os.path.dirname(bag_path)
+		self.base_dir = os.path.dirname(original_path or bag_path)
 		self.dft_markers_path = os.path.join(self.base_dir, "marker_export.json")
 		if os.path.exists(self.dft_markers_path):
 			self.on_import_markers(self.dft_markers_path)
@@ -681,11 +681,11 @@ class SonarGraphWidget(QWidget):
 		selected_items = self.marker_tree.selectedItems()
 		type_name = None
 		
-		# Get selected marker type
-		for item in selected_items:
-			if item.parent() is None:  # It's a type item
-				type_name = item.text(0)
-				break
+		# # Get selected marker type
+		# for item in selected_items:
+		# 	if item.parent() is None:  # It's a type item
+		# 		type_name = item.text(0)
+		# 		break
 		
 		if not type_name:
 			types = list(self.marker_categories.keys())

@@ -262,7 +262,7 @@ class RosbagPlayerWindow(QMainWindow):
 				item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
 				item.setCheckState(0, Qt.Checked)
 
-			self.sonar_graph.set_bag_info(self.working_path, self.bag_info)
+			self.sonar_graph.set_bag_info(self.working_path, self.bag_info, self.bag_path)
 
 			# Enable controls
 			self.play_button.setEnabled(True)
