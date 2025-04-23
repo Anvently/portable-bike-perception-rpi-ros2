@@ -1,5 +1,7 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable, ExecuteProcess
+from ament_index_python.packages import get_package_share_directory
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable, ExecuteProcess, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 # from rclpy.time import Time
@@ -72,14 +74,6 @@ def resolve_port() -> Tuple[str, str, str]:
 
     return port_lidar, port_gps
 
-def resolve_port_sonar() -> Tuple[str, str, str]:
-    port_sonar1 = read_port_by_id('MaxBotix_MB1443')
-    port_sonar2 = read_port_by_id('MaxBotix_MB1433')
-    port_sonar3 = read_port_by_id('MaxBotix_MB1423')
-    port_sonar4 = read_port_by_id('MaxBotix_MB1413')
-
-    return port_sonar1, port_sonar2, port_sonar3, port_sonar4
-
 
 def launch_setup(context):
     parent_dir = LaunchConfiguration('out_path').perform(context)
@@ -87,17 +81,12 @@ def launch_setup(context):
     record = str2bool(LaunchConfiguration('record').perform(context))
     save = str2bool(LaunchConfiguration('save').perform(context))
     time_start = time.time()
-    print("plouf")
     path = setup_directory(parent_dir, time_start)
-    print("pouet")
     port_lidar, port_gps = resolve_port()
-    port_sonar1 = "/dev/ttyS0"
-    port_sonar2 = "/dev/ttyAMA3"
-    port_sonar3, port_sonar4, port_sonar5 = None, None, None
     # port_sonar1, port_sonar2, port_sonar3, port_sonar4 = resolve_port_sonar()
     # port_sonar5 = "/dev/ttyS0"
 
-    print(port_lidar, port_gps, port_sonar1, port_sonar2, port_sonar3, port_sonar4)
+    print(port_lidar, port_gps)
     print(f"Simulation start time = {time_start}")
     ld = []
     if record:
@@ -116,7 +105,25 @@ def launch_setup(context):
             emulate_tty=True,
             parameters=[
                 { 'start_time': float(time_start),
-                 'out_path': path}
+                'out_path': path}
+            ],
+            arguments=['--ros-args', '--log-level', log_level],
+        )])
+    ld.extend([
+        SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs")),
+        Node(
+            package='cyclosafe',
+            executable='camera_pi',
+            namespace='',
+            output='screen',
+            emulate_tty=True,
+            parameters=[
+            {'queue_size': 10,
+                'resolution': [600, 800],
+                'interval': 0.25,
+                'compression': 95,
+                'preview': False,
+                'start_time': float(time_start)}
             ],
             arguments=['--ros-args', '--log-level', log_level],
         )])
@@ -129,150 +136,73 @@ def launch_setup(context):
             emulate_tty=True,
             parameters=[{
                 'baud': 115200,
-                 'port': port_gps,
-                 'period': 1.0,
-                 'start_time': float(time_start),
+                'port': port_gps,
+                'period': 1.0,
+                'start_time': float(time_start),
             }],
             arguments=['--ros-args', '--log-level', log_level],
-		)])
-    if port_sonar1 and os.path.exists(port_sonar1):
-        ld.extend([Node(
+        )])
+    ld.extend([Node(
             package='cyclosafe',
-            executable='sonar_rs232',
+            executable='sonar_lv_pw',
             namespace='sonar1',
             output='screen',
             emulate_tty=True,
             parameters=[{
-                'baud': 9600,
-                 'port': port_sonar1,
-                 'period': 0.15,
-                 'start_time': float(time_start),
-                 'unit': 'in'
+                'period': 0.10,
+                'start_time': float(time_start),
             }],
             arguments=['--ros-args', '--log-level', log_level],
-		)])
-    if port_sonar2 and os.path.exists(port_sonar2):
-        ld.extend([Node(
-            package='cyclosafe',
-            executable='sonar_rs232',
-            namespace='sonar2',
-            output='screen',
-            emulate_tty=True,
-            parameters=[{
-                    'baud': 9600,
-                    'port': port_sonar2,
-                    'period': 0.15,
-                    'start_time': float(time_start),
-                    'unit': 'in'
-            }],
-            arguments=['--ros-args', '--log-level', log_level],
-		)])
-    if port_sonar3 and os.path.exists(port_sonar3):
-        ld.extend([Node(
-            package='cyclosafe',
-            executable='sonar',
-            namespace='sonar3',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-                {'baud': 57600,
-                 'port': port_sonar3,
-                 'period': 0.2,
-                 'start_time': float(time_start)}
-            ],
-            arguments=['--ros-args', '--log-level', log_level],
-		)])
-    ld.extend([Node(
-            package='cyclosafe',
-            executable='sonar_sr04',
-            namespace='sonar3',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-                {'period': 0.1,
-                 'start_time': float(time_start)}
-            ],
-            arguments=['--ros-args', '--log-level', log_level],
-		)])
-    if port_sonar4 and os.path.exists(port_sonar4):
-        ld.extend([Node(
-            package='cyclosafe',
-            executable='sonar',
-            namespace='sonar4',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-                {'baud': 57600,
-                 'port': port_sonar4,
-                 'period': 0.2,
-                 'start_time': float(time_start)}
-            ],
-            arguments=['--ros-args', '--log-level', log_level],
-		)])
-    if port_sonar5 and os.path.exists(port_sonar5):
-        ld.extend([Node(
-            package='cyclosafe',
-            executable='sonar',
-            namespace='sonar5',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-                {'baud': 9600,
-                 'port': port_sonar5,
-                 'period': 0.10,
-                 'start_time': float(time_start)}
-            ],
-            arguments=['--ros-args', '--log-level', log_level],
-		)])
-    ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs")),
-        # Node(
-        #     package='cyclosafe',
-        #     executable='gps',
-        #     namespace='',
-        #     output='screen',
-        #     emulate_tty=True,
-        #     parameters=[
-        #         {'baud': 115200,
-        #          'port': port_gps,
-        #          'start_time': float(time_start)}
-        #     ],
-        #     arguments=['--ros-args', '--log-level', log_level],
-        # ),
-        Node(
-            package='cyclosafe',
-            executable='camera_pi',
-            namespace='',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-               {'queue_size': 10,
-                 'resolution': [600, 800],
-                 'interval': 0.25,
-                 'compression': 95,
-                 'preview': False,
-                 'start_time': float(time_start)}
-            ],
-            arguments=['--ros-args', '--log-level', log_level],
-        ),
-        Node(
-            package='rplidar_ros',
-            executable='rplidar_node',
-            name='rplidar_node',
-            parameters=[{'channel_type': 'serial',
-                         'serial_port': port_lidar,
-                         'serial_baudrate': 460800,
-                         'frame_id': 'laser',
-                         'inverted': False,
-                         'angle_compensate': False,
-                         'scan_mode': 'Standard',
-                         }],
-            output='screen'
-        ),
-    ])
+        )])
+    
+    # ld.extend([
+    #     Node(
+    #         package='rplidar_ros',
+    #         executable='rplidar_node',
+    #         name='rplidar_node',
+    #         parameters=[{'channel_type': 'serial',
+    #                      'serial_port': port_lidar,
+    #                      'serial_baudrate': 460800,
+    #                      'frame_id': 'laser',
+    #                      'inverted': False,
+    #                      'angle_compensate': False,
+    #                      'scan_mode': 'Standard',
+    #                      }],
+    #         output='screen'
+    #     ),
+    # ])
+    # ld.extend([
+    #     Node(
+    #         package='rplidar_ros',
+    #         executable='rplidar_node',
+    #         name='rplidar_node',
+    #         parameters=[{'channel_type': 'serial',
+    #                      'serial_port': port_lidar,
+    #                      'serial_baudrate': 460800,
+    #                      'frame_id': 'laser',
+    #                      'inverted': False,
+    #                      'angle_compensate': False,
+    #                      'scan_mode': 'Standard',
+    #                      }],
+    #         output='screen'
+    #     ),
+    # ])
     return ld
 
 def generate_launch_description():
     opfunc = OpaqueFunction(function = launch_setup)
     ld = LaunchDescription(launch_args)
+
+    ldlidar_launch = IncludeLaunchDescription(
+        launch_description_source=PythonLaunchDescriptionSource([
+            get_package_share_directory('cyclosafe'),
+            '/launch/ldlidar_bringup.launch.py'
+        ]),
+        launch_arguments={
+            'node_name': 'ldlidar_node'
+        }.items()
+    )
+    ld.add_action(ldlidar_launch)
+
     ld.add_action(opfunc)
     return ld

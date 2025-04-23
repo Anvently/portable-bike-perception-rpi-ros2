@@ -22,6 +22,7 @@ def launch_setup(context):
     bag = LaunchConfiguration('bag').perform(context)
     rviz_config_path = os.path.join(
             get_package_share_directory('cyclosafe'),
+            'launch',
             'view.rviz')
     ld = []
     if bag != "":
