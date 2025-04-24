@@ -4,7 +4,7 @@ from rcl_interfaces.msg import ParameterDescriptor
 from typing import Any
 from abc import abstractmethod
 from rclpy.time import Time
-import logging
+import logging, time
 
 MS_TO_NS = (1000 * 1000)
 
@@ -77,6 +77,8 @@ class ASerialPublisher(Node):
 
 		except Exception as e:
 			self.get_logger().error(f"Exception while parsing: {str(e)}")
+			self.timer.timer_period_ns = 3 * 1000 * 1000 * 1000
+			self.serial = None
 
 	@abstractmethod
 	def publish(self, data: Any):
