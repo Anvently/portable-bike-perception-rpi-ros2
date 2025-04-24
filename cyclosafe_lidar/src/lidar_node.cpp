@@ -6,14 +6,12 @@
 
 using namespace std::chrono_literals;
 
-
-
 class LidarNode : public rclcpp::Node {
 	
 	private:
 
 		// const std::string	_port;
-		// const int			_baudrate;
+		// const int			_baud;
 		
 		std::deque<unsigned char>								_buffer;
 		rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr	_pub;
@@ -21,6 +19,12 @@ class LidarNode : public rclcpp::Node {
 		std::shared_ptr<Serial>									_serial;
 	
 		LidarNode(const LidarNode& model);
+
+		int	_configure(void) {
+
+			
+			return (0);
+		}
 
 		void	_routine(void) {
 			
@@ -57,15 +61,15 @@ class LidarNode : public rclcpp::Node {
 			: Node("lidar_node"), _serial(nullptr) {
 
 			std::string	port;
-			int			baudrate;
+			int			baud;
 			
 			this->declare_parameter("port", port);
-			this->declare_parameter("baudrate", 9600);
+			this->declare_parameter("baud", 9600);
 
 			port = this->get_parameter("port").as_string();
-			baudrate = this->get_parameter("baudrate").as_int();
+			baud = this->get_parameter("baud").as_int();
 
-			_serial = std::make_shared<Serial>(port, baudrate);
+			_serial = std::make_shared<Serial>(port, baud);
 			if (_serial == nullptr)
 				throw InitException("Failed to construct serial");
 

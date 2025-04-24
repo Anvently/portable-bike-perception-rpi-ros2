@@ -10,12 +10,13 @@
 #include <format>
 #include <iostream>
 #include <algorithm>
+#include <chrono>
 
-Serial::Serial(const std::string& port, const int baudrate) : _port(port), _baudrate(baudrate){
+Serial::Serial(const std::string& port, const int baud) : _port(port), _baud(baud){
 	_fd = -1;
 }
 
-// Serial::Serial(const Serial& copy) : _port(""), _baudrate(0) {}
+// Serial::Serial(const Serial& copy) : _port(""), _baud(0) {}
 
 Serial::~Serial(void) {
 	this->closeSerial();
@@ -45,8 +46,8 @@ int	Serial::openSerial(void) {
 	ioctl(_fd, TCGETS2, &tio2);
 	tio2.c_cflag &= ~CBAUD;
 	tio2.c_cflag |= BOTHER;
-	tio2.c_ospeed = _baudrate;
-	tio2.c_ispeed = _baudrate;
+	tio2.c_ospeed = _baud;
+	tio2.c_ispeed = _baud;
 	ioctl(_fd, TCSETS2, &tio2);
 
 	ioctl(_fd, TCFLSH, TCIOFLUSH);
@@ -57,9 +58,40 @@ bool	Serial::isOpen(void) const {
 	return (_fd >= 0);
 }
 
-/// @brief Read everything until there's nothing left to read and adds it to dest.
-/// @param dest 
-/// @return Number of bytes read, or < 0 for error
+int Serial::setBaudrate(unsigned int baud) {
+	if (_fd < 0) {
+		_baud = baud;
+		return (0);
+	}
+	
+	struct termios2 tio2;
+
+	if (ioctl(_fd, TCGETS2, &tio2) < 0)
+		return errno;
+	
+	tio2.c_cflag &= ~CBAUD;
+	tio2.c_cflag |= BOTHER;
+	tio2.c_ospeed = baud;
+	tio2.c_ispeed = baud;
+	
+	if (ioctl(_fd, TCSETS2, &tio2) < 0)
+		return errno;
+	
+	_baud = baud;
+
+	ioctl(_fd, TCFLSH, TCIOFLUSH);
+	
+	return 0;
+}
+
+unsigned int	Serial::getBaudrate(void) const {
+	return (_baud);
+}
+
+void	Serial::flush(void) const {
+	ioctl(_fd, TCFLSH, TCIOFLUSH);
+}
+
 ssize_t	Serial::receive(std::string& dest) {
 	ssize_t	total = 0;
 	ssize_t nbytes;
@@ -92,7 +124,7 @@ std::string	Serial::receive(void) {
 		if (nbytes < 0) {
 			if (errno == EAGAIN)
 				break;
-			return std::string(std::format("error: {0}: {1}", errno, strerror(errno)));
+			throw std::exception();
 		}
 		else if (nbytes > 0) {
 			message += std::string(buffer, nbytes);
@@ -157,6 +189,37 @@ ssize_t		Serial::receive(std::deque<unsigned char>& dest, size_t nmax, bool bloc
 	return (nread);
 }
 
+ssize_t		Serial::nreceive(unsigned char* buffer, size_t n, int timeout) {
+	ssize_t	ret;
+	size_t	nread = 0;
+	auto start_time = std::chrono::high_resolution_clock::now();
+
+	while (nread < n) {
+		ret = read(_fd, buffer + nread, n - nread);
+		if (ret < 0) {
+			if (errno == EAGAIN) {
+				if (timeout == 0)
+					break;
+				if (timeout < 0 || checkTimeout(start_time, timeout) == false)
+					continue;
+				break;
+			}
+			return (-errno);
+		}
+		if (ret == 0) {
+			this->closeSerial();
+		} else {
+			nread += ret;
+			if (nread == n)
+				break;
+		}
+		usleep(100);
+	}
+	return (nread);
+}
+
+
+
 int	Serial::send(const char* str, size_t n) {
 	int ret;
 
@@ -187,3 +250,9 @@ size_t	Serial::nBytesWaiting(void) const {
 	return (nbytes);
 }
 
+bool Serial::checkTimeout(const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time, 
+				unsigned long timeout_us) {
+	auto now = std::chrono::high_resolution_clock::now();
+	auto timeout_point = start_time + std::chrono::microseconds(timeout_us);
+	return now >= timeout_point;
+}

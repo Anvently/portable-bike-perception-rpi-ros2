@@ -19,7 +19,7 @@
             ],
             "defines": [],
             "cStandard": "c17",
-            "cppStandard": "gnu++20",
+            "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-clang-x64",
             "compilerPath": "/usr/bin/g++"
         }
