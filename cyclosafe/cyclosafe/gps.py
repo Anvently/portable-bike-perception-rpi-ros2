@@ -4,6 +4,7 @@ from rclpy.executors import ExternalShutdownException
 from cyclosafe_interfaces.msg import NavSatInfo
 from cyclosafe.src.ASerialSensor import ASerialPublisher
 from sensor_msgs.msg import NavSatStatus
+import math
 
 """
 $GNGLL,4850.45401,N,00235.23105,E,111859.00,A,A*7E                              GPS+GLONASS, geographic position, latitude/longitude
@@ -57,6 +58,7 @@ class GPSPublisher(ASerialPublisher):
 		self.pdop = float('NaN')
 		self.ground_speed = float('NaN') # km/h
 		self.active_sat = 0
+		self.current_active = None
 		self.altitude = float('NaN')
 		self.status = NavSatStatus(status=NavSatStatus.STATUS_UNKNOWN)
 
@@ -65,44 +67,50 @@ class GPSPublisher(ASerialPublisher):
 		update: bool = False
 		lines = self.buffer.split(b'\n')
 		update = False
-		current_active = None
-		for line in lines:
+		for line in lines[0:-1]: #Do not parse last line because it could be partial
+			# TODO Check if the last line is complete or not
 			words = line.decode("utf-8").split(',')
-			message_type = words[0]
-			if (message_type == "$GNGLL"):
+			message_type = words[0][3:]
+			if (message_type == "GLL"):
 				self.latitude = float(words[1]) if words[1] != '' else float('NaN')
 				self.longitude = float(words[3]) if words[3] != '' else float('NaN')
 				update = True
-			elif (message_type == "$GNGSA"):
+			elif (message_type == "GSA"):
 				self.hdop = float(words[16]) if words[16] != '' else float('NaN')
 				self.pdop = float(words[15]) if words[15] != '' else float('NaN')
-				if current_active != None:
-					current_active += sum(1 if word != "" else 0 for word in words[3:14])
+				if self.current_active == None:
+					self.current_active = sum(1 if word != "" else 0 for word in words[3:14])
+				else:
+					self.current_active += sum(1 if word != "" else 0 for word in words[3:14])
 				update = True
-			elif (message_type == "$GNGGA"):
+			elif (message_type == "GGA"):
 				self.altitude = float(words[9]) if words[9] != '' else float('NaN')
 				update = True
-			elif (message_type == "$GNRMC"):
-				current_active = 0
+			elif (message_type == "RMC"):
+				#RMC is used as a reset marker for active satellites
+				self.active_sat = self.current_active or 0
+				self.current_active = None
 				self.status.service = 0
 				self.ground_speed = (float(words[7]) * 1.852) if words[7] != '' else float('NaN')
 				update = True
-			elif (message_type == "$GNVTG"):
+			elif (message_type == "VTG"):
 				self.ground_speed = float(words[7]) if words[7] != '' else float('NaN')
 				update = True
-			elif (message_type[:3] == "$GP"):
+			service = words[0][1:3]
+			if (service == "GN"):
+				self.status.service |= NavSatStatus.SERVICE_GPS | NavSatStatus.SERVICE_GLONASS
+			elif (service == "GP"):
 				self.status.service |= NavSatStatus.SERVICE_GPS
-			elif (message_type[:3] == "$GL"):
+			elif (service == "GL"):
 				self.status.service |= NavSatStatus.SERVICE_GLONASS
-			elif (message_type[:3] == "$GA"):
+			elif (service == "GA"):
 				self.status.service |= NavSatStatus.SERVICE_GALILEO
 		if len(lines) > 1:
 			self.buffer = b'\n'.join(lines[:-1])
-		if current_active != None:
-			self.active_sat = current_active
-		if self.longitude != float('NaN') and self.latitude != float ('NaN'):
+		if not math.isnan(self.longitude) and not math.isnan(self.latitude):
 			self.status.status = NavSatStatus.STATUS_FIX
-		else: self.status.status = NavSatStatus.STATUS_NO_FIX
+		else:
+			self.status.status = NavSatStatus.STATUS_NO_FIX
 		return update
 	
 	def publish(self, data: NavSatInfo):
