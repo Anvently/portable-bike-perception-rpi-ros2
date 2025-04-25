@@ -60,7 +60,7 @@ class Serial {
 		/// @param buffer destination buffer
 		/// @param n number of bytes to receive
 		/// @param timeout in us, 0 to return immediately, -1 to block or > 0 to wait x us
-		/// @return 
+		/// @return number of bytes read, 0 if timeout, -errno if error
 		ssize_t		nreceive(unsigned char* buffer, size_t n, int timeout);
 
 		// ssize_t		read_until()
@@ -72,7 +72,6 @@ class Serial {
 		size_t		nBytesWaiting(void) const;
 		bool		isOpen(void) const;
 
-		static bool	checkTimeout(const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time, unsigned long timeout_us);
 
 };
 

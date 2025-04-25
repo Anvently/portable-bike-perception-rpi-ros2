@@ -7,13 +7,23 @@
 #include <cstdint>
 #include <string.h>
 #include <type_traits>
+#include <map>
+#include <set>
+#include <functional>
+#include <algorithm>
+#include "Exceptions.hpp"
 
 #define DATA_FRAME_MAGIC 0x5959
 #define MAGIC 0x5A
 
-namespace BenewakeDriver {
+namespace Benewake {
+
+	using namespace std::chrono_literals;
+	namespace Ex = Exceptions;
 
 	namespace frames {
+
+		namespace Ex = Exceptions::Frames;
 
 		struct DataFrame {
 
@@ -26,18 +36,20 @@ namespace BenewakeDriver {
 				uint8_t		checksum;
 			} payload;
 
+			DataFrame() {}
+
 			DataFrame(char* buffer, unsigned int size) {
-				unsigned int sum;
+				unsigned int sum = 0;
 
 				if (size != sizeof(char[9]))
-					throw SizeException("Invalid data frame size: " + std::to_string(size) + " against expected 9 bytes");
+					throw Ex::SizeException("Invalid data frame size: " + std::to_string(size) + " against expected 9 bytes");
 				payload = *(struct payload*)buffer;
 				if (payload.magic != DATA_FRAME_MAGIC)
-					throw MagicException("Invalid magic number in data frame: " + std::to_string(payload.magic) + " against " + std::to_string(DATA_FRAME_MAGIC));
+					throw Ex::MagicException("Invalid magic number in data frame: " + std::to_string(payload.magic) + " against " + std::to_string(DATA_FRAME_MAGIC));
 				for (unsigned int i = 0, sum = 0; i < sizeof(payload) - 1; i++)
 					sum += (unsigned char)buffer[i];
 				if (payload.checksum != (uint8_t)(sum & 0xFF))
-					throw ChecksumException("Invalid checksum in data frame: " + std::to_string(payload.checksum) + " in frame instead of " + std::to_string(sum & 0xFF));
+					throw Ex::ChecksumException("Invalid checksum in data frame: " + std::to_string(payload.checksum) + " in frame instead of " + std::to_string(sum & 0xFF));
 			}
 		};
 
@@ -122,26 +134,26 @@ namespace BenewakeDriver {
 			uint8_t			checksum;
 
 			ResponseFrame(char* buffer, unsigned int size, uint8_t expected_id) {
-				unsigned int sum;
+				unsigned int sum = 0;
 
 				if (size < 5)
-					throw SizeException("Invalid frame size in response: " + std::to_string(size) + " against minimum of 5 bytes");
+					throw Ex::SizeException("Invalid frame size in response: " + std::to_string(size) + " against minimum of 5 bytes");
 
 				magic = buffer[0];
 				len = buffer[1];
 				command_id = buffer[2];
 				checksum = buffer[len - 1];
 
-				if (magic != DATA_FRAME_MAGIC)
-					throw MagicException("Invalid magic number in response: " + std::to_string(magic) + " against " + std::to_string(DATA_FRAME_MAGIC));
+				if (magic != MAGIC)
+					throw Ex::MagicException("Invalid magic number in response: " + std::to_string(magic) + " against " + std::to_string(DATA_FRAME_MAGIC));
 		
-				for (unsigned int i = 0, sum = 0; i < len - 1; i++)
+				for (uint8_t i = 0, sum = 0; i < len - 1; i++)
 					sum += (unsigned char)buffer[i];
 				if (checksum != (uint8_t)(sum & 0xFF))
-					throw ChecksumException("Invalid checksum in response: " + std::to_string(checksum) + " in frame instead of " + std::to_string(sum & 0xFF));
+					throw Ex::ChecksumException("Invalid checksum in response: " + std::to_string(checksum) + " in frame instead of " + std::to_string(sum & 0xFF));
 
 				if (command_id != expected_id)
-					throw CommandMismatchException("Invalid command id in response: " + std::to_string(command_id) + " against expected " + std::to_string(expected_id));
+					throw Ex::CommandMismatchException("Invalid command id in response: " + std::to_string(command_id) + " against expected " + std::to_string(expected_id));
 
 				payload = new char[len - 4];
 				memcpy(payload, buffer + 3, len - 4);
@@ -155,28 +167,17 @@ namespace BenewakeDriver {
 
 		};
 
-		class SizeException : public VerboseException {
-			public:
-				SizeException(const std::string& message) : VerboseException(message) {}
-		};
-
-		class MagicException : public VerboseException {
-			public:
-				MagicException(const std::string& message) : VerboseException(message) {}
-		};
-
-		class ChecksumException : public VerboseException {
-			public:
-				ChecksumException(const std::string& message) : VerboseException(message) {}
-		};
-
-		class CommandMismatchException : public VerboseException {
-			public:
-				CommandMismatchException(const std::string& message) : VerboseException(message) {}
-		};
 	}
 
 	class ADriver {
+
+		public:
+
+			using DriverFactory = std::function<std::unique_ptr<ADriver>(std::shared_ptr<Serial>)>;
+
+		private:
+
+			static const std::map<std::string, DriverFactory> lidar_models;
 
 		protected:
 
@@ -189,7 +190,7 @@ namespace BenewakeDriver {
 				
 			}
 
-			virtual int	setOutput(bool enable) {
+			virtual void	setOutput(bool enable) {
 				try {
 					frames::CommandFrame	command(0x07, static_cast<uint8_t>(enable));
 					char					received[5];
@@ -197,42 +198,64 @@ namespace BenewakeDriver {
 
 					_serial->flush();
 					_serial->send(command.toString());
-					std::this_thread::sleep_for(std::chrono::milliseconds(1));
+					std::this_thread::sleep_for(1ms);
 
 					nbytes = _serial->nreceive((unsigned char*)received, 5, 1 * 1000000);
 					if (nbytes < 0)
-						throw SysException("Trying to send set output command");
+						throw Ex::SysException("read error");
 					else if (nbytes != 5)
-						throw DriverException("Timeout when trying to send output command");
+						throw Ex::DriverException("invalid number of bytes");
 						
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint8_t*)response.payload != (uint8_t) enable)
-						throw DriverException("Invalid response payload when trying to switch output");
+						throw Ex::DriverException("invalid response payload");
 
-					nbytes = _serial->nreceive((unsigned char*)received, 5, 500 * 1000);
-					if (nbytes != 0)
-						throw DriverException("Device output was disable but it's still sending data");
+					if (enable == false) {
+						nbytes = _serial->nreceive((unsigned char*)received, 5, 500 * 1000);
+						if (nbytes != 0)
+							throw Ex::DriverException("device disabled but it's still sending data");
+					}
 
 					_free_running = enable;
 
 				} catch (const std::exception& ex) {
-					throw DriverException("Trying to send enable/disable output command: " + std::string(ex.what()));
+					throw Ex::DriverException("Trying to send enable/disable output command: " + std::string(ex.what()));
 				}
-				
-
 			}
 
 		public:
 
-			virtual ~ADriver(void) = 0;
+			virtual ~ADriver() = default;
+
+			/// @brief 
+			/// @param timeout 0 to return immediately, -1 to block or > 0 to wait x us
+			/// @return 
+			template <typename DurationType = std::chrono::milliseconds>
+			frames::DataFrame	readFrame(const DurationType& timeout = 1ms, unsigned int* n_received_ptr = nullptr) const {
+				char					received[9];
+				ssize_t					nbytes;
+
+				nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), std::chrono::duration_cast<std::chrono::microseconds>(timeout).count());
+				std::chrono::microseconds dur  = std::chrono::duration_cast<std::chrono::microseconds>(timeout);
+				if (nbytes < 0)
+					throw Ex::SysException("read error");
+				else if (nbytes != sizeof(received))
+					throw Ex::DriverException("timeout");
+
+				frames::DataFrame	response(received, nbytes);
+
+				if (n_received_ptr)
+					*n_received_ptr = nbytes;
+
+				return response;
+			}
 
 			/// @brief 
 			/// @param baud 
-			/// @return 0 for success, 1 for error, or -1 if sensor is free running
 			virtual void	setBaudrate(unsigned int baud) const {
 				unsigned int			previous_baud = _serial->getBaudrate();
 				if (_free_running == true)
-					throw DriverException("Trying to config device while it's still free running");
+					throw Ex::DriverException("Trying to config device while it's still free running");
 
 				try {
 					frames::CommandFrame	command(0x06, static_cast<uint64_t>(baud));
@@ -241,39 +264,40 @@ namespace BenewakeDriver {
 
 					_serial->flush();
 					_serial->send(command.toString());
-					if (_serial->setBaudrate(baud));
-						throw SysException("Trying to set serial baudrate");
-					std::this_thread::sleep_for(std::chrono::milliseconds(1));
+					if (_serial->setBaudrate(baud))
+						throw Ex::SysException("failed to change serial baudrate");
+					std::this_thread::sleep_for(1ms);
 
 					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 500 * 1000);
 					if (nbytes < 0)
-						throw SysException("Trying to send baudrate command");
+						throw Ex::SysException("read error");
 					else if (nbytes != sizeof(received))
-						throw DriverException("Timeout when trying to send baudrate command");
+						throw Ex::DriverException("timeout reading response");
 
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint64_t*)response.payload != (uint64_t) baud)
-						throw DriverException("Invalid response payload when sending change baudrate command");
+						throw Ex::DriverException("invalid response payload");
 
 				} catch (const std::exception& ex) {
-					if (_serial->setBaudrate(previous_baud))
+					if (_serial->setBaudrate(previous_baud)) {
 						_serial->closeSerial();
-						throw DriverException("Trying to change baudrate (also failed to restore previous baudrate, serial was closed): " + std::string(ex.what()));
-					throw DriverException("Trying to send baudrate command: " + std::string(ex.what()));
+						throw Ex::DriverException("Trying to change baudrate (also failed to restore previous baudrate, serial was closed): " + std::string(ex.what()));
+					}
+					throw Ex::DriverException("Trying to send baudrate command: " + std::string(ex.what()));
 				}
 			}
 
-			int enableOutput() {
-				return (this->setOutput(true));
+			void enableOutput() {
+				this->setOutput(true);
 			}
 
-			int enableOutput() {
-				return (this->setOutput(false));
+			void disableOutput() {
+				this->setOutput(false);
 			}
 
 			virtual void	saveConfig() const {
 				if (_free_running == true)
-					throw DriverException("Trying to config device while it's still free running");
+					throw Ex::DriverException("Trying to config device while it's still free running");
 
 				try {
 					frames::CommandFrame	command(0x11);
@@ -282,26 +306,26 @@ namespace BenewakeDriver {
 
 					_serial->flush();
 					_serial->send(command.toString());
-					std::this_thread::sleep_for(std::chrono::seconds(1));
+					std::this_thread::sleep_for(1s);
 
 					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 0);
 					if (nbytes < 0)
-						throw SysException("Trying to send save settings command");
+						throw Ex::SysException("read error");
 					else if (nbytes != sizeof(received))
-						throw DriverException("Timeout when trying to send save settings command");
+						throw Ex::DriverException("timeout reading response");
 
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint8_t*)response.payload != 0x00)
-						throw DriverException("Invalid response payload when sending save settings command. Received: " + std::to_string(*(uint8_t*)response.payload));
+						throw Ex::DriverException("unexpected payload response: " + std::to_string(*(uint8_t*)response.payload));
 
 				} catch (const std::exception& ex) {
-					throw DriverException("Trying to send save settings command: " + std::string(ex.what()));
+					throw Ex::DriverException("Trying to send save settings command: " + std::string(ex.what()));
 				}
 			}
 
 			virtual void	systemReset() const {
 				if (_free_running == true)
-					throw DriverException("Trying to config device while it's still free running");
+					throw Ex::DriverException("Trying to config device while it's still free running");
 
 				try {
 					frames::CommandFrame	command(0x10);
@@ -310,51 +334,60 @@ namespace BenewakeDriver {
 
 					_serial->flush();
 					_serial->send(command.toString());
-					std::this_thread::sleep_for(std::chrono::seconds(1));
+					std::this_thread::sleep_for(1s);
 
 					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 0);
 					if (nbytes < 0)
-						throw SysException("Trying to send factory reset command");
+						throw Ex::SysException("read error");
 					else if (nbytes != sizeof(received))
-						throw DriverException("Timeout when trying to send factory reset command");
+						throw Ex::DriverException("timeout reading response");
 
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint8_t*)response.payload != 0x00)
-						throw DriverException("Invalid response payload when sending factory reset command. Received: " + std::to_string(*(uint8_t*)response.payload));
+						throw Ex::DriverException("unexpected response payload, received: " + std::to_string(*(uint8_t*)response.payload));
 
 				} catch (const std::exception& ex) {
-					throw DriverException("Trying to send factory reset command: " + std::string(ex.what()));
+					throw Ex::DriverException("Trying to send factory reset command: " + std::string(ex.what()));
 				}
 			}
 
 			virtual frames::DataFrame	triggerDetection() const {
 				if (_free_running == true)
-					throw DriverException("Trying to trigger detection while device is in free running mode");
+					throw Ex::DriverException("Trying to trigger detection while device is in free running mode");
 
 				try {
 					frames::CommandFrame	command(0x04);
-					char					received[9];
-					ssize_t					nbytes;
 
 					_serial->flush();
 					_serial->send(command.toString());
 
-					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 5 * 1000); //5ms timeout
-					if (nbytes < 0)
-						throw SysException("Trying to send trigger detection command");
-					else if (nbytes != sizeof(received))
-						throw DriverException("Timeout when trying to send trigger detection command");
-
-					frames::DataFrame	response(received, nbytes);
-
-					return response;
+					return this->readFrame();
 
 				} catch (const std::exception& ex) {
-					throw DriverException("Trying to send trigger detection command: " + std::string(ex.what()));
+					throw Ex::DriverException("Trying to send trigger detection command: " + std::string(ex.what()));
 				}
 			}
 
-			virtual void	setFrameRate() const;
+			/// @brief Set the output framerate
+			/// @param rate 
+			/// @note For ```TFS20-L``` device, possible value include ```0, 20, 50, 100, 250```
+			/// Actual rate will be the first ```value >= rate```
+			/// @note For ```TF02-Pro``` device, max value is ```1000Hz```
+			virtual void	setFrameRate(unsigned int rate) const = 0;
+
+			virtual std::string getModelName() const = 0;
+
+			virtual double	getFov() const {
+				return 1.0;
+			}
+
+			static std::unique_ptr<ADriver> build_driver(const std::string& model_name, std::shared_ptr<Serial> serial_port) {
+				auto it = lidar_models.find(model_name);
+				if (it != lidar_models.end()) {
+					return it->second(serial_port);
+				}
+				return nullptr;
+			}
 
 	};
 
@@ -366,33 +399,151 @@ namespace BenewakeDriver {
 
 			}
 
+			virtual std::string getModelName() const {return ("tf-02");}
+			virtual double	getFov() const {return (3.0);}
 
+			virtual void	setFrameRate(unsigned int rate) const override {
+				if (_free_running == true)
+					throw Ex::DriverException("Trying to config device while it's still free running");
+				try {
+					char					received[6];
+					ssize_t					nbytes;
+					frames::CommandFrame	command(0x03, static_cast<uint16_t>((rate == 0 ? 0 : 2000 / rate)));
 
+					if (rate > 1000)
+						throw Ex::DriverException("parameter error => framerate must be less than 1000Hz: " + std::to_string(rate));
+			
+					_serial->flush();
+					_serial->send(command.toString());
+					std::this_thread::sleep_for(1ms);
+
+					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 1 * 1000000);
+					if (nbytes < 0)
+						throw Ex::SysException("read error");
+					else if (nbytes != sizeof(received))
+						throw Ex::DriverException("timeout reading response");
+						
+					frames::ResponseFrame	response(received, nbytes, command.command_id);
+					if (*(uint16_t*)response.payload != (uint16_t) rate)
+						throw Ex::DriverException("invalid response payload");
+
+				} catch (const std::exception& ex) {
+					throw Ex::DriverException("Trying to set framerate: " + std::string(ex.what()));
+				}
+			}
 	};
 
-	class VerboseException : public std::exception {
-			protected:
-				const std::string	message;
-			public:
-				VerboseException(const std::string& message) : message(message) {}
-				virtual ~VerboseException(void) throw() {}
-				virtual const char*	what(void) const throw() {return (this->message.c_str());}
+	class TFMiniPlusDriver : public ADriver {
+
+		public:
+
+			TFMiniPlusDriver(std::shared_ptr<Serial> serial) : ADriver(serial) {
+
+			}
+
+			virtual std::string getModelName() const {return ("tf-mini-plus");}
+			virtual double	getFov() const {return (3.6);}
+
+			virtual void	setFrameRate(unsigned int rate) const override {
+				if (_free_running == true)
+					throw Ex::DriverException("Trying to config device while it's still free running");
+				try {
+					char					received[6];
+					ssize_t					nbytes;
+					frames::CommandFrame	command(0x03, static_cast<uint16_t>((rate == 0 ? 0 : 1000 / rate)));
+
+					if (rate > 1000)
+						throw Ex::DriverException("parameter error => framerate must be less than 1000Hz: " + std::to_string(rate));
+			
+					_serial->flush();
+					_serial->send(command.toString());
+					std::this_thread::sleep_for(1ms);
+
+					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 1 * 1000000);
+					if (nbytes < 0)
+						throw Ex::SysException("read error");
+					else if (nbytes != sizeof(received))
+						throw Ex::DriverException("timeout reading response");
+						
+					frames::ResponseFrame	response(received, nbytes, command.command_id);
+					if (*(uint16_t*)response.payload != (uint16_t) rate)
+						throw Ex::DriverException("invalid response payload");
+
+				} catch (const std::exception& ex) {
+					throw Ex::DriverException("Trying to set framerate: " + std::string(ex.what()));
+				}
+			}
 	};
 
-	class DriverException : public VerboseException {
-			public:
-				DriverException(const std::string& message) : VerboseException(message) {}
-	};
+	class TFS20LDriver : public ADriver {
 
-	class SysException : public VerboseException {
-			protected:
-				const std::string	message;
-			public:
-				SysException(const std::string& message) : VerboseException(
-					message + ": " + strerror(errno) + " (" + std::to_string(errno) + ")") {}
+		private:
+
+			static const std::set<unsigned int>	rate_values;
+
+			static bool	isValidFramerate(unsigned int rate) {
+				return (rate_values.find(rate) != rate_values.end());
+			}
+
+			static unsigned int	match_rate_value(unsigned int rate) {
+				if (rate_values.find(rate) != rate_values.end())
+					return rate;
+				auto it = rate_values.upper_bound(rate);
+				if (it == rate_values.end())
+					return (*rate_values.lower_bound(rate));
+				return (*it);
+			}
+
+		public:
+
+			TFS20LDriver(std::shared_ptr<Serial> serial) : ADriver(serial) {
+
+			}
+
+			virtual std::string getModelName() const {return ("tf-s20l");}
+			virtual double	getFov() const {return (2.0);}
+
+			virtual void	setFrameRate(unsigned int rate) const override {
+				if (_free_running == true)
+					throw Ex::DriverException("Trying to config device while it's still free running");
+				try {
+					char					received[6];
+					ssize_t					nbytes;
+					frames::CommandFrame	command(0x04, static_cast<uint16_t>(match_rate_value(rate)));
+
+
+					if (rate > 250)
+						throw Ex::DriverException("invalid parameter => must be less than 250Hz: " + std::to_string(rate));
+			
+					_serial->flush();
+					_serial->send(command.toString());
+					std::this_thread::sleep_for(1ms);
+
+					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 1 * 1000000);
+					if (nbytes < 0)
+						throw Ex::SysException("read error");
+					else if (nbytes != sizeof(received))
+						throw Ex::DriverException("timeout reading response");
+						
+					frames::ResponseFrame	response(received, nbytes, command.command_id);
+					if (*(uint16_t*)response.payload != (uint16_t) rate)
+						throw Ex::DriverException("invalid response payload");
+
+				} catch (const std::exception& ex) {
+					throw Ex::DriverException("Trying to send enable/disable output command: " + std::string(ex.what()));
+				}
+			}
 	};
 
 }
+
+const std::set<unsigned int> Benewake::TFS20LDriver::rate_values = {0, 20, 50, 100, 250};
+
+const std::map<std::string, Benewake::ADriver::DriverFactory> Benewake::ADriver::lidar_models = {
+	{"tf-s20l", [](std::shared_ptr<Serial> serial) { return std::make_unique<Benewake::TFS20LDriver>(serial); }},
+	{"tf-mini-plus", [](std::shared_ptr<Serial> serial) { return std::make_unique<Benewake::TFMiniPlusDriver>(serial); }},
+	{"tf-02", [](std::shared_ptr<Serial> serial) { return std::make_unique<Benewake::TF02Driver>(serial); }}
+};
 
 
 #endif

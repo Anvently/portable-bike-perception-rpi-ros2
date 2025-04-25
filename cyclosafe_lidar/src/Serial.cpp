@@ -11,6 +11,7 @@
 #include <iostream>
 #include <algorithm>
 #include <chrono>
+#include <Utils.hpp>
 
 Serial::Serial(const std::string& port, const int baud) : _port(port), _baud(baud){
 	_fd = -1;
@@ -200,7 +201,7 @@ ssize_t		Serial::nreceive(unsigned char* buffer, size_t n, int timeout) {
 			if (errno == EAGAIN) {
 				if (timeout == 0)
 					break;
-				if (timeout < 0 || checkTimeout(start_time, timeout) == false)
+				if (timeout < 0 || Utils::checkTimeout(start_time, std::chrono::microseconds(timeout)) == false)
 					continue;
 				break;
 			}
@@ -248,11 +249,4 @@ size_t	Serial::nBytesWaiting(void) const {
 		return (0);
 	ioctl(_fd, FIONREAD, &nbytes);
 	return (nbytes);
-}
-
-bool Serial::checkTimeout(const std::chrono::time_point<std::chrono::high_resolution_clock>& start_time, 
-				unsigned long timeout_us) {
-	auto now = std::chrono::high_resolution_clock::now();
-	auto timeout_point = start_time + std::chrono::microseconds(timeout_us);
-	return now >= timeout_point;
 }
