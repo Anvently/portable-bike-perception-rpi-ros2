@@ -17,7 +17,6 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
 		('share/' + package_name + '/launch', ['launch/cyclosafe.launch.py', 'launch/viewer.launch.py']),
-		('share/' + package_name + '/launch', ['launch/ldlidar_bringup.launch.py', 'launch/ldlidar_with_mgr.launch.py']),
         ('share/' + package_name + '/launch', ['launch/view.rviz', ]),
 		('share/' + package_name + '/scripts', ['scripts/gpio.py', 'scripts/gpio.sh', 'scripts/gps_time.sh']),
 		('share/' + package_name + '/params', ['params/ldlidar.yaml', 'params/lifecycle_mgr.yaml']),

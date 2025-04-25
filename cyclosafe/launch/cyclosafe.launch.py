@@ -193,16 +193,5 @@ def generate_launch_description():
     opfunc = OpaqueFunction(function = launch_setup)
     ld = LaunchDescription(launch_args)
 
-    ldlidar_launch = IncludeLaunchDescription(
-        launch_description_source=PythonLaunchDescriptionSource([
-            get_package_share_directory('cyclosafe'),
-            '/launch/ldlidar_bringup.launch.py'
-        ]),
-        launch_arguments={
-            'node_name': 'ldlidar_node'
-        }.items()
-    )
-    ld.add_action(ldlidar_launch)
-
     ld.add_action(opfunc)
     return ld
