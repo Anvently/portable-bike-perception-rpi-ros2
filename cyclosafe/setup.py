@@ -41,7 +41,8 @@ setup(
 			'range_circle_transform = cyclosafe.range_circle_transform:main',
 			'sonar_sr04 = cyclosafe.sonar_sr04:main',
 			'sonar_lv_pw = cyclosafe.sonar_lv_pw:main',
-			'battery_monitor = cyclosafe.battery_monitor:main'
+			'battery_monitor = cyclosafe.battery_monitor:main',
+			'tof_lidar = cyclosafe.tof_lidar:main'
         ],
     },
 )
