@@ -5,7 +5,7 @@ from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 # from rclpy.time import Time
 # from rclpy.clock import Clock
-import datetime, time
+import time
 import os
 from typing import List, Tuple
 
@@ -172,38 +172,22 @@ def launch_setup(context):
         ]
     )
     ])
-    # ld.extend([
-    #     Node(
-    #         package='rplidar_ros',
-    #         executable='rplidar_node',
-    #         name='rplidar_node',
-    #         parameters=[{'channel_type': 'serial',
-    #                      'serial_port': port_lidar,
-    #                      'serial_baudrate': 460800,
-    #                      'frame_id': 'laser',
-    #                      'inverted': False,
-    #                      'angle_compensate': False,
-    #                      'scan_mode': 'Standard',
-    #                      }],
-    #         output='screen'
-    #     ),
-    # ])
-    # ld.extend([
-    #     Node(
-    #         package='rplidar_ros',
-    #         executable='rplidar_node',
-    #         name='rplidar_node',
-    #         parameters=[{'channel_type': 'serial',
-    #                      'serial_port': port_lidar,
-    #                      'serial_baudrate': 460800,
-    #                      'frame_id': 'laser',
-    #                      'inverted': False,
-    #                      'angle_compensate': False,
-    #                      'scan_mode': 'Standard',
-    #                      }],
-    #         output='screen'
-    #     ),
-    # ])
+    ld.extend([
+        Node(
+            package='rplidar_ros',
+            executable='rplidar_node',
+            name='rplidar_node',
+            parameters=[{'channel_type': 'serial',
+                         'serial_port': port_lidar,
+                         'serial_baudrate': 460800,
+                         'frame_id': 'laser_vertical',
+                         'inverted': False,
+                         'angle_compensate': False,
+                         'scan_mode': 'Standard',
+                         }],
+            output='screen'
+        ),
+    ])
     return ld
 
 def generate_launch_description():
