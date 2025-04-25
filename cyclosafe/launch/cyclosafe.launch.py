@@ -1,7 +1,6 @@
 from launch import LaunchDescription
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable, ExecuteProcess, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable, ExecuteProcess
 from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 # from rclpy.time import Time
@@ -154,7 +153,25 @@ def launch_setup(context):
             }],
             arguments=['--ros-args', '--log-level', log_level],
         )])
-    
+    ld.extend([
+        Node(
+        package='ldlidar_stl_ros2',
+        executable='ldlidar_stl_ros2_node',
+        name='STL27L',
+        output='screen',
+        parameters=[
+            {'product_name': 'LDLiDAR_STL27L'},
+            {'topic_name': 'scan'},
+            {'frame_id': 'laser'},
+            {'port_name': '/dev/ttyUSB0'},
+            {'port_baudrate': 921600},
+            {'laser_scan_dir': False},
+            {'enable_angle_crop_func': False},
+            {'angle_crop_min': 0.0},
+            {'angle_crop_max': 0.0}
+        ]
+    )
+    ])
     # ld.extend([
     #     Node(
     #         package='rplidar_ros',

@@ -2,3 +2,6 @@
 	path = rplidar_ros
 	url = https://github.com/Slamtec/rplidar_ros.git
 	branch = ros2
+[submodule "ldlidar_stl_ros2"]
+	path = ldlidar_stl_ros2
+	url = git@github.com:ldrobotSensorTeam/ldlidar_stl_ros2.git
