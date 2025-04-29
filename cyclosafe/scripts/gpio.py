@@ -4,9 +4,9 @@ from cyclosafe.battery_monitor import INA219
 
 BTN_RST_GPIO = 16
 BTN_TEST_GPIO = 16
-LED_R_GPIO = 7
+# LED_R_GPIO = 7
 LED_G_GPIO = 8
-LED_B_GPIO = 9
+# LED_B_GPIO = 9
 
 
 pi = pigpio.pi()
@@ -45,43 +45,29 @@ class GPIOController():
 	def __init__(self):
 		GPIOController.colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (0,255,255), (255,255,255)]
 		self.color_index = 0
-		pi.set_mode(LED_R_GPIO, pigpio.OUTPUT)
 		pi.set_mode(LED_G_GPIO, pigpio.OUTPUT)
-		pi.set_mode(LED_B_GPIO, pigpio.OUTPUT)
-		pi.set_PWM_range(LED_R_GPIO, 255)
 		pi.set_PWM_range(LED_G_GPIO, 255)
-		pi.set_PWM_range(LED_B_GPIO, 255)
 		self.set_rgb(0,0,0)
 		self.pos = 0
 		self.enable = True
 
-		self.ina219 = INA219(addr=0x42)
+		self.ina219 = None
+		# self.ina219 = INA219(addr=0x42)
 
 	def set_rgb(self, r, g, b):
-		pi.set_PWM_dutycycle(LED_R_GPIO, r)
 		pi.set_PWM_dutycycle(LED_G_GPIO, g)
-		pi.set_PWM_dutycycle(LED_B_GPIO, b)
-
-	def wheel(self):
-		self.pos = (self.pos + 1) % 255
-		if (self.pos < 85):
-			self.set_rgb(255 - self.pos * 3, 0, self.pos * 3)
-		elif (self.pos < 170):
-			pos = self.pos - 85
-			self.set_rgb(0, pos * 3, 255 - pos * 3)
-		else:
-			pos = self.pos - 170
-			self.set_rgb(pos * 3, pos * 3, 0)
 
 	def blink(self):
 		if self.enable:
 			self.set_rgb(0, 0, 0)
 			self.enable = False
 		else:
-			self.set_rgb(0, 127, 0)
+			self.set_rgb(0, 255, 0)
 			self.enable = True
 
 	def check_battery_state(self):
+		if not self.ina219:
+			return
 		bus_voltage = self.ina219.getBusVoltage_V()
 		if bus_voltage < BATTERY_VOLTAGE_TRESHOLD:
 			raise BatteryException()
@@ -114,6 +100,7 @@ def host_shutdown(GPIO, level, tick):
 def main(args=None):
 	global gpio_controler
 	pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
+	pi.set_pull_up_down(BTN_RST_GPIO, pigpio.PUD_UP)
 	pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
 	gpio_controler.routine()
 	

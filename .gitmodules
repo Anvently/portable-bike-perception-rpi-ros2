@@ -4,4 +4,4 @@
 	branch = ros2
 [submodule "ldlidar_stl_ros2"]
 	path = ldlidar_stl_ros2
-	url = git@github.com:ldrobotSensorTeam/ldlidar_stl_ros2.git
+	url = git@github.com:Anvently/ldlidar_stl_ros2.git
