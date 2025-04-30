@@ -1,6 +1,7 @@
 import pigpio, sys
 import os, time
-from cyclosafe.battery_monitor import INA219
+import battery_monitor
+from battery_monitor import INA219
 
 BTN_RST_GPIO = 16
 BTN_TEST_GPIO = 16
@@ -15,8 +16,8 @@ button_pressed = False
 class BatteryException(Exception):
 	pass
 
-BUTTON_SHUTDOWN = 1
-BATTERY_SHUTDOWN = 2
+BUTTON_SHUTDOWN = 255
+BATTERY_SHUTDOWN = 254
 
 """
  Total voltage	= nbr_cell * charge_voltage
@@ -99,8 +100,8 @@ def host_shutdown(GPIO, level, tick):
 
 def main(args=None):
 	global gpio_controler
-	pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
 	pi.set_pull_up_down(BTN_RST_GPIO, pigpio.PUD_UP)
+	pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
 	pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
 	gpio_controler.routine()
 	

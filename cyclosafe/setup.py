@@ -18,7 +18,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
 		('share/' + package_name + '/launch', ['launch/cyclosafe.launch.py', 'launch/viewer.launch.py']),
         ('share/' + package_name + '/launch', ['launch/view.rviz', ]),
-		('share/' + package_name + '/scripts', ['scripts/gpio.py', 'scripts/gpio.sh', 'scripts/gps_time.sh']),
+		('share/' + package_name + '/scripts', ['scripts/gpio.py', 'scripts/battery_monitor.py', 'scripts/gpio.sh', 'scripts/gps_time.sh']),
 		('share/' + package_name + '/params', ['params/ldlidar.yaml', 'params/lifecycle_mgr.yaml']),
 		('share/' + package_name + '/urdf', ['urdf/ldlidar_descr.urdf.xml']),
 		('share/' + package_name + '/urdf/model', ['urdf/model/LD19.stl']),
