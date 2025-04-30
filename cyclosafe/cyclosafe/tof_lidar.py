@@ -22,6 +22,7 @@ class LidarNode(Node):
 			super().__init__('lidar')
 
 			self.buffer = bytes()
+			self.serial = None
 
 			self.declare_parameter('port', '/dev/ttyS0', ParameterDescriptor(description="device from which the serial data will be read"))
 			self.declare_parameter('baud', 921600, ParameterDescriptor(description="serial interface baudrate"))
@@ -80,6 +81,7 @@ class LidarNode(Node):
 		query = LidarNode.query
 		query[4] = id #Add the ID you want to query to the command 将需要查询的ID添加到命令中
 		query[7] = id + 0x63 #Update Checksum 更新校验和
+		checksum = 0
 
 		self.serial.flush() #Clear the serial port buffer 清空串口缓存
 		self.serial.write(bytearray(query)) #Start query 开始查询
