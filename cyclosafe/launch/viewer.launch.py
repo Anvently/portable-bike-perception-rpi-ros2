@@ -4,9 +4,15 @@ from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 # from rclpy.time import Time
 # from rclpy.clock import Clock
-import datetime, time
-import os
+import os, sys
 from ament_index_python.packages import get_package_share_directory
+
+package_dir = get_package_share_directory('cyclosafe')
+launch_dir = os.path.join(package_dir, 'launch')
+print(launch_dir)
+sys.path.insert(0, launch_dir)
+from config import sensors_list, SensorTypeEnum
+
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -14,6 +20,7 @@ def str2bool(v):
 launch_args = [
     DeclareLaunchArgument('bag', default_value=TextSubstitution(text=""), description="Specify a bag from which the data will be played"),
 ]
+
 
 def setup_directory(parent_dir: str, time_start: float) -> str:
     pass
@@ -37,17 +44,17 @@ def launch_setup(context):
                 additional_env={'QT_QPA_PLATFORM': 'xcb'}
             )
         ])
-    else:
-        ld.extend([Node(
-            package='rqt_image_view',
-            executable='rqt_image_view',
-            output='screen',
-            emulate_tty=True,
-            parameters=[],
-            arguments=[
-                "images", "--ros-args", "--remap", "_image_transport:=compressed"
-            ]
-		)])
+    # else:
+    #     ld.extend([Node(
+    #         package='rqt_image_view',
+    #         executable='rqt_image_view',
+    #         output='screen',
+    #         emulate_tty=True,
+    #         parameters=[],
+    #         arguments=[
+    #             "images", "--ros-args", "--remap", "_image_transport:=compressed"
+    #         ]
+	# 	)])
     ld.extend(
         [Node(
             package='rviz2',
@@ -55,52 +62,38 @@ def launch_setup(context):
             name='rviz2',
             output='screen',
             arguments=['-d', rviz_config_path],
-        ),
+        )]),
+    # Range circle visualizer
+    ld.extend([
         Node(
             package='cyclosafe',
             executable='range_circle_transform',
             output='screen',
             emulate_tty=True,
             parameters=[{
-                "topic_list": ["sonar1/range", "sonar2/range", "sonar3/range", "sonar4/range", "sonar5/range"]
+                "topic_list": [sensor.topic for sensor in sensors_list if sensor.type == SensorTypeEnum.RangeSensor],
+                "colors": [sensor.get_color_int32() for sensor in sensors_list if sensor.type == SensorTypeEnum.RangeSensor]
             }],
         ),
+    ])
+    # Frame transformations
+    for sensor in sensors_list:
+        if sensor.transform and len(sensor.transform) > 0:
+            ld.extend([
+                    Node(
+                    package="tf2_ros",
+                    executable="static_transform_publisher",
+                    output="screen" ,
+                    arguments=sensor.transform
+                )])
+    # Board to world transformation
+    ld.extend([
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
             output="screen" ,
-            arguments=["0.01", "0.05", "0", "0", "0", "0", "laser", "sonar1/range"]
-        ),
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            output="screen" ,
-            arguments=["0.08", "0.05", "0", "0", "0", "0", "laser", "sonar3/range"]
-        ),
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            output="screen" ,
-            arguments=["0.155", "0.05", "0", "0", "0", "0", "laser", "sonar2/range"]
-        ),
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            output="screen" ,
-            arguments=["0.215", "0.05", "0", "0", "0", "0", "laser", "sonar4/range"]
-        ),
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            output="screen" ,
-            arguments=["0.125", "0.05", "0", "0", "0", "0", "laser", "sonar5/range"]
-        ),
-        # Node(
-        #     package="tf2_ros",
-        #     executable="static_transform_publisher",
-        #     output="screen" ,
-        #     arguments=["0.", "0", "1", "0", "0", "0", "world", "laser"]
-        # ),
+            arguments=["--x", "0.0", "--y", "0.0", "--z", "0.85", "--roll", "0", "--pitch", "0.0", "--yaw", "0", "--frame-id", "world", "--child-frame-id", "board"],
+        )
     ])
     return ld
 

@@ -11,21 +11,26 @@ from geometry_msgs.msg import Point
 
 class RangeCircleVisualizer(Node):
 
-	colors = [
-		ColorRGBA(r=1.0,g=0.0, b=0.0, a=0.25),
-		ColorRGBA(r=0.0,g=1.0, b=0.0, a=0.25),
-		ColorRGBA(r=0.0,g=0.0, b=1.0, a=0.25),
-		ColorRGBA(r=1.0,g=1.0, b=0.0, a=0.25),
-		ColorRGBA(r=0.0,g=1.0, b=1.0, a=0.25)
-	]
-
 	def __init__(self):
 		# Initialisation du nœud ROS
 		super().__init__("cyclosafe_visualizer")
 
 		self.declare_parameter("topic_list", ["range1", "range2", "range3", "range4"])
-
+		self.declare_parameter("colors", [0x40FF0000, 0x4000FF000, 0x400000FF, 0x40FFFF00])
+	
 		self.topic_list = self.get_parameter("topic_list").get_parameter_value().string_array_value
+		self.colors = []
+		self.colors_int32 = self.get_parameter("colors").get_parameter_value().integer_array_value
+		for color_int32 in self.colors_int32:
+			self.colors.append(ColorRGBA(
+				a=float(((color_int32 & 0xFF000000) >> 24)) / 255.0,
+				r=float(((color_int32 & 0x00FF0000) >> 16)) / 255.0,
+				g=float(((color_int32 & 0x0000FF00) >> 8)) / 255.0,
+				b=float(((color_int32 & 0x000000FF) >> 0)) / 255.0,
+			))
+		if len(self.colors) != len(self.topic_list):
+			raise Exception(f"nbr of topic ({len(self.topic_list)}) doesn't match  number of colors ({len(self.colors)})")
+
 		self.suscribers = {}
 		self.publisher = self.create_publisher(Marker, '/visualization_marker',10)
 		
@@ -40,17 +45,17 @@ class RangeCircleVisualizer(Node):
 		marker = Marker()
 		marker.header.frame_id = topic
 		marker.header.stamp = msg.header.stamp
-		index = list(self.suscribers).index(topic)
+		index = self.topic_list.index(topic)
 		
 		marker.id = index
 		marker.type = Marker.POINTS
 		marker.action = Marker.ADD
 
 		# Taille des points
-		marker.scale.x = 0.04
-		marker.scale.y = 0.04
+		marker.scale.x = 0.03
+		marker.scale.y = 0.03
 		
-		marker.color = RangeCircleVisualizer.colors[index]
+		marker.color = self.colors[index]
 		num_points = 1000  # Nombre de points dans le cercle
 		radius = msg.range
 		

@@ -144,11 +144,13 @@ namespace Benewake {
 				command_id = buffer[2];
 				checksum = buffer[len - 1];
 
-				if (magic != MAGIC)
-					throw Ex::MagicException("Invalid magic number in response: " + std::to_string(magic) + " against " + std::to_string(DATA_FRAME_MAGIC));
+				if (magic != MAGIC) {
+					// RCLCPP_DEBUG(this->get_logger(), "%s");
+					throw Ex::MagicException("Invalid magic number in response: " + std::to_string(magic) + " against " + std::to_string(MAGIC));
+				}
 		
 				for (uint8_t i = 0, sum = 0; i < len - 1; i++)
-					sum += (unsigned char)buffer[i];
+					sum += (unsigned int)buffer[i];
 				if (checksum != (uint8_t)(sum & 0xFF))
 					throw Ex::ChecksumException("Invalid checksum in response: " + std::to_string(checksum) + " in frame instead of " + std::to_string(sum & 0xFF));
 
@@ -187,7 +189,7 @@ namespace Benewake {
 			/// @brief 
 			/// @param serial 
 			ADriver(std::shared_ptr<Serial> serial) : _serial(serial), _free_running(true) {
-				
+				this->detectMode();
 			}
 
 			virtual void	setOutput(bool enable) {
@@ -203,8 +205,8 @@ namespace Benewake {
 					nbytes = _serial->nreceive((unsigned char*)received, 5, 1 * 1000000);
 					if (nbytes < 0)
 						throw Ex::SysException("read error");
-					else if (nbytes != 5)
-						throw Ex::DriverException("invalid number of bytes");
+					else if (nbytes != sizeof(received))
+						throw Ex::DriverException("timeout");
 						
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint8_t*)response.payload != (uint8_t) enable)
@@ -226,6 +228,28 @@ namespace Benewake {
 		public:
 
 			virtual ~ADriver() = default;
+
+			virtual bool	isFreeRunning() const {
+				return _free_running;
+			}
+
+			virtual bool	detectMode() {
+				char					received[2];
+				ssize_t					nbytes;
+
+				try {
+					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 1000 * 1000);
+					if (nbytes < 0)
+						throw Ex::SysException("read error");
+					else if (nbytes == 0)
+						_free_running = false;
+					else
+						_free_running = true;
+				} catch (const std::exception& ex) {
+					throw Ex::DriverException("Trying to detect mode: " + std::string(ex.what()));
+				}
+				return (_free_running);
+			}
 
 			/// @brief 
 			/// @param timeout 0 to return immediately, -1 to block or > 0 to wait x us
@@ -465,6 +489,11 @@ namespace Benewake {
 					else if (nbytes != sizeof(received))
 						throw Ex::DriverException("timeout reading response");
 						
+					std::cout << nbytes << "|";
+					for (int i = 0; i < nbytes; ++i)
+						std::cout << std::hex << std::setfill('0') << std::setw(2) << ((unsigned int)received[i] & 0xFF) << " ";
+					std::cout << std::endl;
+				
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint16_t*)response.payload != (uint16_t) rate)
 						throw Ex::DriverException("invalid response payload");

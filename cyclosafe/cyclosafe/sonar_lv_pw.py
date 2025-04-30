@@ -37,6 +37,8 @@ class SonarLvPwNode(Node):
 		
 		self.timer = self.create_timer(self.period, self.measure)
 
+		self.get_logger().info(f"Node started and measuring with period={self.period}")
+
 	def measure(self):
 		"""
 			Pull TRIGGER low for 20us then measure the pulse width to estimate distance (147us/inch)
@@ -86,6 +88,7 @@ class SonarLvPwNode(Node):
 		msg = Range()
 		msg.range = distance
 		msg.header.stamp = self.get_clock().now().to_msg()
+		msg.header.frame_id = f"{self.get_namespace()}/range"
 		msg.field_of_view = FOV
 		msg.max_range = distance
 		msg.min_range = distance

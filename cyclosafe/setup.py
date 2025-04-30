@@ -16,7 +16,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-		('share/' + package_name + '/launch', ['launch/cyclosafe.launch.py', 'launch/viewer.launch.py']),
+		('share/' + package_name + '/launch', ['launch/cyclosafe.launch.py', 'launch/viewer.launch.py', 'launch/config.py']),
         ('share/' + package_name + '/launch', ['launch/view.rviz', ]),
 		('share/' + package_name + '/scripts', ['scripts/gpio.py', 'scripts/battery_monitor.py', 'scripts/gpio.sh', 'scripts/gps_time.sh']),
 		('share/' + package_name + '/params', ['params/ldlidar.yaml', 'params/lifecycle_mgr.yaml']),

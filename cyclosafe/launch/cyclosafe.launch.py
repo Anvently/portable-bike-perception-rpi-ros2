@@ -3,18 +3,13 @@ from ament_index_python.packages import get_package_share_directory
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable, ExecuteProcess
 from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
-# from rclpy.time import Time
-# from rclpy.clock import Clock
 import time
-import os
-from typing import List, Tuple
+import os, sys
 
-DFT_LIDAR_PORT = "/dev/ttyAMA2"
-DFT_GPS_PORT = "/dev/ttyACM0"
-DFT_SONAR1_PORT = "/dev/ttyUSB0"
-DFT_SONAR2_PORT = "/dev/ttyUSB1"
-DFT_SONAR3_PORT = "/dev/ttyACM0"
-DFT_SONAR4_PORT = "/dev/ttyACM1"
+package_dir = get_package_share_directory('cyclosafe')
+launch_dir = os.path.join(package_dir, 'launch')
+sys.path.insert(0, launch_dir)
+from config import sensors_list, SensorTypeEnum
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -52,28 +47,6 @@ def setup_directory(parent_dir: str, time_start: float) -> str:
     os.mkdir(f"{path}/logs", 511)
     return (path)
 
-def read_port_by_id(hint: str) -> str:
-    try:
-        devices: List[str] = os.listdir("/dev/serial/by-id")
-        matches = [dev for dev in devices if dev.find(hint) != -1]
-        if len(matches) != 1:
-            return None
-        return (os.path.join('/dev/serial/by-id', os.readlink(os.path.join('/dev/serial/by-id', matches[0]))))
-    except Exception as e:
-        return None
-
-def resolve_port() -> Tuple[str, str, str]:
-    port_lidar: str = DFT_LIDAR_PORT
-    port_gps: str = DFT_GPS_PORT
-
-    port = read_port_by_id('CP2102N')
-    if port: port_lidar = port
-    port = read_port_by_id('u-blox')
-    if port: port_gps = port
-
-    return port_lidar, port_gps
-
-
 def launch_setup(context):
     parent_dir = LaunchConfiguration('out_path').perform(context)
     log_level = LaunchConfiguration('log_level').perform(context)
@@ -81,13 +54,10 @@ def launch_setup(context):
     save = str2bool(LaunchConfiguration('save').perform(context))
     time_start = time.time()
     path = setup_directory(parent_dir, time_start)
-    port_lidar, port_gps = resolve_port()
-    # port_sonar1, port_sonar2, port_sonar3, port_sonar4 = resolve_port_sonar()
-    # port_sonar5 = "/dev/ttyS0"
-
-    print(port_lidar, port_gps)
     print(f"Simulation start time = {time_start}")
+
     ld = []
+    ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs"))])
     if record:
         ld.extend([
             ExecuteProcess(
@@ -108,86 +78,36 @@ def launch_setup(context):
             ],
             arguments=['--ros-args', '--log-level', log_level],
         )])
-    ld.extend([
-        SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs")),
-        Node(
-            package='cyclosafe',
-            executable='camera_pi',
-            namespace='',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-            {'queue_size': 10,
-                'resolution': [600, 800],
-                'interval': 0.25,
-                'compression': 95,
-                'preview': False,
-                'start_time': float(time_start)}
-            ],
-            arguments=['--ros-args', '--log-level', log_level],
-        )])
-    if port_gps and os.path.exists(port_gps):
+    # ld.extend([Node(
+    #     package='cyclosafe',
+    #     executable='camera_pi',
+    #     namespace='',
+    #     output='screen',
+    #     emulate_tty=True,
+    #     parameters=[
+    #     {'queue_size': 10,
+    #         'resolution': [600, 800],
+    #         'interval': 0.25,
+    #         'compression': 95,
+    #         'preview': False,
+    #         'start_time': float(time_start)}
+    #     ],
+    #     arguments=['--ros-args', '--log-level', log_level],
+    # )])
+    for sensor in sensors_list:
+        if sensor.enable == False or sensor.port == None:
+            continue
+        params = sensor.parameters.copy()
+        params.append({'start_time': float(time_start)})
         ld.extend([Node(
-            package='cyclosafe',
-            executable='gps',
-            namespace='',
+            package=sensor.package,
+            executable=sensor.executable,
+            namespace=sensor.namespace,
             output='screen',
             emulate_tty=True,
-            parameters=[{
-                'baud': 115200,
-                'port': port_gps,
-                'period': 1.0,
-                'start_time': float(time_start),
-            }],
+            parameters=params,
             arguments=['--ros-args', '--log-level', log_level],
         )])
-    ld.extend([Node(
-            package='cyclosafe',
-            executable='sonar_lv_pw',
-            namespace='sonar1',
-            output='screen',
-            emulate_tty=True,
-            parameters=[{
-                'period': 0.10,
-                'start_time': float(time_start),
-            }],
-            arguments=['--ros-args', '--log-level', log_level],
-        )])
-    ld.extend([
-        Node(
-        package='ldlidar_stl_ros2',
-        executable='ldlidar_stl_ros2_node',
-        name='STL27L',
-        output='screen',
-        parameters=[
-            {'product_name': 'LDLiDAR_STL27L'},
-            {'topic_name': 'scan'},
-            {'frame_id': 'laser'},
-            {'port_name': '/dev/ttyUSB0'},
-            {'port_baudrate': 921600},
-            {'laser_scan_dir': False},
-            {'enable_angle_crop_func': False},
-            {'angle_crop_min': 0.0},
-            {'angle_crop_max': 0.0}
-        ]
-    )
-    ])
-    ld.extend([
-        Node(
-            package='rplidar_ros',
-            executable='rplidar_node',
-            name='rplidar_node',
-            parameters=[{'channel_type': 'serial',
-                         'serial_port': port_lidar,
-                         'serial_baudrate': 460800,
-                         'frame_id': 'laser_vertical',
-                         'inverted': False,
-                         'angle_compensate': False,
-                         'scan_mode': 'Standard',
-                         }],
-            output='screen'
-        ),
-    ])
     return ld
 
 def generate_launch_description():

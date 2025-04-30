@@ -19,6 +19,7 @@ class LidarNode : public rclcpp::Node {
 		unsigned int		_framerate;
 		unsigned int		_target_baud;
 		bool				_trigger_mode;
+		std::string			_frame_id;
 		
 		// std::deque<unsigned char>								_buffer;
 		rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr	_pub;
@@ -63,6 +64,8 @@ class LidarNode : public rclcpp::Node {
 		/// @return 0 for success
 		int	_configure(void) {
 			try {
+				if (_driver->isFreeRunning() == true)
+					_driver->disableOutput();
 				if (_target_baud != _baud) {
 					_driver->setBaudrate(_target_baud);
 					_baud = _target_baud;
@@ -111,6 +114,7 @@ class LidarNode : public rclcpp::Node {
 			auto msg = sensor_msgs::msg::Range();
 
 			msg.header.stamp = this->get_clock()->now();
+			msg.header.frame_id = this->_frame_id;
 			msg.field_of_view = _driver->getFov();
 			msg.radiation_type = sensor_msgs::msg::Range::INFRARED;
 			msg.max_range = msg.min_range = msg.range = distance;
@@ -120,32 +124,41 @@ class LidarNode : public rclcpp::Node {
 
 		LidarNode()
 			: Node("lidar_node"), _serial(nullptr) {
+
+			try {
+				_retrieve_params();
+
+				_frame_id = std::string(this->get_namespace()) + "/range";
+
+				_serial = std::make_shared<Serial>(_port, _baud);
+				if (_serial == nullptr)
+					throw InitException("Failed to construct serial");
+
+				if (_serial->openSerial())
+					throw InitException("Failed to open serial" + std::string(strerror(errno)));
+				
+				_pub = this->create_publisher<sensor_msgs::msg::Range>("range", rclcpp::QoS(10));
+				if (_pub == nullptr)
+					throw InitException("Failed to construct publisher");
+				
+				_timer = this->create_wall_timer(500ms, std::bind(&LidarNode::_routine, this), nullptr, false);
+				if (_timer == nullptr)
+					throw InitException("Failed to construct timer");
+
+				_driver = Benewake::ADriver::build_driver(_model, _serial);
+				if (_driver == nullptr)
+					throw InitException("Failed to construct driver from model [" + _model + "]. Valid options: tf-02, tf-mini-plus, tf-s20l.");
+
+				if (this->_configure())
+					throw InitException("Failed to configure lidar");
+
+				_timer->reset(); // Start the timer routine as autostart was set to false
+
+			} catch (const InitException& ex) {
+				RCLCPP_ERROR(this->get_logger(), ex.what());
+				throw (std::exception());
+			}
 			
-			_retrieve_params();
-
-			_serial = std::make_shared<Serial>(_port, _baud);
-			if (_serial == nullptr)
-				throw InitException("Failed to construct serial");
-
-			if (_serial->openSerial())
-				throw InitException("Failed to open serial" + std::string(strerror(errno)));
-			
-			_pub = this->create_publisher<sensor_msgs::msg::Range>("range", rclcpp::QoS(10));
-			if (_pub == nullptr)
-				throw InitException("Failed to construct publisher");
-			
-			_timer = this->create_wall_timer(500ms, std::bind(&LidarNode::_routine, this), nullptr, false);
-			if (_timer == nullptr)
-				throw InitException("Failed to construct timer");
-
-			_driver = Benewake::ADriver::build_driver(_model, _serial);
-			if (_driver == nullptr)
-				throw InitException("Failed to construct driver from model " + _model);
-
-			if (this->_configure())
-				throw InitException("Failed to configure lidar");
-
-			_timer->reset(); // Start the timer routine as autostart was set to false
 		}
 
 		virtual ~LidarNode(void) throw() {

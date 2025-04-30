@@ -35,6 +35,7 @@ class LidarNode(Node):
 			self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
 
 			self.pub = self.create_publisher(Range, "range", 10)
+			self.frame_id = f"{self.get_namespace()}/range"
 
 			self.timer = self.create_timer(0, self.routine)
 			self.count = 0
@@ -56,7 +57,7 @@ class LidarNode(Node):
 			self.trigger_measure(0)
 
 		except (serialutil.SerialException, OSError) as e:
-			self.get_logger().error(f"Failed to read from serial: {e.strerror}\nRetrying...")
+			self.get_logger().error(f"Failed to read from serial: {e}\nRetrying...")
 			self.timer.timer_period_ns = 10 * 1000 * 1000 * 1000
 			self.serial = None
 
@@ -68,7 +69,7 @@ class LidarNode(Node):
 	def publish(self, data: int):
 		msg = Range()
 		msg.header.stamp = self.get_clock().now().to_msg()
-		msg.header.frame_id = 'lidar'
+		msg.header.frame_id = self.frame_id
 		msg.field_of_view = FOV
 		msg.range = float(data) / 1e3
 		msg.max_range = msg.range
