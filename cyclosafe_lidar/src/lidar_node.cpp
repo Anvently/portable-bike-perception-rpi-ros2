@@ -57,6 +57,10 @@ class LidarNode : public rclcpp::Node {
 			if (target_baud_int < 0)
 				throw InitException("target_baud must be a positive integer");
 			_target_baud = static_cast<unsigned int>(target_baud_int);
+
+			_period = this->get_parameter("period").as_double();
+			if (_period < 0)
+				throw InitException("period must be a positive number");
 		}
 
 		/// @brief 
@@ -64,14 +68,15 @@ class LidarNode : public rclcpp::Node {
 		/// @return 0 for success
 		int	_configure(void) {
 			try {
+				_serial->flush();
 				if (_driver->isFreeRunning() == true)
 					_driver->disableOutput();
-				if (_target_baud != _baud) {
-					_driver->setBaudrate(_target_baud);
-					_baud = _target_baud;
-				}
+				// if (_target_baud != _baud) {
+				// 	_driver->setBaudrate(_target_baud);
+				// 	_baud = _target_baud;
+				// }
 				_driver->setFrameRate(_framerate);
-				if (_trigger_mode == true)
+				if (_trigger_mode == false)
 					_driver->enableOutput();
 			} catch (const std::exception& ex) {
 				RCLCPP_ERROR(this->get_logger(), ex.what());
@@ -82,32 +87,33 @@ class LidarNode : public rclcpp::Node {
 
 		void	_routine(void) {
 			Benewake::frames::DataFrame	frame;
-			unsigned int				n_received;
+
 			try {
-				if (_trigger_mode == true) {
+				if (_driver->isFreeRunning() == false) {
 					frame = _driver->triggerDetection();
 					if (frame.payload.strength != 65535 && frame.payload.strength >= 100)
 						this->_publish(static_cast<double>(frame.payload.distance) / 100.0);
 				} else {
 					auto start_point = std::chrono::high_resolution_clock::now();
 					// Timeout is set to half of period 
-					auto timeout = std::chrono::milliseconds(static_cast<unsigned int>((_period / 2.0) * 1000.0)); 
+					auto timeout = std::chrono::milliseconds(static_cast<unsigned int>((_period) * 1000.0));
 					do {
-						frame = _driver->readFrame(1ms, &n_received);
+						frame = _driver->readFrame(0ms);
+						RCLCPP_DEBUG(this->get_logger(), "frame: %x, %x, %x, %x, %x", frame.payload.magic, frame.payload.distance, frame.payload.strength, frame.payload.temp, frame.payload.checksum);
 						if (frame.payload.strength != 65535 && frame.payload.strength >= 100)
 							this->_publish(static_cast<double>(frame.payload.distance) / 100.0);
-					} while (n_received > 0 && Utils::checkTimeout(start_point, timeout) == false);
-					if (n_received != 0) {// Means that timeout was detected and some range data likely remain in serial buffer
-						RCLCPP_WARN(this->get_logger(), "Failed to read all the data sent by lidar. "\
-											"Some readings will be lost. Make sure to set the read period close to the framerate.");
-						_serial->flush(); // Flush any remaining readings
-					}
+					} while (Utils::checkTimeout(start_point, timeout) == false);
+					// Means that timeout was detected and some range data likely remain in serial buffer
+					RCLCPP_WARN(this->get_logger(), "Failed to read all the data sent by lidar. "\
+										"Some readings will be lost. Make sure to set the read period close to the framerate.");
+					_serial->flush(); // Flush any remaining readings
 				}
-
+			} catch (const Exceptions::NoDataException& ex) {
+				RCLCPP_DEBUG(this->get_logger(), "No data");
+				return;
 			} catch (const std::exception& ex) {
 				RCLCPP_ERROR(this->get_logger(), ex.what());
 			}
-
 		}
 
 		void	_publish(double distance) {
@@ -118,6 +124,7 @@ class LidarNode : public rclcpp::Node {
 			msg.field_of_view = _driver->getFov();
 			msg.radiation_type = sensor_msgs::msg::Range::INFRARED;
 			msg.max_range = msg.min_range = msg.range = distance;
+			this->_pub->publish(msg);
 		}
 
 	public:
@@ -141,18 +148,22 @@ class LidarNode : public rclcpp::Node {
 				if (_pub == nullptr)
 					throw InitException("Failed to construct publisher");
 				
-				_timer = this->create_wall_timer(500ms, std::bind(&LidarNode::_routine, this), nullptr, false);
-				if (_timer == nullptr)
-					throw InitException("Failed to construct timer");
-
 				_driver = Benewake::ADriver::build_driver(_model, _serial);
 				if (_driver == nullptr)
 					throw InitException("Failed to construct driver from model [" + _model + "]. Valid options: tf-02, tf-mini-plus, tf-s20l.");
+				Benewake::ADriver::setLogger(this->get_logger());
 
 				if (this->_configure())
 					throw InitException("Failed to configure lidar");
+				
+				_timer = this->create_wall_timer(std::chrono::milliseconds(static_cast<unsigned int>(_period * 1000.0)), std::bind(&LidarNode::_routine, this), nullptr, false);
+				if (_timer == nullptr)
+					throw InitException("Failed to construct timer");
+
 
 				_timer->reset(); // Start the timer routine as autostart was set to false
+
+				RCLCPP_INFO(this->get_logger(), "Lidar %s node started", _model.c_str());
 
 			} catch (const InitException& ex) {
 				RCLCPP_ERROR(this->get_logger(), ex.what());

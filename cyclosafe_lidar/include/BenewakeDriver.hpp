@@ -46,8 +46,8 @@ namespace Benewake {
 				payload = *(struct payload*)buffer;
 				if (payload.magic != DATA_FRAME_MAGIC)
 					throw Ex::MagicException("Invalid magic number in data frame: " + std::to_string(payload.magic) + " against " + std::to_string(DATA_FRAME_MAGIC));
-				for (unsigned int i = 0, sum = 0; i < sizeof(payload) - 1; i++)
-					sum += (unsigned char)buffer[i];
+				for (unsigned int i = 0; i < sizeof(payload) - 1; i++)
+					sum += (unsigned int)buffer[i];
 				if (payload.checksum != (uint8_t)(sum & 0xFF))
 					throw Ex::ChecksumException("Invalid checksum in data frame: " + std::to_string(payload.checksum) + " in frame instead of " + std::to_string(sum & 0xFF));
 			}
@@ -57,7 +57,8 @@ namespace Benewake {
 			const uint8_t magic = 0x5A;
 			uint8_t len;
 			const uint8_t command_id;
-			std::string payload;
+			char* payload = nullptr;
+			char* serialized = nullptr;
 			uint8_t checksum;
 
 			/// @brief Constructor for integral type
@@ -69,7 +70,7 @@ namespace Benewake {
 			CommandFrame(uint8_t command_id, const T& data, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr)
 				: len(sizeof(T) + 3 + 1), command_id(command_id)
 			{
-				payload.resize(sizeof(T));
+				payload = new char[sizeof(T)];
 				const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&data);
 
 				for (size_t i = 0; i < sizeof(T); ++i) {
@@ -77,12 +78,14 @@ namespace Benewake {
 				}
 				
 				calculateChecksum();
+				serialized = serialize();
 			}
 
 			CommandFrame(uint8_t command_id)
 				: len(3 + 1), command_id(command_id)
 			{
 				calculateChecksum();
+				serialized = serialize();
 			}
 
 			/// @brief Constructor for array of integral arithmetic types
@@ -95,7 +98,7 @@ namespace Benewake {
 			CommandFrame(uint8_t command_id, const T* data, size_t count, typename std::enable_if<std::is_arithmetic<T>::value>::type* = nullptr)
 				: len(sizeof(T) * count + 3 + 1), command_id(command_id)
 			{
-				payload.resize(sizeof(T) * count);
+				payload = new char[sizeof(T)];
 				const uint8_t* bytes = reinterpret_cast<const uint8_t*>(data);
 
 				for (size_t i = 0; i < sizeof(T) * count; ++i) {
@@ -103,26 +106,33 @@ namespace Benewake {
 				}
 				
 				calculateChecksum();
+				serialized = serialize();
 			}
 
-			std::string toString(void) const {
-				std::string result;
-				result.reserve(len);
-				result.push_back(static_cast<char>(magic));
-				result.push_back(static_cast<char>(len));
-				result.push_back(static_cast<char>(command_id));
-				result.append(payload);
-				result.push_back(static_cast<char>(checksum));
-				return result;
+			~CommandFrame() {
+				if (payload)
+					delete[] payload;
+				if (serialized)
+					delete[] serialized;
 			}
 
 		private:
 			void calculateChecksum() {
-				unsigned int sum = magic + len + command_id;
-				for (std::string::const_iterator it = payload.begin(); it != payload.end(); it++) {
-					sum += (unsigned char)*it;
+				unsigned int sum = (unsigned int)magic + (unsigned int)len + (unsigned int)command_id;
+				for (unsigned int i = 0; i < ((unsigned int)len - 3 - 1); i++) {
+					sum += (unsigned int)payload[i];
 				}
 				checksum = (uint8_t)(sum & 0xFF);
+			}
+
+			char* serialize(void) const {
+				char* out = new char[len];
+				out[0] = static_cast<char>(magic);
+				out[1] = static_cast<char>(len);
+				out[2] = static_cast<char>(command_id);
+				memcpy(&out[3], payload, len - 3 - 1);
+				out[len - 1] = static_cast<char>(checksum);
+				return out;
 			}
 		};
 
@@ -149,8 +159,9 @@ namespace Benewake {
 					throw Ex::MagicException("Invalid magic number in response: " + std::to_string(magic) + " against " + std::to_string(MAGIC));
 				}
 		
-				for (uint8_t i = 0, sum = 0; i < len - 1; i++)
+				for (uint8_t i = 0; i < (len - 1); i++)
 					sum += (unsigned int)buffer[i];
+
 				if (checksum != (uint8_t)(sum & 0xFF))
 					throw Ex::ChecksumException("Invalid checksum in response: " + std::to_string(checksum) + " in frame instead of " + std::to_string(sum & 0xFF));
 
@@ -177,9 +188,26 @@ namespace Benewake {
 
 			using DriverFactory = std::function<std::unique_ptr<ADriver>(std::shared_ptr<Serial>)>;
 
+			static void	setLogger(const rclcpp::Logger& logger) {
+				ADriver::_logger = logger;
+			}
+
+			static const rclcpp::Logger& getLogger() {
+				return _logger;
+			}
+
 		private:
 
-			static const std::map<std::string, DriverFactory> lidar_models;
+			static const std::map<std::string, DriverFactory>	lidar_models;
+			static rclcpp::Logger								_logger;
+
+			static void	printReceived(size_t nbytes, char* received) {
+				std::cout << nbytes << "|";
+				for (unsigned int i = 0; i < nbytes; ++i)
+					std::cout << std::hex << std::setfill('0') << std::setw(2) << ((unsigned int)received[i] & 0xFF) << " ";
+				std::cout << std::endl;
+			}
+
 
 		protected:
 
@@ -195,30 +223,26 @@ namespace Benewake {
 			virtual void	setOutput(bool enable) {
 				try {
 					frames::CommandFrame	command(0x07, static_cast<uint8_t>(enable));
-					char					received[5];
+					char					received[5] = {0};
 					ssize_t					nbytes;
 
+					RCLCPP_INFO(getLogger(), "%s lidar output", (enable ? "Enabling" : "Disabling"));
 					_serial->flush();
-					_serial->send(command.toString());
-					std::this_thread::sleep_for(1ms);
-
-					nbytes = _serial->nreceive((unsigned char*)received, 5, 1 * 1000000);
+					_serial->send(command.serialized, command.len);
+					nbytes = _serial->nreceive_peek(received, sizeof(received),  "\x5a\x05", 2, 3 * 1000000);
 					if (nbytes < 0)
 						throw Ex::SysException("read error");
-					else if (nbytes != sizeof(received))
+					else if (nbytes != sizeof(received)) {
+						RCLCPP_WARN(_logger, "received %ld bytes, |%.5s|\n", nbytes, received);
 						throw Ex::DriverException("timeout");
-						
+					}
+		
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint8_t*)response.payload != (uint8_t) enable)
 						throw Ex::DriverException("invalid response payload");
 
-					if (enable == false) {
-						nbytes = _serial->nreceive((unsigned char*)received, 5, 500 * 1000);
-						if (nbytes != 0)
-							throw Ex::DriverException("device disabled but it's still sending data");
-					}
-
 					_free_running = enable;
+					RCLCPP_INFO(getLogger(), "Output %s", (enable ? "enabled" : "disabled"));
 
 				} catch (const std::exception& ex) {
 					throw Ex::DriverException("Trying to send enable/disable output command: " + std::string(ex.what()));
@@ -234,20 +258,13 @@ namespace Benewake {
 			}
 
 			virtual bool	detectMode() {
-				char					received[2];
 				ssize_t					nbytes;
 
-				try {
-					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 1000 * 1000);
-					if (nbytes < 0)
-						throw Ex::SysException("read error");
-					else if (nbytes == 0)
-						_free_running = false;
-					else
-						_free_running = true;
-				} catch (const std::exception& ex) {
-					throw Ex::DriverException("Trying to detect mode: " + std::string(ex.what()));
-				}
+				nbytes = _serial->nBytesWaiting();
+				if (nbytes > 0)
+					_free_running = true;
+				else
+					_free_running = true;
 				return (_free_running);
 			}
 
@@ -255,21 +272,19 @@ namespace Benewake {
 			/// @param timeout 0 to return immediately, -1 to block or > 0 to wait x us
 			/// @return 
 			template <typename DurationType = std::chrono::milliseconds>
-			frames::DataFrame	readFrame(const DurationType& timeout = 1ms, unsigned int* n_received_ptr = nullptr) const {
+			frames::DataFrame	readFrame(const DurationType& timeout = 1ms) const {
 				char					received[9];
 				ssize_t					nbytes;
 
-				nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), std::chrono::duration_cast<std::chrono::microseconds>(timeout).count());
+				nbytes = _serial->nreceive_peek(received, sizeof(received), "\x59\x59", 2, std::chrono::duration_cast<std::chrono::microseconds>(timeout).count());
 				std::chrono::microseconds dur  = std::chrono::duration_cast<std::chrono::microseconds>(timeout);
 				if (nbytes < 0)
-					throw Ex::SysException("read error");
-				else if (nbytes != sizeof(received))
-					throw Ex::DriverException("timeout");
+					throw Ex::SysException("read error reading frame");
+				else if (nbytes != sizeof(received)) {
+					throw Ex::NoDataException();
+				}
 
 				frames::DataFrame	response(received, nbytes);
-
-				if (n_received_ptr)
-					*n_received_ptr = nbytes;
 
 				return response;
 			}
@@ -286,13 +301,14 @@ namespace Benewake {
 					char					received[8];
 					ssize_t					nbytes;
 
+					RCLCPP_INFO(getLogger(), "Setting baudrate");
 					_serial->flush();
-					_serial->send(command.toString());
+					_serial->send(command.serialized, command.len);
 					if (_serial->setBaudrate(baud))
 						throw Ex::SysException("failed to change serial baudrate");
 					std::this_thread::sleep_for(1ms);
 
-					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 500 * 1000);
+					nbytes = _serial->nreceive_peek(received, sizeof(received),  "\x5a\x08", 2, 500 * 1000);
 					if (nbytes < 0)
 						throw Ex::SysException("read error");
 					else if (nbytes != sizeof(received))
@@ -301,6 +317,8 @@ namespace Benewake {
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint64_t*)response.payload != (uint64_t) baud)
 						throw Ex::DriverException("invalid response payload");
+
+					RCLCPP_INFO(getLogger(), "Baudrate set to %u", baud);
 
 				} catch (const std::exception& ex) {
 					if (_serial->setBaudrate(previous_baud)) {
@@ -329,18 +347,22 @@ namespace Benewake {
 					ssize_t					nbytes;
 
 					_serial->flush();
-					_serial->send(command.toString());
+					_serial->send(command.serialized, command.len);
 					std::this_thread::sleep_for(1s);
 
-					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 0);
+					nbytes = _serial->nreceive_peek(received, sizeof(received), "\x5a\x05", 2, 0);
 					if (nbytes < 0)
 						throw Ex::SysException("read error");
-					else if (nbytes != sizeof(received))
+					else if (nbytes != sizeof(received)) {
+						// RCLCPP_DEBUG
 						throw Ex::DriverException("timeout reading response");
+					}
 
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint8_t*)response.payload != 0x00)
 						throw Ex::DriverException("unexpected payload response: " + std::to_string(*(uint8_t*)response.payload));
+
+					RCLCPP_INFO(getLogger(), "Config saved");
 
 				} catch (const std::exception& ex) {
 					throw Ex::DriverException("Trying to send save settings command: " + std::string(ex.what()));
@@ -357,10 +379,10 @@ namespace Benewake {
 					ssize_t					nbytes;
 
 					_serial->flush();
-					_serial->send(command.toString());
+					_serial->send(command.serialized, command.len);
 					std::this_thread::sleep_for(1s);
 
-					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 0);
+					nbytes = _serial->nreceive_peek(received, sizeof(received), "\x5a\x05", 2, 0);
 					if (nbytes < 0)
 						throw Ex::SysException("read error");
 					else if (nbytes != sizeof(received))
@@ -369,6 +391,8 @@ namespace Benewake {
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint8_t*)response.payload != 0x00)
 						throw Ex::DriverException("unexpected response payload, received: " + std::to_string(*(uint8_t*)response.payload));
+
+					RCLCPP_INFO(getLogger(), "System reset");
 
 				} catch (const std::exception& ex) {
 					throw Ex::DriverException("Trying to send factory reset command: " + std::string(ex.what()));
@@ -383,7 +407,7 @@ namespace Benewake {
 					frames::CommandFrame	command(0x04);
 
 					_serial->flush();
-					_serial->send(command.toString());
+					_serial->send(command.serialized, command.len);
 
 					return this->readFrame();
 
@@ -434,14 +458,15 @@ namespace Benewake {
 					ssize_t					nbytes;
 					frames::CommandFrame	command(0x03, static_cast<uint16_t>((rate == 0 ? 0 : 2000 / rate)));
 
+					RCLCPP_INFO(getLogger(), "Setting frame rate to %u", rate);
+
 					if (rate > 1000)
 						throw Ex::DriverException("parameter error => framerate must be less than 1000Hz: " + std::to_string(rate));
 			
 					_serial->flush();
-					_serial->send(command.toString());
-					std::this_thread::sleep_for(1ms);
+					_serial->send(command.serialized, command.len);
 
-					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 1 * 1000000);
+					nbytes = _serial->nreceive_peek(received, sizeof(received), "\x5a\x06", 2, 3 * 1000000);
 					if (nbytes < 0)
 						throw Ex::SysException("read error");
 					else if (nbytes != sizeof(received))
@@ -450,6 +475,8 @@ namespace Benewake {
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
 					if (*(uint16_t*)response.payload != (uint16_t) rate)
 						throw Ex::DriverException("invalid response payload");
+
+					RCLCPP_INFO(getLogger(), "Frame rate set to %u hertz", rate);
 
 				} catch (const std::exception& ex) {
 					throw Ex::DriverException("Trying to set framerate: " + std::string(ex.what()));
@@ -469,34 +496,33 @@ namespace Benewake {
 			virtual double	getFov() const {return (3.6);}
 
 			virtual void	setFrameRate(unsigned int rate) const override {
+
+				RCLCPP_INFO(getLogger(), "Setting frame rate to %u", rate);
 				if (_free_running == true)
 					throw Ex::DriverException("Trying to config device while it's still free running");
 				try {
 					char					received[6];
 					ssize_t					nbytes;
-					frames::CommandFrame	command(0x03, static_cast<uint16_t>((rate == 0 ? 0 : 1000 / rate)));
+					frames::CommandFrame	command(0x03, static_cast<uint16_t>(rate));
 
 					if (rate > 1000)
 						throw Ex::DriverException("parameter error => framerate must be less than 1000Hz: " + std::to_string(rate));
 			
 					_serial->flush();
-					_serial->send(command.toString());
-					std::this_thread::sleep_for(1ms);
+					_serial->send(command.serialized, command.len);
 
-					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 1 * 1000000);
+					nbytes = _serial->nreceive_peek(received, sizeof(received), "\x5a\x06", 2, 3 * 1000000);
 					if (nbytes < 0)
 						throw Ex::SysException("read error");
 					else if (nbytes != sizeof(received))
 						throw Ex::DriverException("timeout reading response");
-						
-					std::cout << nbytes << "|";
-					for (int i = 0; i < nbytes; ++i)
-						std::cout << std::hex << std::setfill('0') << std::setw(2) << ((unsigned int)received[i] & 0xFF) << " ";
-					std::cout << std::endl;
 				
 					frames::ResponseFrame	response(received, nbytes, command.command_id);
-					if (*(uint16_t*)response.payload != (uint16_t) rate)
+					if (*(uint16_t*)response.payload != static_cast<uint16_t>(rate)) {
 						throw Ex::DriverException("invalid response payload");
+					}
+
+					RCLCPP_INFO(getLogger(), "Frame rate was set to %u", rate);
 
 				} catch (const std::exception& ex) {
 					throw Ex::DriverException("Trying to set framerate: " + std::string(ex.what()));
@@ -545,10 +571,9 @@ namespace Benewake {
 						throw Ex::DriverException("invalid parameter => must be less than 250Hz: " + std::to_string(rate));
 			
 					_serial->flush();
-					_serial->send(command.toString());
-					std::this_thread::sleep_for(1ms);
+					_serial->send(command.serialized, command.len);
 
-					nbytes = _serial->nreceive((unsigned char*)received, sizeof(received), 1 * 1000000);
+					nbytes = _serial->nreceive_peek(received, sizeof(received), "\x5a\x06", 2, 3 * 1000000);
 					if (nbytes < 0)
 						throw Ex::SysException("read error");
 					else if (nbytes != sizeof(received))
@@ -565,6 +590,8 @@ namespace Benewake {
 	};
 
 }
+
+rclcpp::Logger Benewake::ADriver::_logger = rclcpp::get_logger("default_logger_name");
 
 const std::set<unsigned int> Benewake::TFS20LDriver::rate_values = {0, 20, 50, 100, 250};
 

@@ -45,4 +45,9 @@ namespace Exceptions {
 			public:
 				DriverException(const std::string& message) : VerboseException(message) {}
 	};
+
+	class NoDataException : public std::exception {
+			public:
+				NoDataException() {}
+	};
 }
