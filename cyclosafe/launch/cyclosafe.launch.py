@@ -1,6 +1,6 @@
 from launch import LaunchDescription
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironmentVariable, ExecuteProcess, TimerAction
 from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 import time
@@ -99,7 +99,8 @@ def launch_setup(context):
             continue
         params = sensor.parameters.copy()
         params.append({'start_time': float(time_start)})
-        ld.extend([Node(
+
+        list = [Node(
             package=sensor.package,
             executable=sensor.executable,
             namespace=sensor.namespace,
@@ -107,7 +108,12 @@ def launch_setup(context):
             emulate_tty=True,
             parameters=params,
             arguments=['--ros-args', '--log-level', log_level],
-        )])
+        )]
+        if sensor.delay != None:
+            print(f"adding delay of {sensor.delay}")
+            ld.extend([TimerAction(period=sensor.delay, actions=list)])
+        else:
+            ld.extend(list)
     return ld
 
 def generate_launch_description():

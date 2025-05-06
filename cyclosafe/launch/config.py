@@ -31,7 +31,8 @@ class SerialSensor:
 	def __init__(self, package: str, executable: str, namespace: str, port: str, type: SensorTypeEnum,
 			  enable: bool = True,parameters: list[Any] = [],
 			  description: str = "", transform: List[str] = None, topic: str = "range", color: ColorRGBA | str = None,
-			  port_hint: str = None):
+			  port_hint: str = None,
+			  delay: float | None = None):
 		self.type = type
 		self.description = description
 		self.enable = enable
@@ -41,6 +42,7 @@ class SerialSensor:
 		self.topic = f"{namespace}/{topic}"
 		self.parameters = parameters
 		self.transform = transform
+		self.delay = delay
 	
 		if (port == None):
 			if port_hint:
@@ -101,7 +103,7 @@ sensors_list = [
 		namespace="lidar1_tof",
 		description="tof lidar",
 		port="/dev/ttyAMA5",
-		transform=["--x", "0.18", "--y", "0.0", "--z", "0", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar1_tof/range"],
+		transform=["--x", "0.18", "--y", "0.0", "--z", "0.006", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar1_tof/range"],
 		topic="range",
 		color="red",
 		parameters=[{
@@ -151,6 +153,7 @@ sensors_list = [
 			'framerate': 20,
 			'trigger': False
 		}],
+		delay=5.0
 	),
 	SerialSensor(
 		type=SensorTypeEnum.GPSSensor,
@@ -168,21 +171,21 @@ sensors_list = [
 				'period': 1.0,
 		}],
 	),
-	SerialSensor(
-		enable=False,
-		type=SensorTypeEnum.RangeSensor,
-		package="cyclosafe",
-		executable="sonar_lv_pw",
-		namespace="sonar1",
-		description="sonar LV1040",
-		port="",
-		transform=["--x", "0.215", "--y", "0.0", "--z", "-0.03", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id","board", "--child-frame-id", "sonar1/range"],
-		topic="range",
-		color="green",
-		parameters=[{
-			'period': 0.1,
-		}]
-	),
+	# SerialSensor(
+	# 	enable=False,
+	# 	type=SensorTypeEnum.RangeSensor,
+	# 	package="cyclosafe",
+	# 	executable="sonar_lv_pw",
+	# 	namespace="sonar1",
+	# 	description="sonar LV1040",
+	# 	port="",
+	# 	transform=["--x", "0.215", "--y", "0.0", "--z", "-0.03", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id","board", "--child-frame-id", "sonar1/range"],
+	# 	topic="range",
+	# 	color="green",
+	# 	parameters=[{
+	# 		'period': 0.1,
+	# 	}]
+	# ),
 	SerialSensor(
 		enable=False,
 		type=SensorTypeEnum.Lidar360Sensor,
