@@ -61,6 +61,14 @@ class LidarNode : public rclcpp::Node {
 			_period = this->get_parameter("period").as_double();
 			if (_period < 0)
 				throw InitException("period must be a positive number");
+
+			if (_trigger_mode == true && _framerate != 0) {
+				RCLCPP_WARN(this->get_logger(), "Trigger mode overrides non-zero framerate parameter");
+				_framerate = 0;
+			}
+
+			if (_target_baud != _baud)
+				RCLCPP_WARN(this->get_logger(), "Setting a manual baudrate feature is not tested yet and may not work !");
 		}
 
 		/// @brief 
@@ -71,13 +79,13 @@ class LidarNode : public rclcpp::Node {
 				_serial->flush();
 				if (_driver->isFreeRunning() == true)
 					_driver->disableOutput();
-				// if (_target_baud != _baud) {
-				// 	_driver->setBaudrate(_target_baud);
-				// 	_baud = _target_baud;
-				// }
+				if (_target_baud != _baud) {
+					_driver->setBaudrate(_target_baud);
+					_baud = _target_baud;
+				}
 				_driver->setFrameRate(_framerate);
-				if (_trigger_mode == false)
-					_driver->enableOutput();
+				_driver->enableOutput();
+				_driver->detectMode();
 			} catch (const std::exception& ex) {
 				RCLCPP_ERROR(this->get_logger(), ex.what());
 				return (1);
@@ -89,7 +97,7 @@ class LidarNode : public rclcpp::Node {
 			Benewake::frames::DataFrame	frame;
 
 			try {
-				if (_driver->isFreeRunning() == false) {
+				if (_trigger_mode == true) {
 					frame = _driver->triggerDetection();
 					if (frame.payload.strength != 65535 && frame.payload.strength >= 100)
 						this->_publish(static_cast<double>(frame.payload.distance) / 100.0);

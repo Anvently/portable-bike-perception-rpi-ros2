@@ -1,3 +1,5 @@
+#ifndef EXCEPTIONS_HPP
+# define EXCEPTIONS_HPP
 #include <string>
 #include <string.h>
 
@@ -46,8 +48,10 @@ namespace Exceptions {
 				DriverException(const std::string& message) : VerboseException(message) {}
 	};
 
-	class NoDataException : public std::exception {
-			public:
-				NoDataException() {}
+	class NoDataException : public VerboseException {
+		public:
+			NoDataException() : VerboseException("No data") {}
 	};
 }
+
+#endif

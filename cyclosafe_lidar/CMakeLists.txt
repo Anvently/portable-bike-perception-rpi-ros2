@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(cyclosafe_lidar)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -g3)
 endif()
 
 if(NOT CMAKE_CXX_STANDARD)
@@ -19,7 +19,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 include_directories(include)
-add_executable(node_lidar src/lidar_node.cpp src/Serial.cpp)
+add_executable(node_lidar src/lidar_node.cpp src/Serial.cpp src/Utils.cpp)
 
 ament_target_dependencies(node_lidar
   rclcpp

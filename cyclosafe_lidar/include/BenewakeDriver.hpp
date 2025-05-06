@@ -12,6 +12,7 @@
 #include <functional>
 #include <algorithm>
 #include "Exceptions.hpp"
+#include <Utils.hpp>
 
 #define DATA_FRAME_MAGIC 0x5959
 #define MAGIC 0x5A
@@ -201,13 +202,6 @@ namespace Benewake {
 			static const std::map<std::string, DriverFactory>	lidar_models;
 			static rclcpp::Logger								_logger;
 
-			static void	printReceived(size_t nbytes, char* received) {
-				std::cout << nbytes << "|";
-				for (unsigned int i = 0; i < nbytes; ++i)
-					std::cout << std::hex << std::setfill('0') << std::setw(2) << ((unsigned int)received[i] & 0xFF) << " ";
-				std::cout << std::endl;
-			}
-
 
 		protected:
 
@@ -264,7 +258,7 @@ namespace Benewake {
 				if (nbytes > 0)
 					_free_running = true;
 				else
-					_free_running = true;
+					_free_running = false;
 				return (_free_running);
 			}
 
@@ -408,6 +402,7 @@ namespace Benewake {
 
 					_serial->flush();
 					_serial->send(command.serialized, command.len);
+					std::this_thread::sleep_for(20ms);
 
 					return this->readFrame();
 
@@ -456,7 +451,7 @@ namespace Benewake {
 				try {
 					char					received[6];
 					ssize_t					nbytes;
-					frames::CommandFrame	command(0x03, static_cast<uint16_t>((rate == 0 ? 0 : 2000 / rate)));
+					frames::CommandFrame	command(0x03, static_cast<uint16_t>(rate));
 
 					RCLCPP_INFO(getLogger(), "Setting frame rate to %u", rate);
 

@@ -61,15 +61,15 @@ int	Serial::openSerial(void) {
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
 	tio.c_cc[VMIN] = 0;
-	tio.c_cc[VTIME] = 10;
-	ioctl(_fd, TCGETS, &tio); //Set initial flags
+	tio.c_cc[VTIME] = 1;
+	ioctl(_fd, TCSETS, &tio); //Set initial flags
 	
 	ioctl(_fd, TCGETS2, &tio2);
 	tio2.c_cflag &= ~CBAUD;
 	tio2.c_cflag |= BOTHER;
 	tio2.c_ospeed = _baud;
 	tio2.c_ispeed = _baud;
-	ioctl(_fd, TCSETS2, &tio2);
+	ioctl(_fd, TCSETS2, &tio2, TCSANOW);
 
 	usleep(100 * 1000);
 

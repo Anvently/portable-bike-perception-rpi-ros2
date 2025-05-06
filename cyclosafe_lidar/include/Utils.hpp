@@ -1,3 +1,5 @@
+#ifndef UTILS_HPP
+# define UTILS_HPP
 #include <chrono>
 
 namespace Utils {
@@ -8,4 +10,8 @@ namespace Utils {
 		auto timeout_point = start_time + timeout;
 		return now >= timeout_point;
 	}
+
+	void	printReceived(size_t nbytes, char* received);
 }
+
+#endif
