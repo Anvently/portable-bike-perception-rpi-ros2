@@ -14,10 +14,11 @@
 #include <Utils.hpp>
 #include <sys/select.h>
 
+
 /// @brief Find needle sequence in haystack
 /// @param haystack 
 /// @param hay_len 
-/// @param needle 
+/// @param needle Needle can be either fully contained in haystack or partial at the end of haystack
 /// @param needle_len 
 /// @return nullptr if needle sequence not found in haystack
 static const char*	find_sequence(const char* haystack, size_t hay_len, const char* needle, size_t needle_len) {
@@ -25,7 +26,7 @@ static const char*	find_sequence(const char* haystack, size_t hay_len, const cha
 
 	for (i = 0; i < hay_len; i++) {
 		for (j = 0; j < needle_len && i + j < hay_len && (unsigned char)haystack[i + j] == (unsigned char)needle[j]; j++);
-		if (j == needle_len)
+		if (j == needle_len || ((i + j) == hay_len && j > 0)) // Either needle was found or started at the end of haystack
 			return (haystack + i);
 	}
 	return (nullptr);
@@ -60,8 +61,8 @@ int	Serial::openSerial(void) {
 	memset(&tio, 0, sizeof(tio));
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
-	tio.c_cc[VMIN] = 0;
-	tio.c_cc[VTIME] = 1;
+	tio.c_cc[VMIN] = 1;
+	tio.c_cc[VTIME] = 0;
 	ioctl(_fd, TCSETS, &tio); //Set initial flags
 	
 	ioctl(_fd, TCGETS2, &tio2);
@@ -286,10 +287,11 @@ ssize_t		Serial::nreceive_peek(char* dest, size_t len_dest, const char* peek, si
 	size_t	nread = 0;
 	auto start_time = std::chrono::high_resolution_clock::now();
 	char	tmp[1024] = {0};
+	const char*	pos_sequence;
 
 	while (nread < len_dest) {
 		ret = read(_fd, tmp, 1024);
-	
+
 		if (ret < 0) {
 			if (errno == EAGAIN) {
 				if (timeout == 0 || (timeout > 0 && Utils::checkTimeout(start_time, std::chrono::microseconds(timeout)) == true))
@@ -303,16 +305,26 @@ ssize_t		Serial::nreceive_peek(char* dest, size_t len_dest, const char* peek, si
 			this->closeSerial();
 		} else {
 			if (nread == 0) {
-				const char* pos = find_sequence(tmp, ret, peek, peek_len);
-				if (pos != nullptr) {
-					len = std::min((size_t)ret - (pos - tmp), len_dest);
-					memcpy(dest, pos, len);
+				pos_sequence = find_sequence(tmp, ret, peek, peek_len);
+				if (pos_sequence != nullptr) {
+					len = std::min((size_t)ret - (pos_sequence - tmp), len_dest);
+					memcpy(dest, pos_sequence, len);
 					nread += len;
 				}
 			} else {
 				len = std::min((size_t)ret, len_dest - nread);
 				memcpy(dest + nread, tmp, len);
 				nread += len;
+				if (memcmp(peek, dest, peek_len) != 0) { // If the sequence does not match anymore
+					pos_sequence = find_sequence(dest, nread, peek, peek_len);
+					if (pos_sequence != nullptr) { // If dest already contains part of or the full sequence
+						len = nread - (pos_sequence - dest);
+						memmove(dest, pos_sequence, len);
+						nread = len;
+					} else {
+						nread = 0; // Reset counter
+					}
+				}
 			}
 		}
 	}

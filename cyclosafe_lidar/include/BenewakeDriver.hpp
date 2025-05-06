@@ -271,7 +271,6 @@ namespace Benewake {
 				ssize_t					nbytes;
 
 				nbytes = _serial->nreceive_peek(received, sizeof(received), "\x59\x59", 2, std::chrono::duration_cast<std::chrono::microseconds>(timeout).count());
-				std::chrono::microseconds dur  = std::chrono::duration_cast<std::chrono::microseconds>(timeout);
 				if (nbytes < 0)
 					throw Ex::SysException("read error reading frame");
 				else if (nbytes != sizeof(received)) {

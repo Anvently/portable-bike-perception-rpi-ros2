@@ -11,7 +11,7 @@ namespace Utils {
 		return now >= timeout_point;
 	}
 
-	void	printReceived(size_t nbytes, char* received);
+	void	printReceived(size_t nbytes, const char* received);
 }
 
 #endif
