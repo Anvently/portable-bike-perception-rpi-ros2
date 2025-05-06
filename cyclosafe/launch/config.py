@@ -75,6 +75,11 @@ class SerialSensor:
 		
 	def check_port(self):
 		if self.port == "" or (self.port != None and os.path.exists(self.port)):
+			if self.parameters and isinstance(self.parameters[0], dict):
+				if 'port' in self.parameters[0]:
+					self.parameters[0]['port'] = self.port
+				elif 'serial_port' in self.parameters[0]:
+					self.parameters[0]['serial_port'] = self.port
 			return
 		self.port = None
 
@@ -93,10 +98,10 @@ sensors_list = [
 		type=SensorTypeEnum.RangeSensor,
 		package="cyclosafe",
 		executable="tof_lidar",
-		namespace="lidar1",
+		namespace="lidar1-tof",
 		description="tof lidar",
 		port="/dev/ttyAMA5",
-		transform=["--x", "0.18", "--y", "0.0", "--z", "0", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar1/range"],
+		transform=["--x", "0.18", "--y", "0.0", "--z", "0", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar1-tof/range"],
 		topic="range",
 		color="red",
 		parameters=[{
@@ -109,17 +114,43 @@ sensors_list = [
 		enable=True,
 		type=SensorTypeEnum.RangeSensor,
 		package="cyclosafe_lidar",
-		executable="tof_lidar",
-		namespace="lidar1",
-		description="tof lidar",
-		port="/dev/ttyAMA5",
-		transform=["--x", "0.18", "--y", "0.0", "--z", "0", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar1/range"],
+		executable="lidar_node",
+		namespace="lidar2-tf-mini-plus",
+		description="benewake tf-mini-plus lidar",
+		port="/dev/ttyS0",
+		transform=["--x", "0.155", "--y", "-0.02", "--z", "-0.035", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar2-tf-mini-plus/range"],
 		topic="range",
-		color="red",
+		color="green",
 		parameters=[{
-			'baud': 921600,
-			'port': "/dev/ttyAMA5",
-			'period': 0.1,
+			'model': 'tf-mini-plus',
+			'port': "/dev/ttyS0",
+			'baud': 115200,
+			'target_baud': 115200,
+			'period': 0.05,
+			'framerate': 20,
+			'trigger': False
+		}],
+	),
+	SerialSensor(
+		enable=True,
+		type=SensorTypeEnum.RangeSensor,
+		package="cyclosafe_lidar",
+		executable="lidar_node",
+		namespace="lidar2-tf-02",
+		description="benewake tf-02 lidar",
+		port=None,
+		port_hint='usb-Silicon_Labs_CP2102N_USB_to_UART_Bridge_Controller_e40dc7ec375aee118e528bdc8ffcc75d-if00-port0',
+		transform=["--x", "0.10", "--y", "-0.026", "--z", "-0.035", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar2-tf-mini-plus/range"],
+		topic="range",
+		color="green",
+		parameters=[{
+			'model': 'tf-02',
+			'port': None,
+			'baud': 115200,
+			'target_baud': 115200,
+			'period': 0.05,
+			'framerate': 20,
+			'trigger': False
 		}],
 	),
 	SerialSensor(
@@ -139,6 +170,7 @@ sensors_list = [
 		}],
 	),
 	SerialSensor(
+		enable=False,
 		type=SensorTypeEnum.RangeSensor,
 		package="cyclosafe",
 		executable="sonar_lv_pw",
