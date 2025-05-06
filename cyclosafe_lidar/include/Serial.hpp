@@ -14,10 +14,14 @@ class Serial {
 		const std::string			_port;
 		int							_baud;
 		std::deque<char>	_buffer;
+		std::string					_lockfile;
 
 		static ssize_t	_read(int fd, char* buffer, size_t n);
 
-		int	_fd;
+		int	_lockDevice(void);
+
+		int	_fd = -1;
+		int	_lockfd = -1;
 	
 	public:
 

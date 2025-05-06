@@ -13,6 +13,9 @@
 #include <iomanip>
 #include <Utils.hpp>
 #include <sys/select.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <fstream>
 
 
 /// @brief Find needle sequence in haystack
@@ -43,9 +46,49 @@ Serial::~Serial(void) {
 }
 
 int	Serial::closeSerial(void) {
-	if (_fd >= 0)
+	if (_fd >= 0) {
 		ioctl(_fd, TCFLSH, TCIOFLUSH);
-	close(_fd);
+		close(_fd);
+	}
+	if (_lockfd >= 0) {
+		close(_lockfd);
+		unlink(_lockfile.c_str());
+	}
+	return (0);
+}
+
+/// @brief Attempt to create a lock file for serial device.
+/// @param  
+/// @return 0 for success, 1 if device is already locked or -1 for sys error 
+int	Serial::_lockDevice(void) {
+	struct stat buffer;
+	std::string device_name;
+	
+	size_t pos = _port.find_last_of('/');
+	if (pos != std::string::npos) {
+		device_name = _port.substr(pos + 1);
+	} else
+		device_name = _port;
+	_lockfile = "/var/lock/LCK.." + device_name;
+	if (stat(_lockfile.c_str(), &buffer) == 0) {
+		std::ifstream lock_stream(_lockfile);
+		int pid;
+		lock_stream >> pid;
+		lock_stream.close();
+		std::string pid_dir = "/proc/" + std::to_string(pid);
+		if (stat(pid_dir.c_str(), &buffer) == 0) {
+			return (1);
+		} else {
+			unlink(_lockfile.c_str());
+		}
+	}
+
+	_lockfd = open(_lockfile.c_str(), O_CREAT | O_RDWR, 0644);
+	if (_lockfd < 0)
+		return (-1);
+	std::string	pid_str = std::to_string(getpid());
+	if (write(_lockfd, pid_str.c_str(), pid_str.length()) < 0)
+		return (-1);
 	return (0);
 }
 
@@ -58,6 +101,12 @@ int	Serial::openSerial(void) {
 		return (errno);
 	if (isatty(_fd) != 1)
 		return (-1);
+
+	if (_lockDevice()) {
+		std::cerr << "Port seems to be lock by another process." << std::endl;
+		return (-1);
+	}
+
 	memset(&tio, 0, sizeof(tio));
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;

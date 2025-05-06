@@ -150,7 +150,7 @@ class LidarNode : public rclcpp::Node {
 					throw InitException("Failed to construct serial");
 
 				if (_serial->openSerial())
-					throw InitException("Failed to open serial" + std::string(strerror(errno)));
+					throw InitException("Failed to open serial : " + std::string(strerror(errno)));
 				
 				_pub = this->create_publisher<sensor_msgs::msg::Range>("range", rclcpp::QoS(10));
 				if (_pub == nullptr)

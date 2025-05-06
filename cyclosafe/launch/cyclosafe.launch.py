@@ -18,7 +18,7 @@ launch_args = [
     DeclareLaunchArgument('out_path', default_value=TextSubstitution(text=""), description="Path in which a data directory for this simulation will be created"),
     DeclareLaunchArgument('log_level', default_value=TextSubstitution(text="info"), description="Log level for all nodes"),
     DeclareLaunchArgument('record', default_value=TextSubstitution(text="false"), description="Capture every topic in a bag"),
-    DeclareLaunchArgument('save', default_value=TextSubstitution(text="true"), description="If true, hub node won't be started and data will not be written. Use in with record=true in order to only record data from ROS perspective."),
+    DeclareLaunchArgument('save', default_value=TextSubstitution(text="false"), description="If true, hub node won't be started and data will not be written. Use in with record=true in order to only record data from ROS perspective."),
 ]
 
 def setup_directory(parent_dir: str, time_start: float) -> str:
