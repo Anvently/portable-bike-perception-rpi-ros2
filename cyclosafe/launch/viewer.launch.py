@@ -44,17 +44,17 @@ def launch_setup(context):
                 additional_env={'QT_QPA_PLATFORM': 'xcb'}
             )
         ])
-    # else:
-    #     ld.extend([Node(
-    #         package='rqt_image_view',
-    #         executable='rqt_image_view',
-    #         output='screen',
-    #         emulate_tty=True,
-    #         parameters=[],
-    #         arguments=[
-    #             "images", "--ros-args", "--remap", "_image_transport:=compressed"
-    #         ]
-	# 	)])
+    else:
+        ld.extend([Node(
+            package='rqt_image_view',
+            executable='rqt_image_view',
+            output='screen',
+            emulate_tty=True,
+            parameters=[],
+            arguments=[
+                "images", "--ros-args", "--remap", "_image_transport:=compressed"
+            ]
+		)])
     ld.extend(
         [Node(
             package='rviz2',

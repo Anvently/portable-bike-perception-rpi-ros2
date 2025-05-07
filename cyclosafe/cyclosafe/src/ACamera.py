@@ -33,7 +33,7 @@ class AImagePublisher(Node):
 			self.declare_parameter('resolution', [800, 600], ParameterDescriptor(description="Image resolution: [width, height]"))
 			self.declare_parameter('interval', 0.5, ParameterDescriptor(description="Interval during each image"))
 			self.declare_parameter('compression', 95, ParameterDescriptor(description="Compression level [0-100]"))
-			self.declare_parameter('preview', True, ParameterDescriptor(description="Enable/Disable preview. Only before start"))
+			self.declare_parameter('preview', False, ParameterDescriptor(description="Enable/Disable preview. Only before start"))
 			self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
 			self.update_parameters()
 

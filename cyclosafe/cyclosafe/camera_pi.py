@@ -16,7 +16,7 @@ class ImagePublisherPy(AImagePublisher):
 				"size": (self.resolution[0], self.resolution[1]),
 				"format": "RGB888"
 			},
-			transform=Transform(vflip=True, hflip=True)
+			transform=Transform(vflip=False, hflip=False)
 		)
 		self.cam.configure(capture_config)
 		if self.preview:

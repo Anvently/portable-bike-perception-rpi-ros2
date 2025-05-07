@@ -61,7 +61,7 @@ def launch_setup(context):
     if record:
         ld.extend([
             ExecuteProcess(
-                cmd=['ros2', 'bag', 'record', '-a', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
+                cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
                 output='screen'
             )
         ])
@@ -78,22 +78,22 @@ def launch_setup(context):
             ],
             arguments=['--ros-args', '--log-level', log_level],
         )])
-    # ld.extend([Node(
-    #     package='cyclosafe',
-    #     executable='camera_pi',
-    #     namespace='',
-    #     output='screen',
-    #     emulate_tty=True,
-    #     parameters=[
-    #     {'queue_size': 10,
-    #         'resolution': [600, 800],
-    #         'interval': 0.25,
-    #         'compression': 95,
-    #         'preview': False,
-    #         'start_time': float(time_start)}
-    #     ],
-    #     arguments=['--ros-args', '--log-level', log_level],
-    # )])
+    ld.extend([Node(
+        package='cyclosafe',
+        executable='camera_pi',
+        namespace='',
+        output='screen',
+        emulate_tty=True,
+        parameters=[
+        {'queue_size': 0,
+            'resolution': [600, 400],
+            'interval': 0.1,
+            'compression': 90,
+            'preview': False,
+            'start_time': float(time_start)}
+        ],
+        arguments=['--ros-args', '--log-level', log_level],
+    )])
     for sensor in sensors_list:
         if sensor.enable == False or sensor.port == None:
             continue
