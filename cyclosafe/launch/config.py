@@ -32,7 +32,7 @@ class SerialSensor:
 			  enable: bool = True,parameters: list[Any] = [],
 			  description: str = "", transform: List[str] = None, topic: str = "range", color: ColorRGBA | str = None,
 			  port_hint: str = None,
-			  delay: float | None = None):
+			  delay: float | None = None, log_level: str = "info"):
 		self.type = type
 		self.description = description
 		self.enable = enable
@@ -43,6 +43,7 @@ class SerialSensor:
 		self.parameters = parameters
 		self.transform = transform
 		self.delay = delay
+		self.log_level = log_level
 	
 		if (port == None):
 			if port_hint:
@@ -109,7 +110,7 @@ sensors_list = [
 		parameters=[{
 			'baud': 921600,
 			'port': "/dev/ttyAMA5",
-			'period': 0.1,
+			'period': 0.05,
 		}],
 	),
 	SerialSensor(
@@ -132,6 +133,7 @@ sensors_list = [
 			'framerate': 20,
 			'trigger': False
 		}],
+		log_level="info",
 	),
 	SerialSensor(
 		enable=True,

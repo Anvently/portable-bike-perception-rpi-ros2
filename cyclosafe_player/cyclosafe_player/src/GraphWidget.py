@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
 							QDoubleSpinBox, QTextEdit, QCheckBox, QPlainTextEdit)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush
-from pyqtgraph import PlotWidget, InfiniteLine
+from pyqtgraph import PlotWidget, InfiniteLine, PlotDataItem
 import rosbag2_py
 from rclpy.serialization import deserialize_message
 from rclpy.node import Node
@@ -508,9 +508,10 @@ class SonarGraphWidget(QWidget):
 		x_vals, y_vals = self.process_messages(sonar_data.datas)
 		
 		# Plot the curve with the chosen color
-		curve_item = self.plot_widget.plot(x_vals, y_vals, pen=sonar_data.color,
+		curve_item = PlotDataItem(x_vals, y_vals, pen=sonar_data.color,
 									name=topic,symbol='o', symbolSize=1,
-									symbolBrush=sonar_data.color)
+									symbolBrush=sonar_data.color, connect="finite")
+		self.plot_widget.addItem(curve_item)
 		if not visible:
 			curve_item.setVisible(False)
 

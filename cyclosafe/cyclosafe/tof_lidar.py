@@ -23,6 +23,8 @@ class LidarNode(Node):
 
 			self.buffer = bytes()
 			self.serial = None
+			self.TOF_rx_data=[0] * 16 #Create a list with 16 members 创建一个拥有16个成员的列表
+			self.TOF_tx_data=[0x57,0x10,0xff,0xff,0x00,0xff,0xff,0x63] #Query the command with ID 0 查询ID为0的命令
 
 			self.declare_parameter('port', '/dev/ttyS0', ParameterDescriptor(description="device from which the serial data will be read"))
 			self.declare_parameter('baud', 921600, ParameterDescriptor(description="serial interface baudrate"))
@@ -54,7 +56,7 @@ class LidarNode(Node):
 				self.serial: Serial = Serial(self.port, self.baud)
 				self.get_logger().info(f"listening on port {self.port}, baud={self.baud}")
 				self.timer.timer_period_ns = self.period * 1000 * 1000 * 1000
-			self.trigger_measure(0)
+			self.TOF_Active_Decoding()
 
 		except (serialutil.SerialException, OSError) as e:
 			self.get_logger().error(f"Failed to read from serial: {e}\nRetrying...")
@@ -78,7 +80,7 @@ class LidarNode(Node):
 		self.pub.publish(msg)
 		self.get_logger().debug(f"Published : {data}")
 
-	def trigger_measure(self,id):
+	def trigger_measure(self,id = 0):
 		query = LidarNode.query
 		query[4] = id #Add the ID you want to query to the command 将需要查询的ID添加到命令中
 		query[7] = id + 0x63 #Update Checksum 更新校验和
@@ -112,11 +114,52 @@ class LidarNode(Node):
 			# print("TOF range precision is: "+str(range_precision)) #The repeatability accuracy reference value output by the TOF module is invalid for Type C, Type D and Mini. TOF模块输出的重复测距精度参考值，对于C型,D型和Mini型是无效的
 			self.get_logger().debug(f"distance={distance},status={status},strength={signal_strength},precision={range_precision}")
 
+			if (distance == 0.0 or signal_strength == 0.0):
+				distance = float('NaN')
+
 			self.serial.flushInput() #Clear the serial port input register 清空串口输入寄存器
 		else:
 			raise Exception("Verification failed.")
 		
 		self.publish(distance)
+
+	def TOF_Active_Decoding(self):
+		self.serial.flushInput() #Clear the serial port input register 清空串口输入寄存器
+		while True: #Waiting for serial port data 等待串口数据
+			self.TOF_peek = ord(self.serial.read(1))  #Read a byte and convert it into an integer 读取一个字节并转换成整数
+			if self.TOF_peek == TOF_FRAME_HEADER: #If it is a frame header, restart the loop count 如果是帧头,则重新开始循环计数
+				self.count_i = 0
+				self.TOF_rx_data[self.count_i] = self.TOF_peek #Store the read data into a tuple for later decoding 将读取到的数据存入元组中，用于后面解码使用
+			else:
+				self.TOF_rx_data[self.count_i] = self.TOF_peek #Store the read data into a tuple for later decoding 将读取到的数据存入元组中，用于后面解码使用
+
+			self.count_i = self.count_i + 1 #Loop count +1 循环计数+1
+
+			if self.count_i > 15:#If the number of received data is greater than 15, the count variable can be cleared and a decoding can be performed. 接收数量大于15,则可以将计数变量清零并进行一次解码
+				self.count_i = 0
+				for i in range (0,15):
+					self.check_sum = (self.check_sum + self.TOF_rx_data[i]) & 0xFF #Calculate the checksum and take the lowest byte 计算检验和并取最低一个字节
+
+				#Determine whether the decoding is correct 判断解码是否正确
+				if (self.TOF_rx_data[0] == TOF_FRAME_HEADER) and (self.TOF_rx_data[1] == TOF_FUNCTION_MARK) and (self.check_sum == self.TOF_rx_data[15]):
+
+					distance = (self.TOF_rx_data[8]) | (self.TOF_rx_data[9]<<8) | (self.TOF_rx_data[10]<<16)
+			
+					status = self.TOF_rx_data[11]
+			
+					signal_strength = self.TOF_rx_data[12] | self.TOF_rx_data[13]<<8
+
+					range_precision = self.TOF_rx_data[14]
+
+					if (distance == 0.0 or signal_strength == 0.0):
+						distance = float('NaN')
+
+					self.get_logger().debug(f"distance={distance},status={status},strength={signal_strength},precision={range_precision}")
+					self.publish(distance)
+					break
+				else:
+					raise Exception("Verification failed.")
+			self.check_sum = 0 #Clear Checksum 清空校验和
 
 def main(args=None):
 	try:

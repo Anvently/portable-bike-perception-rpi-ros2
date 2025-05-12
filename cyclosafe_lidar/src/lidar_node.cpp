@@ -108,8 +108,10 @@ class LidarNode : public rclcpp::Node {
 					do {
 						frame = _driver->readFrame(0ms);
 						RCLCPP_DEBUG(this->get_logger(), "frame: %x, %x, %x, %x, %x", frame.payload.magic, frame.payload.distance, frame.payload.strength, frame.payload.temp, frame.payload.checksum);
-						if (frame.payload.strength != 65535 && frame.payload.strength >= 100)
+						if (frame.payload.strength != 65535 && frame.payload.strength >= 100 && frame.payload.distance > 0)
 							this->_publish(static_cast<double>(frame.payload.distance) / 100.0);
+						else
+							this->_publish(nan(""));
 					} while (Utils::checkTimeout(start_point, timeout) == false);
 					// Means that timeout was detected and some range data likely remain in serial buffer
 					RCLCPP_WARN(this->get_logger(), "Failed to read all the data sent by lidar. "\

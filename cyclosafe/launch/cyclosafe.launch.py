@@ -53,31 +53,32 @@ def launch_setup(context):
     record = str2bool(LaunchConfiguration('record').perform(context))
     save = str2bool(LaunchConfiguration('save').perform(context))
     time_start = time.time()
-    path = setup_directory(parent_dir, time_start)
     print(f"Simulation start time = {time_start}")
 
     ld = []
-    ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs"))])
-    if record:
-        ld.extend([
-            ExecuteProcess(
-                cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
-                output='screen'
-            )
-        ])
-    if save:
-        ld.extend([Node(
-            package='cyclosafe_hub',
-            executable='hub',
-            namespace='',
-            output='screen',
-            emulate_tty=True,
-            parameters=[
-                { 'start_time': float(time_start),
-                'out_path': path}
-            ],
-            arguments=['--ros-args', '--log-level', log_level],
-        )])
+    if record or save:
+        path = setup_directory(parent_dir, time_start)
+        ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs"))])
+        if record:
+            ld.extend([
+                ExecuteProcess(
+                    cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
+                    output='screen'
+                )
+            ])
+        if save:
+            ld.extend([Node(
+                package='cyclosafe_hub',
+                executable='hub',
+                namespace='',
+                output='screen',
+                emulate_tty=True,
+                parameters=[
+                    { 'start_time': float(time_start),
+                    'out_path': path}
+                ],
+                arguments=['--ros-args', '--log-level', log_level],
+            )])
     ld.extend([Node(
         package='cyclosafe',
         executable='camera_pi',
@@ -107,7 +108,7 @@ def launch_setup(context):
             output='screen',
             emulate_tty=True,
             parameters=params,
-            arguments=['--ros-args', '--log-level', log_level],
+            arguments=['--ros-args', '--log-level', log_level if sensor.log_level == None else sensor.log_level],
         )]
         if sensor.delay != None:
             print(f"adding delay of {sensor.delay}")

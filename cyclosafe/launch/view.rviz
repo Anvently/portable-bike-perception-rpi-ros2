@@ -82,7 +82,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 54
+      Max Intensity: 29
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: LaserScan
@@ -114,11 +114,15 @@ Visualization Manager:
           Value: true
         laser2:
           Value: true
-        lidar1/range:
+        lidar1_tof/range:
           Value: true
-        sonar1/range:
+        lidar2_tf_02/range:
+          Value: true
+        lidar2_tf_mini_plus/range:
           Value: true
         world:
+          Value: true
+        world_on_x:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -126,16 +130,19 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        world:
-          board:
-            laser1:
-              {}
-            laser2:
-              {}
-            lidar1/range:
-              {}
-            sonar1/range:
-              {}
+        world_on_x:
+          world:
+            board:
+              laser1:
+                {}
+              laser2:
+                {}
+              lidar1_tof/range:
+                {}
+              lidar2_tf_02/range:
+                {}
+              lidar2_tf_mini_plus/range:
+                {}
       Update Interval: 0
       Value: true
     - Class: rviz_default_plugins/Marker
@@ -188,7 +195,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: world
+    Fixed Frame: world_on_x
     Frame Rate: 30
   Name: root
   Tools:
@@ -240,11 +247,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 159.21734619140625
+      Scale: 99.82431030273438
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: -0.15891402959823608
-      Y: -0.22188280522823334
+      X: 0.20250530540943146
+      Y: 1.0051053762435913
     Saved: ~
 Window Geometry:
   Displays:

@@ -49,25 +49,26 @@ class RangeCircleVisualizer(Node):
 		
 		marker.id = index
 		marker.type = Marker.POINTS
-		marker.action = Marker.ADD
+		marker.action = Marker.ADD if not math.isnan(msg.range) else Marker.DELETE
 
-		# Taille des points
-		marker.scale.x = 0.03
-		marker.scale.y = 0.03
-		
-		marker.color = self.colors[index]
-		num_points = 1000  # Nombre de points dans le cercle
-		radius = msg.range
-		
-		for i in range(num_points):
-			angle = 2.0 * 3.14159 * i / num_points
+		if marker.action == Marker.ADD:
+			# Taille des points
+			marker.scale.x = 0.03
+			marker.scale.y = 0.03
 			
-			point = Point()
-			point.x = radius * math.cos(angle)
-			point.y = radius * math.sin(angle)
-			point.z = 0.0
+			marker.color = self.colors[index]
+			num_points = 1000  # Nombre de points dans le cercle
+			radius = msg.range
 			
-			marker.points.append(point)
+			for i in range(num_points):
+				angle = 2.0 * 3.14159 * i / num_points
+				
+				point = Point()
+				point.x = radius * math.cos(angle)
+				point.y = radius * math.sin(angle)
+				point.z = 0.0
+				
+				marker.points.append(point)
 			
 		# Publier le marker
 		# self.get_logger(f"published")

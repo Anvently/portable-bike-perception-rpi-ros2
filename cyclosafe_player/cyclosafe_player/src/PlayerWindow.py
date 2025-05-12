@@ -413,7 +413,7 @@ class RosbagPlayerWindow(QMainWindow):
 				img = compressed_image_to_qimage(self, msg)
 				
 				# Rotation de 90° de l'image
-				transform = QTransform().rotate(270)
+				transform = QTransform().rotate(180)
 				rotated_img = img.transformed(transform)
 
 				pixmap = QPixmap.fromImage(rotated_img).scaledToWidth(400, Qt.SmoothTransformation)
