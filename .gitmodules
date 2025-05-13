@@ -5,3 +5,6 @@
 [submodule "ldlidar_stl_ros2"]
 	path = ldlidar_stl_ros2
 	url = git@github.com:Anvently/ldlidar_stl_ros2.git
+[submodule "arducam_tof_camera"]
+	path = arducam_tof_camera
+	url = ./arducam_tof_camera
