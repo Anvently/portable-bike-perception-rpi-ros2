@@ -52,8 +52,12 @@ class GPIOController():
 		self.pos = 0
 		self.enable = True
 
-		self.ina219 = None
-		# self.ina219 = INA219(addr=0x42)
+		self.ina219 = INA219(1, 0x42)
+		ina219_reading_mA = 1000
+		ext_meter_reading_mA = 1000
+		while not self.ina219.begin():
+			time.sleep(2)
+		self.ina219.linear_cal(ina219_reading_mA, ext_meter_reading_mA)
 
 	def set_rgb(self, r, g, b):
 		pi.set_PWM_dutycycle(LED_G_GPIO, g)
@@ -69,8 +73,8 @@ class GPIOController():
 	def check_battery_state(self):
 		if not self.ina219:
 			return
-		bus_voltage = self.ina219.getBusVoltage_V()
-		if bus_voltage < BATTERY_VOLTAGE_TRESHOLD:
+		bus_voltage = self.ina219.get_bus_voltage_V()
+		if bus_voltage < self.ina219.min_voltage:
 			raise BatteryException()
 
 	def routine(self):

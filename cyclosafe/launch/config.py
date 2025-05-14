@@ -83,6 +83,9 @@ class SerialSensor:
 					self.parameters[0]['port'] = self.port
 				elif 'serial_port' in self.parameters[0]:
 					self.parameters[0]['serial_port'] = self.port
+				elif 'port_name' in self.parameters[0]:
+					self.parameters[0]['port_name'] = self.port
+
 			return
 		self.port = None
 
@@ -114,7 +117,7 @@ sensors_list = [
 		}],
 	),
 	SerialSensor(
-		enable=True,
+		enable=False,
 		type=SensorTypeEnum.RangeSensor,
 		package="cyclosafe_lidar",
 		executable="node_lidar",
@@ -155,7 +158,7 @@ sensors_list = [
 			'framerate': 20,
 			'trigger': False
 		}],
-		delay=5.0
+		delay=0.0
 	),
 	SerialSensor(
 		type=SensorTypeEnum.GPSSensor,
@@ -189,13 +192,14 @@ sensors_list = [
 	# 	}]
 	# ),
 	SerialSensor(
-		enable=False,
+		enable=True,
 		type=SensorTypeEnum.Lidar360Sensor,
 		package="ldlidar_stl_ros2",
 		executable="ldlidar_stl_ros2_node",
 		namespace="lidar360_1",
 		description="360° lidar",
-		port="/dev/ttyAMA2",
+		port=None,
+		port_hint="24cc9677b06eef11ad80b77dc169b110",
 		transform=["--x", "0.045", "--y", "-0.045", "--z", "0.02", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id","board", "--child-frame-id", "laser1"],
 		topic="scan",
 		color=None,
@@ -203,7 +207,7 @@ sensors_list = [
 				'product_name': 'LDLiDAR_STL27L',
 				'topic_name': 'scan',
 				'frame_id': 'laser1',
-				'port_name': '/dev/ttyAMA2',
+				'port_name': None,
 				'port_baudrate': 921600,
 				'laser_scan_dir': False,
 				'enable_angle_crop_func': False,
