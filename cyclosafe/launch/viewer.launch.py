@@ -19,6 +19,7 @@ def str2bool(v):
 
 launch_args = [
     DeclareLaunchArgument('bag', default_value=TextSubstitution(text=""), description="Specify a bag from which the data will be played"),
+    DeclareLaunchArgument('map', default_value=TextSubstitution(text="false"), description="Enable live mapping from open street satellite image"),
 ]
 
 
@@ -27,6 +28,7 @@ def setup_directory(parent_dir: str, time_start: float) -> str:
 
 def launch_setup(context):
     bag = LaunchConfiguration('bag').perform(context)
+    map_arg = str2bool(LaunchConfiguration('map').perform(context))
     rviz_config_path = os.path.join(
             get_package_share_directory('cyclosafe'),
             'launch',
@@ -92,14 +94,51 @@ def launch_setup(context):
             package="tf2_ros",
             executable="static_transform_publisher",
             output="screen" ,
-            arguments=["--x", "0.0", "--y", "0.0", "--z", "0.92", "--roll", "0", "--pitch", "0.0", "--yaw", "0", "--frame-id", "world", "--child-frame-id", "board"],
+            arguments=["--x", "0.0", "--y", "0.0", "--z", "0.0", "--roll", "-1.57", "--pitch", "1.57", "--yaw", "0", "--frame-id", "world_on_x", "--child-frame-id", "world"],
         ),
         Node(
             package="tf2_ros",
             executable="static_transform_publisher",
             output="screen" ,
-            arguments=["--x", "0.0", "--y", "0.0", "--z", "0.0", "--roll", "-1.57", "--pitch", "1.57", "--yaw", "0", "--frame-id", "world_on_x", "--child-frame-id", "world"],
+            arguments=["--x", "0.0", "--y", "-0.08", "--z", "0.0", "--roll", "0.00", "--pitch", "0.00", "--yaw", "0", "--frame-id", "world", "--child-frame-id", "bicycle_link"],
         ),
+    ])
+    gps_sensor = next((sensor for sensor in sensors_list if sensor.type == SensorTypeEnum.GPSSensor), None)
+    if map_arg == True and gps_sensor != None:
+        ld.extend([
+            Node(
+                package="cyclosafe",
+                executable="gps_converter",
+                parameters=[{
+                    'topic': '/fix',
+                    'topic_src': gps_sensor.topic
+                }],
+                output="screen"
+            ),
+            Node(
+                package="tf2_ros",
+                executable="static_transform_publisher",
+                output="screen" ,
+                arguments=["--frame-id", "world", "--child-frame-id", "map"],
+            ),
+        ])
+
+     # Nœuds pour le model publisher
+    # Lecture du contenu du fichier URDF
+    urdf_path = os.path.join(get_package_share_directory('cyclosafe'), 'urdf', 'model.urdf.xml')
+    with open(urdf_path, 'r') as file:
+        robot_description = file.read()
+    ld.extend([
+        Node(
+            package='robot_state_publisher',
+            executable='robot_state_publisher',
+            name='robot_state_publisher',
+            output='screen',
+            parameters=[{
+                'use_sim_time': False,
+                'robot_description': robot_description
+            }]
+        )
     ])
     return ld
 

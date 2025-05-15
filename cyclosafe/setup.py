@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 import os
-
+from glob import glob
 package_name = 'cyclosafe'
 
 # # Rendre le script gpio.sh exécutable
@@ -20,8 +20,8 @@ setup(
         ('share/' + package_name + '/launch', ['launch/view.rviz', ]),
 		('share/' + package_name + '/scripts', ['scripts/gpio.py', 'scripts/battery_monitor.py', 'scripts/gpio.sh', 'scripts/gps_time.sh']),
 		('share/' + package_name + '/params', ['params/ldlidar.yaml', 'params/lifecycle_mgr.yaml']),
-		('share/' + package_name + '/urdf', ['urdf/ldlidar_descr.urdf.xml']),
-		('share/' + package_name + '/urdf/model', ['urdf/model/LD19.stl']),
+		('share/' + package_name + '/urdf', ['urdf/model.urdf.xml']),
+		('share/' + package_name + '/urdf/model', glob('urdf/model/*')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -42,7 +42,8 @@ setup(
 			'sonar_sr04 = cyclosafe.sonar_sr04:main',
 			'sonar_lv_pw = cyclosafe.sonar_lv_pw:main',
 			'battery_monitor = cyclosafe.battery_monitor:main',
-			'tof_lidar = cyclosafe.tof_lidar:main'
+			'tof_lidar = cyclosafe.tof_lidar:main',
+			'gps_converter = cyclosafe.gps_converter:main',
         ],
     },
 )

@@ -85,7 +85,6 @@ class SerialSensor:
 					self.parameters[0]['serial_port'] = self.port
 				elif 'port_name' in self.parameters[0]:
 					self.parameters[0]['port_name'] = self.port
-
 			return
 		self.port = None
 
@@ -107,7 +106,6 @@ sensors_list = [
 		namespace="lidar1_tof",
 		description="tof lidar",
 		port="/dev/ttyAMA5",
-		transform=["--x", "0.18", "--y", "0.0", "--z", "0.006", "--roll", "0", "--pitch", "-1.57", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar1_tof/range"],
 		topic="range",
 		color="red",
 		parameters=[{
@@ -124,7 +122,6 @@ sensors_list = [
 		namespace="lidar2_tf_mini_plus",
 		description="benewake tf-mini-plus lidar",
 		port="/dev/ttyS0",
-		transform=["--x", "0.155", "--y", "0.02", "--z", "-0.035", "--roll", "0", "--pitch", "-1.57", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar2_tf_mini_plus/range"],
 		topic="range",
 		color="green",
 		parameters=[{
@@ -146,7 +143,6 @@ sensors_list = [
 		namespace="lidar2_tf_02",
 		description="benewake tf-02 lidar",
 		port='/dev/ttyS0',
-		transform=["--x", "0.10", "--y", "0.026", "--z", "-0.035", "--roll", "0", "--pitch", "-1.57", "--yaw", "0", "--frame-id", "board", "--child-frame-id", "lidar2_tf_02/range"],
 		topic="range",
 		color="green",
 		parameters=[{
@@ -158,7 +154,7 @@ sensors_list = [
 			'framerate': 20,
 			'trigger': False
 		}],
-		delay=0.0
+		delay=5.0
 	),
 	SerialSensor(
 		type=SensorTypeEnum.GPSSensor,
@@ -176,21 +172,6 @@ sensors_list = [
 				'period': 1.0,
 		}],
 	),
-	# SerialSensor(
-	# 	enable=False,
-	# 	type=SensorTypeEnum.RangeSensor,
-	# 	package="cyclosafe",
-	# 	executable="sonar_lv_pw",
-	# 	namespace="sonar1",
-	# 	description="sonar LV1040",
-	# 	port="",
-	# 	transform=["--x", "0.215", "--y", "0.0", "--z", "-0.03", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id","board", "--child-frame-id", "sonar1/range"],
-	# 	topic="range",
-	# 	color="green",
-	# 	parameters=[{
-	# 		'period': 0.1,
-	# 	}]
-	# ),
 	SerialSensor(
 		enable=True,
 		type=SensorTypeEnum.Lidar360Sensor,
@@ -199,8 +180,7 @@ sensors_list = [
 		namespace="lidar360_1",
 		description="360° lidar",
 		port=None,
-		port_hint="24cc9677b06eef11ad80b77dc169b110",
-		transform=["--x", "0.045", "--y", "-0.045", "--z", "0.02", "--roll", "0", "--pitch", "0", "--yaw", "0", "--frame-id","board", "--child-frame-id", "laser1"],
+		port_hint="24cc9677b06eef11ad80b77dc169b110-if00-port0",
 		topic="scan",
 		color=None,
 		parameters=[{
@@ -221,12 +201,12 @@ sensors_list = [
 		executable="rplidar_node",
 		namespace="lidar360_2",
 		description="360° lidar",
-		port="/dev/ttyUSB0",
-		transform=["--x", "-0.035", "--y", "-0.080", "--z", "-0.06", "--roll", "0", "--pitch", "-1.57", "--yaw", "0", "--frame-id","board", "--child-frame-id", "laser2"],
+		port=None,
+		port_hint="e40dc7ec375aee118e528bdc8ffcc75d-if00-port0",
 		topic="scan",
 		color=None,
 		parameters=[{'channel_type': 'serial',
-						'serial_port': "/dev/ttyUSB0",
+						'serial_port': None,
 						'serial_baudrate': 460800,
 						'frame_id': 'laser2',
 						'inverted': False,
@@ -234,25 +214,4 @@ sensors_list = [
 						'scan_mode': 'Standard',
 						}],
 	),
-	# SerialSensor(
-	# 	enable=True,
-	# 	type=SensorTypeEnum.Lidar360Sensor,
-	# 	package="rplidar_ros",
-	# 	executable="rplidar_node",
-	# 	namespace="lidar360_2",
-	# 	description="360° lidar",
-	# 	port=None,
-	# 	port_hint='usb-Silicon_Labs_CP2102N_USB_to_UART_Bridge_Controller_e40dc7ec375aee118e528bdc8ffcc75d',
-	# 	transform=["--x", "0.050", "--y", "-0.047", "--z", "0.02", "--roll", "0", "--pitch", "0", "--yaw", "3.14", "--frame-id","board", "--child-frame-id", "laser2"],
-	# 	topic="scan",
-	# 	color=None,
-	# 	parameters=[{'channel_type': 'serial',
-	# 					'serial_port': None,
-	# 					'serial_baudrate': 460800,
-	# 					'frame_id': 'laser2',
-	# 					'inverted': False,
-	# 					'angle_compensate': False,
-	# 					'scan_mode': 'Standard',
-	# 					}],
-	# ),
 ]
