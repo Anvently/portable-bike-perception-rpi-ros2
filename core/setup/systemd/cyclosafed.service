@@ -1,0 +1,20 @@
+[Unit]
+Description=cyclosafe daemon
+After=gpio_node.service
+Requires=gpio_node.service
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=npirard
+Restart=on-failure
+ExecStart=/bin/bash -c 'source ~/ros_ws/install/setup.bash; ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false'
+TimeoutStopSec=6
+KillMode=mixed
+KillSignal=SIGINT
+RestartKillSignal=SIGINT
+SendSIGKILL=yes
+
+[Install]
+WantedBy=multi-user.target

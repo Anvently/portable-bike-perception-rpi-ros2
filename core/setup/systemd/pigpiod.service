@@ -1,0 +1,15 @@
+[Unit]
+Description=pigpio library daemon
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStart=/usr/bin/pigpiod -lg
+TimeoutStopSec=1
+KillMode=mixed
+KillSignal=SIGKILL
+SendSIGKILL=yes
+
+[Install]
+WantedBy=multi-user.target

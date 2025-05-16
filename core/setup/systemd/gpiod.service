@@ -1,0 +1,19 @@
+[Unit]
+Description=gpio daemon controlling led blinking, button press and battery monitoring
+After=pigpiod.service
+Requires=pigpiod.service
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+ExecStart=/bin/bash -c 'source home/npirard/ros_ws/install/cyclosafe/share/cyclosafe/scripts/gpio.sh'
+TimeoutStopSec=1
+KillMode=mixed
+KillSignal=SIGKILL
+SendSIGKILL=yes
+
+[Install]
+WantedBy=multi-user.target

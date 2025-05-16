@@ -1,0 +1,13 @@
+[Unit]
+Description=Synchronisation de l'heure système via GPS
+After=network.target
+Wants=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'source home/npirard/ros_ws/install/cyclosafe/share/cyclosafe/scripts/gps_time.sh'
+RemainAfterExit=yes
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

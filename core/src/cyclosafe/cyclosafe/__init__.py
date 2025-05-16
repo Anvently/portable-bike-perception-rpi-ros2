@@ -1,0 +1,1 @@
+from .src.Config import SerialSensor, SensorTypeEnum
