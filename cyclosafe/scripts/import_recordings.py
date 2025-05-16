@@ -6,7 +6,14 @@ import subprocess
 import sys
 import glob
 import getpass
+import logging
+from rich.logging import RichHandler
 
+FORMAT = "%(message)s"
+logging.basicConfig(
+	level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)  # set level=20 or logging.INFO to turn off debug
+logger = logging.getLogger("rich")
 
 def parse_arguments():
 	"""Parse command line arguments."""
@@ -31,21 +38,21 @@ def parse_arguments():
 
 def get_remote_records(hostname, password):
 	"""Get list of record directories on remote host."""
-	print(f"Retrieving record list from {hostname}...")
+	logger.info(f"Retrieving record list from {hostname}...")
 	try:
 		cmd = f"sshpass -p {password} ssh {hostname} 'find  /home/$(whoami)/data/ -type d -mindepth 1 -maxdepth 1'"
 		result = subprocess.run(cmd, shell=True, check=True, text=True, capture_output=True)
 		records = result.stdout.strip().split('\n')
 		
 		if not records or (len(records) == 1 and not records[0]):
-			print("No record directories found on remote host.")
+			logger.info("No record directories found on remote host.")
 			return []
 			
-		print(f"Found {len(records)} record directories.")
+		logger.info(f"Found {len(records)} record directories.")
 		return records
 	except subprocess.CalledProcessError as e:
-		print(f"Error retrieving record list: {e}")
-		print(f"Command output: {e.stderr}")
+		logger.error(f"Error retrieving record list: {e}")
+		logger.error(f"Command output: {e.stderr}")
 		sys.exit(1)
 
 def import_records(hostname, password, records, output_dir):
@@ -58,21 +65,21 @@ def import_records(hostname, password, records, output_dir):
 		target_dir = os.path.join(output_dir, record_name)
 		
 		if os.path.exists(target_dir):
-			print(f"[{i}/{total_records}] Directory {target_dir} already exists, skipping...")
+			logger.info	(f"[{i}/{total_records}] Directory {target_dir} already exists, skipping...")
 			continue
 		
-		print(f"[{i}/{total_records}] Importing {record_name} to {output_dir}...")
+		logger.info	(f"[{i}/{total_records}] Importing {record_name} to {output_dir}...")
 		os.makedirs(target_dir, exist_ok=True)
 		
 		try:
 			cmd = f"sshpass -p {password} scp -r {hostname}:{record} {output_dir}/"
-			print(f"Running: {cmd}")
+			logger.info	(f"Running: {cmd}")
 			subprocess.run(cmd, shell=True, check=True)
 			
-			print(f"Successfully imported {record_name}")
+			logger.info	(f"Successfully imported {record_name}")
 		except subprocess.CalledProcessError as e:
-			print(f"Error importing {record_name}: {e}")
-			print(f"Command output: {e.stderr}")
+			logger.error(f"Error importing {record_name}: {e}")
+			logger.error(f"Command output: {e.stderr}")
 			continue
 	
 	return output_dir
@@ -122,18 +129,23 @@ def convert_bags(record_dirs):
 	
 	for i, record_dir in enumerate(record_dirs, 1):
 		record_name = os.path.basename(record_dir)
-		print(f"[{i}/{total_records}] Converting bags in {record_name}...")
+		logger.info(f"[{i}/{total_records}] Converting bags in {record_name}...")
 		
 		bag_dir = os.path.join(record_dir, "bag")
 		if not os.path.exists(bag_dir):
-			print(f"Bag directory not found in {record_dir}, skipping...")
+			logger.info(f"Bag directory not found in {record_dir}, skipping...")
 			continue
 		
 		out_dir = os.path.join(record_dir, "out")
 
 		if os.path.exists(os.path.join(out_dir, "metadata.yaml")):
-			print(f"Converted bag already exist in {record_dir}, skipping...")
+			logger.info(f"Converted bag already exist in {record_dir}, skipping...")
 			continue
+
+		if os.path.exists(os.path.join(record_dir, "bag", "mtadata.yaml")) == False:
+			logger.warning(f"{record_dir} is missing a metadata.yaml")
+			if repair_bag(os.path.join(record_dir, "bag")) == False:
+				continue
 		
 		# Create out_options file
 		out_options_path = os.path.join(record_dir, "out_options")
@@ -142,17 +154,39 @@ def convert_bags(record_dirs):
 		# Run conversion command
 		try:
 			cmd = f"ros2 bag convert -i {bag_dir} -o {out_options_path}"
-			print(f"Running: {cmd}")
+			logger.info(f"Running: {cmd}")
 			subprocess.run(cmd, shell=True, check=True, cwd=record_dir)
-			print(f"Successfully converted bags in {record_name}")
+			logger.info(f"Successfully converted bags in {record_name}")
 		except subprocess.CalledProcessError as e:
-			print(f"Error converting bags in {record_name}: {e}")
+			logger.error(f"Error converting bags in {record_name}: {e}")
 			continue
+
+def repair_bag(bag_folder: str) -> bool:
+	"""
+		Unzip every compressed bag in bag_folder
+		Return True if success
+	"""
+
+	print(f"Attempting to repair {bag_folder}")
+	compressed_bags = glob.glob(os.path.join(bag_folder, "*.zstd"))
+	try:
+		for bag in compressed_bags:
+			cmd = f"unzstd  {bag}"
+			logger.info(f"Running: {cmd}")
+			subprocess.run(cmd, shell=True, check=True, cwd=bag_folder)
+		if len(compressed_bags) > 0:
+			logger.info(f"Successfully uncompressed bag")
+		cmd = "ros2 bag reindex ."
+		logger.info(f"Running: {cmd}")
+		subprocess.run(cmd, shell=True, check=True, cwd=bag_folder)
+		logger.info(f"Bag {bag_folder} was repaired")
+		return True
+	except subprocess.CalledProcessError as e:
+		logger.error(f"Error repairing bag in {bag_folder}: {e}")
+	return False
 
 def main():
 	args = parse_arguments()
-
-	password = getpass.getpass(prompt="Enter SSH password: ")
 	
 	# Determine output directory
 	if args.output:
@@ -160,29 +194,24 @@ def main():
 	else:
 		output_dir = os.path.expanduser(f"~/data/import/")
 	
-	print(f"Output directory: {output_dir}")
+	logger.info(f"Output directory: {output_dir}")
 	
 	# Determine record directories to process
 	if args.skip_import:
 		# Use specified local path
 		local_path = os.path.abspath(args.skip_import)
 		if not os.path.exists(local_path):
-			print(f"Error: Specified path {local_path} does not exist")
+			logger.error(f"Error: Specified path {local_path} does not exist")
 			sys.exit(1)
 		
-		# Find record directories in specified path
-		if os.path.basename(local_path).startswith("record"):
-			# Single record directory specified
-			record_dirs = [local_path]
-		else:
-			# Directory containing record directories specified
-			record_dirs = glob.glob(os.path.join(local_path, "record*"))
+		# Directory containing record directories specified
+		record_dirs = glob.glob(os.path.join(local_path, "*-*"))
 		
 		if not record_dirs:
-			print(f"No record directories found in {local_path}")
+			logger.info(f"No record directories found in {local_path}")
 			sys.exit(1)
 		
-		print(f"Found {len(record_dirs)} record directories in {local_path}")
+		logger.info(f"Found {len(record_dirs)} record directories in {local_path}")
 	else:
 		# Import from remote host
 		if '@' in args.hostname:
@@ -190,19 +219,20 @@ def main():
 		else:
 			hostname = f"{args.user}@{args.hostname}"
 		
+		password = getpass.getpass(prompt="Enter SSH password: ")
 		remote_records = get_remote_records(hostname, password)
 		
 		if not remote_records:
-			print("No records to import. Exiting.")
+			logger.info("No records to import. Exiting.")
 			sys.exit(0)
 		
-		record_dirs = import_records(hostname, password, remote_records, output_dir)
+		import_records(hostname, password, remote_records, output_dir)
 		# Convert record_dirs from string to list of directories
 		record_dirs = glob.glob(os.path.join(output_dir, "*-*"))
 	
 	# Convert bags
 	convert_bags(record_dirs)
-	print("All operations completed successfully!")
+	logger.info("All operations completed successfully!")
 
 if __name__ == "__main__":
 	main()
