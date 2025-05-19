@@ -1,3 +1,5 @@
+#!/bin/bash
+
 function color() {
   if [ "$#" -ne 2 ] ; then
     echo "[ERROR] color <color-name> <text> expected two arguments, but got $#" >&2
@@ -47,11 +49,13 @@ function warning() {
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$parent_path"
 
-if [ "$EUID" -ne 0 ]; then
-  error "This script must be run as root. Use sudo"
+if [ "$EUID" -eq 0 ]; then
+  error "This script must be run as normal user."
   exit 1
 fi
 
+info "Please log in"
+sudo echo "dummy" > /dev/null
 
 if [ -f /opt/ros/jazzy/setup.bash ]; then
 	info "Ros is already installed"

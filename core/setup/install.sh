@@ -1,3 +1,5 @@
+#!/bin/bash
+
 function color() {
   if [ "$#" -ne 2 ] ; then
     echo "[ERROR] color <color-name> <text> expected two arguments, but got $#" >&2
@@ -48,12 +50,12 @@ parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$parent_path"
 
 
-if [ "$EUID" -ne 0 ]; then
-  error "This script must be run as root. Use sudo"
+if [ "$EUID" -eq 0 ]; then
+  error "This script must be run as normal user."
   exit 1
 fi
 
-uname -a | grep raspberrypi
+uname -a | grep raspberrypi > /dev/null
 if [ $? -eq 1 ]; then
   error "This device does not appear to be a raspberry pi"
   exit 1
@@ -68,17 +70,24 @@ source .env
 
 if [ $(cat /boot/firmware/cmdline.txt | grep -c ipv6.disable=1) -eq 0 ]; then
   info "Updating boot config files".
-  $(cat ./cmdline.txt) >> /boot/firmware/cmdline.txt
-  $(cat ./config.txt) >> /boot/firmware/config.txt
+  sudo $(cat ./cmdline.txt) >> /boot/firmware/cmdline.txt
+  sudo $(cat ./config.txt) >> /boot/firmware/config.txt
   info "--- Boot config was updated. You must reboot the raspberry pi before making any further installation." 
   exit 0
 fi
 
 if ! [ -f /opt/ros/jazzy/setup.bash ]; then
+  info "No ROS2 installation detected. Installing." 
 	./ros_install.sh
-else
+fi
+
+info "Sourcing ROS2"
+
+source /opt/ros/jazzy/setup.bash
 
 cd $CYCLOSAFE_WORKSPACE
+
+info "Installing dependencies"
 
 rosdep install -ry --from-path src
 
@@ -89,13 +98,21 @@ fi
 info "Building ROS packages"
 colcon build --symlink-install --parallel-workers=2
 
+if [ $? -ne 0 ]; then
+  warning "Build errors detected. Check build output for any fatal error."
+  warning "You can use cy_core_build (after sourcing cyclosafe_environment) to retry the build."
+fi
+
+cd $parent_path
+echo $parent_path
+
 systemctl status cyclosafed.service > /dev/null
 if [ $? -eq 4 ]; then
   info "Setting up cyclosafe services"
-  ./setup_services.sh
+  ./systemd/setup_services.sh
 fi
 
 info "Installation is done. Make sure no error or warning show up in the logs."
 info "You can source cyclosafe environment using : source $CYCLOSAFE_WORKSPACE/setup/.bashrc"
-info "You can enable environment at startup using : $(cat $CYCLOSAFE_WORKSPACE/setup/.bashrc) >> ~/.bashrc"
+info "You can enable environment at startup using : \$(cat $CYCLOSAFE_WORKSPACE/setup/.bashrc) >> ~/.bashrc"
 info "To start cyclosafe recordings you can use: sudo systemctl start cyclosafed.service"

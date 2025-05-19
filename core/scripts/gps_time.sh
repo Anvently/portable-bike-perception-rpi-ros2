@@ -5,8 +5,8 @@ GPS_DEVICE=$GPS_SERIAL_PORT  # À adapter selon votre port GPS
 BAUDRATE=115200              # À adapter selon votre appareil GPS
 MAX_ATTEMPTS=3             # Nombre maximum de tentatives
 READ_TIMEOUT=3            # Délai d'attente pour la lecture en secondes
-LOG_DIR="/home/npirard/data/logs"
-LOG_FILE="/home/npirard/data/logs/gps_time_sync.log"
+LOG_DIR=$CYCLOSAFE_LOGS
+LOG_FILE="$LOG_DIR/gps_time_sync.log"
 
 log() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a $LOG_FILE

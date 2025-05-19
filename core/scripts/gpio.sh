@@ -3,7 +3,7 @@
 LOG_DIR="$CYCLOSAFE_LOGS"
 LOG_FILE="$CYCLOSAFE_LOGS/on_off.log"
 SCRIPT_DIR="$SCRIPTS_PATH"
-PYTHON_SCRIPT="gpio"
+PYTHON_SCRIPT="gpio.py"
 
 mkdir -p "$LOG_DIR"
 touch "$LOG_FILE"
@@ -31,7 +31,7 @@ else
 fi
 
 systemctl stop cyclosafed.service
-sleep $SHUTDOWN_DELAY
+sleep $(($SHUTDOWN_DELAY + 1))
 
 systemctl is-active --quiet service && (echo "[WARNING] $(date) - Shutdown while service still active" | tee -a "$LOG_FILE")
 

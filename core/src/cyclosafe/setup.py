@@ -17,7 +17,6 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
 		('share/' + package_name + '/launch', ['launch/cyclosafe.launch.py', 'launch/config.py']),
-		('share/' + package_name + '/scripts', ['scripts/gpio.py', 'scripts/battery_monitor.py', 'scripts/gpio.sh', 'scripts/gps_time.sh']),
 		
     ],
     install_requires=['setuptools'],

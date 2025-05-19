@@ -1,3 +1,5 @@
+#!/bin/bash
+
 function color() {
   if [ "$#" -ne 2 ] ; then
     echo "[ERROR] color <color-name> <text> expected two arguments, but got $#" >&2
@@ -47,13 +49,12 @@ function warning() {
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 cd "$parent_path"
 
-
-if [ "$EUID" -ne 0 ]; then
-  error "This script must be run as root. Use sudo"
+if [ "$EUID" -eq 0 ]; then
+  error "This script must be run as normal user."
   exit 1
 fi
 
-uname -a | grep raspberrypi
+uname -a | grep raspberrypi > /dev/null
 if [ $? -eq 1 ]; then
   error "This device does not appear to be a raspberry pi"
   exit 1
@@ -61,6 +62,8 @@ fi
 
 if [ -n "$SUDO_USER" ]; then
   USERNAME="$SUDO_USER"
+else
+  USERNAME=$USER
 fi
 
 HOME=$(eval echo ~$USERNAME)
@@ -68,15 +71,15 @@ source .env
 
 SCRIPTS_PATH="$CYCLOSAFE_WORKSPACE/scripts"
 
-systemctl status cyclosafed.service > /dev/null
+sudo systemctl status cyclosafed.service > /dev/null
 if [ $? -eq 4 ]; then
   info "Installing cyclosafed service"
   # Créer le fichier service
-cat > /etc/systemd/system/cyclosafe.service << EOF
+cat << EOF | sudo tee /etc/systemd/system/cyclosafed.service
 [Unit]
 Description=cyclosafe daemon
-After=gpio_node.service
-Requires=gpio_node.service
+After=gpiod.service
+Requires=gpiod.service
 StartLimitIntervalSec=60
 StartLimitBurst=3
 
@@ -86,7 +89,7 @@ User=$USERNAME
 Restart=on-failure
 EnvironmentFile=$(realpath .env)
 ExecStart=/bin/bash -c "source \$CYCLOSAFE_WORKSPACE/setup/.bashrc; ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false"
-TimeoutStopSec=$(($SHUTDOWN_DELAY + 1))
+TimeoutStopSec=$SHUTDOWN_DELAY
 KillMode=mixed
 KillSignal=SIGINT
 RestartKillSignal=SIGINT
@@ -97,11 +100,11 @@ WantedBy=multi-user.target
 EOF
 fi
 
-systemctl status gpiod.service > /dev/null
+sudo systemctl status gpiod.service > /dev/null
 if [ $? -eq 4 ]; then
   info "Installing gpiod service"
   # Créer le fichier service
-cat > /etc/systemd/system/gpiod.service << EOF
+cat << EOF | sudo tee /etc/systemd/system/gpiod.service
 [Unit]
 Description=gpio daemon controlling led blinking, button press and battery monitoring
 After=pigpiod.service
@@ -114,7 +117,7 @@ Type=simple
 User=root
 Restart=on-failure
 EnvironmentFile=$(realpath .env)
-ExecStart=/bin/bash -c "\$SCRIPTS_PATH/gpio.sh"
+ExecStart=/bin/bash -c "source \$SCRIPTS_PATH/gpio.sh"
 TimeoutStopSec=1
 KillMode=mixed
 KillSignal=SIGKILL
@@ -125,11 +128,11 @@ WantedBy=multi-user.target
 EOF
 fi
 
-systemctl status gps_time.service > /dev/null
+sudo systemctl status gps_time.service > /dev/null
 if [ $? -eq 4 ]; then
   info "Installing gps_time service"
   # Créer le fichier service
-cat > /etc/systemd/system/gps_time.service << EOF
+cat << EOF | sudo tee /etc/systemd/system/gps_time.service
 [Unit]
 Description=Synchronisation de l'heure système via GPS
 After=network.target
@@ -147,11 +150,11 @@ WantedBy=multi-user.target
 EOF
 fi
 
-systemctl status pigpiod.service > /dev/null
+sudo systemctl status pigpiod.service > /dev/null
 if [ $? -eq 4 ]; then
   info "Installing pigpiod service"
   # Créer le fichier service
-cat > /etc/systemd/system/pigpiod.service << EOF
+cat << EOF | sudo tee /etc/systemd/system/pigpiod.service
 [Unit]
 Description=pigpio library daemon
 After=network.target
@@ -170,16 +173,19 @@ WantedBy=multi-user.target
 EOF
 fi
 
-systemctl daemon-reload
+sudo systemctl daemon-reload
 
-systemctl enable pigpiod.service
-info "pigpiod.service enabled"
+sudo systemctl enable pigpiod.service
+sudo systemctl start pigpiod.service
+info "pigpiod.service enabled and started"
 
-systemctl enable gps_time.service
-info "gps_time.service enabled"
+sudo systemctl enable gps_time.service
+sudo systemctl enable gps_time.service
+info "gps_time.service enabled and started"
 
-systemctl enable gpiod.service
-info "gpiod.service enabled"
+sudo systemctl enable gpiod.service
+sudo systemctl enable gpiod.service
+info "gpiod.service enabled and started"
 
 info "cyclosafed.service was not enabled. If you want to enable at startup, use: sudo systemctl enable cyclosafed.service."
 

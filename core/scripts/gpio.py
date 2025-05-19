@@ -19,6 +19,8 @@ button_pressed = False
 class BatteryException(Exception):
 	pass
 
+# Valeurs de retours
+
 BUTTON_SHUTDOWN = 255
 BATTERY_SHUTDOWN = 254
 
@@ -31,9 +33,16 @@ BATTERY_SHUTDOWN = 254
  Min_voltage	= Total voltage - (nbr_cell * range_per_cell)
 				= 8.4 - (2 * 1.2) = 6
 """
+# Nombre d'accus de la batterie
 NBR_CELLS = 2
+
+# Tension de charge pour un accu
 CHARGE_VOLTAGE = 4.2
-MIN_VOLTAGE = 3
+# Tension minimale pour un accu 
+# (techniquement le pallier limite est à 2.5V)
+# (dans les faits les sécurités hardware, cad l'extinction brutale, se mettent en place à 2.8V)
+MIN_VOLTAGE = 3 
+
 VOLTAGE_RANGE = CHARGE_VOLTAGE - MIN_VOLTAGE
 BUS_CHARGE_VOLTAGE = NBR_CELLS * CHARGE_VOLTAGE
 BATTERY_VOLTAGE_TRESHOLD = BUS_CHARGE_VOLTAGE - (NBR_CELLS * VOLTAGE_RANGE)

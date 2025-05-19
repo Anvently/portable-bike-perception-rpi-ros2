@@ -1,4 +1,16 @@
-source $CYCLOSAFE_WORKSPACE/setup/.env
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+
+source $parent_path/.env
+
+echo "Cyclosafe config:"
+echo "workspace: $CYCLOSAFE_WORKSPACE"
+echo "record directory: $CYCLOSAFE_RECORD"
+echo "log directory: $CYCLOSAFE_LOGS"
+echo "scripts path: $SCRIPTS_PATH"
+echo "gps serial port: $GPS_SERIAL_PORT"
+echo "shutdown delay: $SHUTDOWN_DELAY"
+
+export CYCLOSAFE_RECORD=$CYCLOSAFE_RECORD
 
 if [ -f $CYCLOSAFE_WORKSPACE/install/setup.bash ]; then
     source $CYCLOSAFE_WORKSPACE/install/setup.bash
@@ -15,10 +27,12 @@ if [ -f $CYCLOSAFE_WORKSPACE/install/setup.bash ]; then
 	CYCLOSAFE_READY=0
 fi
 
-local MSG="Ros is not installed or the cyclosafe environment was not sourced."
+MSG="Ros is not installed or the cyclosafe environment was not sourced."
 
-if [ $ROS_INSTALLED -e 1 ]; then
-	alias cy_core_build="cd $CYCLOSAFE_WORKSPACE; colcon build --symlink-install --parallel-workers=2; source $CYCLOSAFE_WORKSPACE/install/setup.bash; cd -"
+if [ $ROS_INSTALLED -eq 1 ]; then
+	alias cy_core_build="cd $CYCLOSAFE_WORKSPACE; colcon build --symlink-install --parallel-workers=2; source ./setup/.bashrc; cd -"
+	alias cy_core_clean="cd $CYCLOSAFE_WORKSPACE; rm -rf build/ install/ log/; source ./setup/.bashrc; cd -"
 else
 	alias cy_core_build="$MSG"
+	alias cy_core_clean="$MSG"
 fi
