@@ -5,7 +5,8 @@ Wants=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c 'source home/npirard/ros_ws/install/cyclosafe/share/cyclosafe/scripts/gps_time.sh'
+EnvironmentFile=/home/npirard/cyclosafe/setup/.env
+ExecStart=/bin/bash -c "source $SCRIPTS_PATH/gps_time.sh"
 RemainAfterExit=yes
 StandardOutput=journal
 

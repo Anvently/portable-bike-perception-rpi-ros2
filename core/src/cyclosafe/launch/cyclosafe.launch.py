@@ -24,7 +24,9 @@ launch_args = [
 
 def setup_directory(parent_dir: str, time_start: float) -> str:
     if not parent_dir:
-        parent_dir = os.path.join(os.getenv("HOME", ""), "data")
+        parent_dir = os.getenv("CYCLOSAFE_RECORD", None)
+        if parent_dir == None:
+            raise Exception("CYCLOSAFE_RECORD env variable is not set, make sure to source cyclosafe workspace.")
     
     os.makedirs(parent_dir, exist_ok=True)
     

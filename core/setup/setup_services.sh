@@ -85,8 +85,8 @@ Type=simple
 User=$USERNAME
 Restart=on-failure
 EnvironmentFile=$(realpath .env)
-ExecStart=/bin/bash -c 'source \$CYCLOSAFE_WORKSPACE/install/setup.bash; ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false'
-TimeoutStopSec=6
+ExecStart=/bin/bash -c "source \$CYCLOSAFE_WORKSPACE/setup/.bashrc; ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false"
+TimeoutStopSec=$(($SHUTDOWN_DELAY + 1))
 KillMode=mixed
 KillSignal=SIGINT
 RestartKillSignal=SIGINT
@@ -114,7 +114,7 @@ Type=simple
 User=root
 Restart=on-failure
 EnvironmentFile=$(realpath .env)
-ExecStart=/bin/bash -c '\$SCRIPTS_PATH/gpio.sh'
+ExecStart=/bin/bash -c "\$SCRIPTS_PATH/gpio.sh"
 TimeoutStopSec=1
 KillMode=mixed
 KillSignal=SIGKILL
@@ -138,7 +138,7 @@ Wants=network.target
 [Service]
 Type=oneshot
 EnvironmentFile=$(realpath .env)
-ExecStart=/bin/bash -c 'source \$SCRIPTS_PATH/gps_time.sh'
+ExecStart=/bin/bash -c "source \$SCRIPTS_PATH/gps_time.sh"
 RemainAfterExit=yes
 StandardOutput=journal
 
@@ -169,4 +169,18 @@ SendSIGKILL=yes
 WantedBy=multi-user.target
 EOF
 fi
+
+systemctl daemon-reload
+
+systemctl enable pigpiod.service
+info "pigpiod.service enabled"
+
+systemctl enable gps_time.service
+info "gps_time.service enabled"
+
+systemctl enable gpiod.service
+info "gpiod.service enabled"
+
+info "cyclosafed.service was not enabled. If you want to enable at startup, use: sudo systemctl enable cyclosafed.service."
+
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-GPS_DEVICE="/dev/ttyACM0"  # À adapter selon votre port GPS
+GPS_DEVICE=$GPS_SERIAL_PORT  # À adapter selon votre port GPS
 BAUDRATE=115200              # À adapter selon votre appareil GPS
 MAX_ATTEMPTS=3             # Nombre maximum de tentatives
 READ_TIMEOUT=3            # Délai d'attente pour la lecture en secondes

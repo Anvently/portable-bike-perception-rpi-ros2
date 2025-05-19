@@ -1,4 +1,4 @@
-source .env
+source $CYCLOSAFE_WORKSPACE/setup/.env
 
 if [ -f $CYCLOSAFE_WORKSPACE/install/setup.bash ]; then
     source $CYCLOSAFE_WORKSPACE/install/setup.bash

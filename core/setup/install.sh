@@ -97,4 +97,5 @@ fi
 
 info "Installation is done. Make sure no error or warning show up in the logs."
 info "You can source cyclosafe environment using : source $CYCLOSAFE_WORKSPACE/setup/.bashrc"
-info "You can enable environment at startup using : $(cat $CYCLOSAFE_WORKSPACE/setup/.bashrc) >> ~/.bashrc
+info "You can enable environment at startup using : $(cat $CYCLOSAFE_WORKSPACE/setup/.bashrc) >> ~/.bashrc"
+info "To start cyclosafe recordings you can use: sudo systemctl start cyclosafed.service"
