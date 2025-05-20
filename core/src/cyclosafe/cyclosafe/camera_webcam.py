@@ -1,9 +1,7 @@
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from cyclosafe.src.ACamera import AImagePublisher
-import cv2, datetime
-
-import rclpy.logging
+import cv2
 
 class ImagePublisherDesktop(AImagePublisher):
 

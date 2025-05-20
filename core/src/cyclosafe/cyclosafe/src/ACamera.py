@@ -1,17 +1,14 @@
 from rclpy.node import Node, ParameterDescriptor
 from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import CompressedImage
-from std_srvs.srv import Trigger
-from cv_bridge import CvBridge
 from collections import deque
 from abc import abstractmethod
 from cyclosafe_interfaces.srv import SaveImages
 from enum import IntEnum
-import os, ctypes
-import datetime, cv2
-import time
+import os
+import cv2
 from rclpy.time import Time, S_TO_NS
-from typing import Tuple, Any
+from typing import Any
 
 MS_TO_NS = (1000 * 1000)
 
@@ -29,7 +26,7 @@ class AImagePublisher(Node):
 
 		try:
 
-			self.declare_parameter('queue_size', 20, ParameterDescriptor(description="Max number of images stored in memory."))
+			self.declare_parameter('queue_size', 0, ParameterDescriptor(description="Max number of images stored in memory."))
 			self.declare_parameter('resolution', [800, 600], ParameterDescriptor(description="Image resolution: [width, height]"))
 			self.declare_parameter('interval', 0.5, ParameterDescriptor(description="Interval during each image"))
 			self.declare_parameter('compression', 95, ParameterDescriptor(description="Compression level [0-100]"))
@@ -42,7 +39,6 @@ class AImagePublisher(Node):
 			self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
 
 			self.img_queue = deque(maxlen=self.queue_size)
-			self.bridge = CvBridge()
 			self.count = 0
 
 			self.init_camera()
@@ -86,11 +82,12 @@ class AImagePublisher(Node):
 				if (now - img_timestamp > request.time):
 					continue
 				path: str = f"{request.path}/{img_timestamp}.jpg"
+				print(path)
 				if (os.path.isfile(path)):
 					continue
 				# Écrire directement l'image compressée
-			with open(path, 'wb') as f:
-				f.write(compressed_img.tobytes())
+				with open(path, 'wb') as f:
+					f.write(compressed_img.tobytes())
 	
 		except Exception as e:
 			self.get_logger().error(f"SaveFiles service: Failed to save images: {str(e)}")

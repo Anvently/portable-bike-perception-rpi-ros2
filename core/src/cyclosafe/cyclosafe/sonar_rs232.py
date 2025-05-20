@@ -12,6 +12,7 @@ class SonarNode(ASerialPublisher):
 
 	def __init__(self):
 			super().__init__('sonar', Range, 'range', '/dev/ttyUSB0', 57600)
+			self.factor = 0.0254
 		
 	def parse(self) -> int:
 		i = self.buffer.rfind(b'R')

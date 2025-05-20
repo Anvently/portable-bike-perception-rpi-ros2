@@ -2,15 +2,12 @@ import rclpy
 from rclpy.executors import ExternalShutdownException
 from picamera2 import Picamera2, Preview
 from libcamera import Transform
-from cv_bridge import CvBridge
-import datetime
 from cyclosafe.src.ACamera import AImagePublisher
 from typing import Any
 
 class ImagePublisherPy(AImagePublisher):
 	def init_camera(self):
 		self.cam = Picamera2()
-		self.bridge = CvBridge()
 		capture_config = self.cam.create_video_configuration(
 			main={
 				"size": (self.resolution[0], self.resolution[1]),
