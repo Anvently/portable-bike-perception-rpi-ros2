@@ -2,7 +2,7 @@
 
 A chaque capteur est associé un noeud ROS qui implémente éventuellement un driver et publie les mesures sur des topics dédiés.
 
-Chaque noeud peut-être lancé indépendemment ou l'ensemble des noeuds sont lancés ensembles via la launch configuration [**cyclosafe.launch.py**](url)
+Chaque noeud peut-être lancé indépendemment ou l'ensemble des noeuds sont lancés ensembles via la launch description [**cyclosafe.launch.py**](src/cyclosafe/README.md#launch-description)
 
 # Structure
 
@@ -14,15 +14,19 @@ Noeud central du projet.
 
 Contient :
 - l'ensemble des noeuds de capteur écrits en python, à savoir :
-	- noeud caméra (sensor_msgs/msg/CompressedImg)
-	- noeud gps (cyclosafe_interfaces/msg/NavSatInfo)
-	- 4 noeuds pour différents sonars (sensor_msgs/msg/Range)
-	- noeud lidar (modèle waveshare no-name) (sensor_msgs/msg/Range)
+	- [**noeud gps**](src/cyclosafe/README.md#gpspy) publiant des *cyclosafe_interfaces/msg/NavSatInfo*
+	- 4 noeuds pour différents sonars  publiant des *sensor_msgs/msg/Range*
+		- [**sonar**](src/cyclosafe/README.md#sonarpy) pour la gamme MaxBotix USB
+		- [**sonar_sr04**](src/cyclosafe/README.md#sonar_sr04py) pour le modèle SR04
+		- [**sonar_lv_pw**](src/cyclosafe/README.md#sonar_lv_pwpy-obsolete) pour la gamme MaxBotix en mesurant la largeur des pulse (PWM)
+		- [**sonar_rs232**](src/cyclosafe/README.md#sonar_rs232py) pour la gamme MaxBotix LV10X0
+	- [**tof_lidar**](src/cyclosafe/README.md#tof_lidarpy) pour le lidar unidirectionnel de Waveshare publiant des *sensor_msgs/msg/Range*
+	- [**noeud caméra**](src/cyclosafe/README.md#camera_pipy) publiant des *sensor_msgs/msg/CompressedImage* sur le topic ***
 - l'implémentation de classes utilisées par des noeuds ou d'autres packages :
-	- ASerialSensor : modèle de noeud parsant des données envoyées via serial
-	- ACamera : modèle de noeud caméra
-	- Config : destinée à l'intégration d'un node dans une launch description, pour uniformiser la déclaration des paramètres à travers plusieurs launch description
-- la [**launch description**](url) permettant de lancer l'ensemble des noeuds ensembles.
+	- [**ASerialSensor**](src/cyclosafe/README.md#aserialsensor) : modèle de noeud générique parsant des données envoyées via serial
+	- [**ACamera**](src/cyclosafe/README.md#acamera) : modèle de noeud caméra0
+	- [**Config**](src/cyclosafe/README.md#config) : destinée à l'intégration d'un node dans une launch description, pour uniformiser la déclaration des paramètres à travers plusieurs launch description
+- la [**launch description**](src/cyclosafe/README.md#launch-description) permettant de lancer l'ensemble des noeuds ensembles.
 
 ## cyclosafe_hub (obsolete)
 
@@ -30,7 +34,7 @@ Contient :
 
 Noeud en cpp qui a pour but d'aggréger des données venant de différents topics et de les enregistrer au format csv dans des fichiers isolés. Commande également l'enregistrement des photos via un service adressé au noeud camera.
 
-Rendu obsolte par l'utilisation de rosbag, qui gère l'enregistrement, la sérialisation et la compression de toutes les données publiées.
+Rendu obsolete par l'utilisation de rosbag, qui gère l'enregistrement, la sérialisation et la compression de toutes les données publiées.
 
 ## cyclosafe_interfaces
 

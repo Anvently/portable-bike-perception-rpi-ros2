@@ -2,10 +2,27 @@ from typing import List, Any
 from std_msgs.msg import ColorRGBA
 import os
 from enum import IntEnum
-from cyclosafe import SerialSensor, SensorTypeEnum
+from cyclosafe import Sensor, SensorTypeEnum
 
 sensors_list = [
-	SerialSensor(
+	Sensor(
+		enable=True,
+		type=SensorTypeEnum.CameraSensor,
+		package="cyclosafe",
+		executable="camera_pi",
+		namespace="",
+		description="camera node",
+		port="",
+		topic="images/compressed",
+		color=None,
+		parameters=[{'queue_size': 0,
+            'resolution': [600, 400],
+            'interval': 0.1,
+            'compression': 90,
+            'preview': False,
+        }],
+	),
+	Sensor(
 		enable=True,
 		type=SensorTypeEnum.RangeSensor,
 		package="cyclosafe",
@@ -21,7 +38,7 @@ sensors_list = [
 			'period': 0.05,
 		}],
 	),
-	SerialSensor(
+	Sensor(
 		enable=False,
 		type=SensorTypeEnum.RangeSensor,
 		package="cyclosafe_lidar",
@@ -42,7 +59,7 @@ sensors_list = [
 		}],
 		log_level="info",
 	),
-	SerialSensor(
+	Sensor(
 		enable=True,
 		type=SensorTypeEnum.RangeSensor,
 		package="cyclosafe_lidar",
@@ -63,7 +80,7 @@ sensors_list = [
 		}],
 		delay=5.0
 	),
-	SerialSensor(
+	Sensor(
 		type=SensorTypeEnum.GPSSensor,
 		package="cyclosafe",
 		executable="gps",
@@ -79,7 +96,7 @@ sensors_list = [
 				'period': 1.0,
 		}],
 	),
-	SerialSensor(
+	Sensor(
 		enable=True,
 		type=SensorTypeEnum.Lidar360Sensor,
 		package="ldlidar_stl_ros2",
@@ -102,7 +119,7 @@ sensors_list = [
 				'angle_crop_max': 0.0
 		}],
 	),
-	SerialSensor(
+	Sensor(
 		type=SensorTypeEnum.Lidar360Sensor,
 		package="rplidar_ros",
 		executable="rplidar_node",

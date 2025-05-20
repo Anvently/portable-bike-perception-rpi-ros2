@@ -65,3 +65,16 @@ sudo systemctl disable cyclosafed.service # Désactiver
 ### Services systemd
 
 [**setup/systemd/README**](setup/systemd/README)
+
+### Documentation ROS 2
+
+**Documentation officielle** :
+
+https://docs.ros.org/en/jazzy/Tutorials.html
+
+La suite de tutoriel basés sur **turtlesim** est une bonne façon d'appréhender les différents concepts de ROS : https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools.html
+
+
+**Excellente source de tutoriels et compléments*** : 
+
+https://roboticsbackend.com/category/ros2/

@@ -82,7 +82,6 @@ class AImagePublisher(Node):
 				if (now - img_timestamp > request.time):
 					continue
 				path: str = f"{request.path}/{img_timestamp}.jpg"
-				print(path)
 				if (os.path.isfile(path)):
 					continue
 				# Écrire directement l'image compressée

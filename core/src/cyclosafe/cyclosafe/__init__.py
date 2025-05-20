@@ -1,1 +1,1 @@
-from .src.Config import SerialSensor, SensorTypeEnum
+from .src.Config import Sensor, SensorTypeEnum

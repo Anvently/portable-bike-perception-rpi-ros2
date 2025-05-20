@@ -7,6 +7,7 @@ import sys
 import glob
 import getpass
 import logging
+import shutil
 from rich.logging import RichHandler
 
 FORMAT = "%(message)s"
@@ -19,20 +20,27 @@ def parse_arguments():
 	"""Parse command line arguments."""
 	parser = argparse.ArgumentParser(description='Import and convert rosbag files from a remote host.')
 	parser.add_argument('-u', '--hostname', help='Hostname for SSH connection (user@host-ip)')
+	parser.add_argument('-c', '--copy', help='Path to a local source directory (e.g., mounted SD card) to copy from')
 	parser.add_argument('-s', '--skip_import', help='Skip import step and use specified local path for conversion')
 	parser.add_argument('-o', '--output', help='Output directory for imported bags')
 	
 	args = parser.parse_args()
 	
 	# Validate arguments
-	if not args.skip_import and not args.hostname:
-		parser.error("hostname argument is required unless --skip_import is specified")
+	if args.hostname and args.copy:
+		parser.error("Cannot use both --hostname and --copy options together")
 	
-	if not args.skip_import:
-		if '@' in args.hostname:
-			args.user = args.hostname.split('@')[0]
-		else:
-			parser.error("hostname(-u/--hostname) as an invalid syntaxe. Usage: user@guest-ip")
+	if not args.skip_import and not args.hostname and not args.copy:
+		parser.error("Either --hostname, --copy, or --skip_import option is required")
+	
+	if args.hostname and '@' not in args.hostname:
+		parser.error("hostname(-u/--hostname) has an invalid syntax. Usage: user@guest-ip")
+	
+	if args.copy and not os.path.exists(args.copy):
+		parser.error(f"Source directory '{args.copy}' does not exist")
+	
+	if args.hostname:
+		args.user = args.hostname.split('@')[0]
 	
 	return args
 
@@ -53,6 +61,23 @@ def get_remote_records(hostname, password):
 	except subprocess.CalledProcessError as e:
 		logger.error(f"Error retrieving record list: {e}")
 		logger.error(f"Command output: {e.stderr}")
+		sys.exit(1)
+
+def get_local_records(source_path):
+	"""Get list of record directories from local source path."""
+	logger.info(f"Looking for record directories in {source_path}...")
+	try:
+		# Find directories that match the pattern (assuming *-* pattern as in the original code)
+		records = glob.glob(os.path.join(source_path, "*-*"))
+		
+		if not records:
+			logger.info("No record directories found in source path.")
+			return []
+			
+		logger.info(f"Found {len(records)} record directories.")
+		return records
+	except Exception as e:
+		logger.error(f"Error finding record directories: {e}")
 		sys.exit(1)
 
 def import_records(hostname, password, records, output_dir):
@@ -80,6 +105,30 @@ def import_records(hostname, password, records, output_dir):
 		except subprocess.CalledProcessError as e:
 			logger.error(f"Error importing {record_name}: {e}")
 			logger.error(f"Command output: {e.stderr}")
+			continue
+	
+	return output_dir
+
+def copy_records(source_records, output_dir):
+	"""Copy record directories from local source to output directory."""
+	os.makedirs(output_dir, exist_ok=True)
+	
+	total_records = len(source_records)
+	for i, record in enumerate(source_records, 1):
+		record_name = os.path.basename(record)
+		target_dir = os.path.join(output_dir, record_name)
+		
+		if os.path.exists(target_dir):
+			logger.info(f"[{i}/{total_records}] Directory {target_dir} already exists, skipping...")
+			continue
+		
+		logger.info(f"[{i}/{total_records}] Copying {record_name} to {output_dir}...")
+		
+		try:
+			shutil.copytree(record, target_dir)
+			logger.info(f"Successfully copied {record_name}")
+		except Exception as e:
+			logger.error(f"Error copying {record_name}: {e}")
 			continue
 	
 	return output_dir
@@ -142,7 +191,7 @@ def convert_bags(record_dirs):
 			logger.info(f"Converted bag already exist in {record_dir}, skipping...")
 			continue
 
-		if os.path.exists(os.path.join(record_dir, "bag", "mtadata.yaml")) == False:
+		if os.path.exists(os.path.join(record_dir, "bag", "metadata.yaml")) == False:
 			logger.warning(f"{record_dir} is missing a metadata.yaml")
 			if repair_bag(os.path.join(record_dir, "bag")) == False:
 				continue
@@ -212,13 +261,21 @@ def main():
 			sys.exit(1)
 		
 		logger.info(f"Found {len(record_dirs)} record directories in {local_path}")
+	elif args.copy:
+		# Import from local source path (e.g., mounted SD card)
+		source_path = os.path.abspath(args.copy)
+		local_records = get_local_records(source_path)
+		
+		if not local_records:
+			logger.info("No records to copy. Exiting.")
+			sys.exit(0)
+		
+		copy_records(local_records, output_dir)
+		# Get list of imported directories for conversion
+		record_dirs = glob.glob(os.path.join(output_dir, "*-*"))
 	else:
 		# Import from remote host
-		if '@' in args.hostname:
-			hostname = args.hostname
-		else:
-			hostname = f"{args.user}@{args.hostname}"
-		
+		hostname = args.hostname
 		password = getpass.getpass(prompt="Enter SSH password: ")
 		remote_records = get_remote_records(hostname, password)
 		
@@ -227,7 +284,7 @@ def main():
 			sys.exit(0)
 		
 		import_records(hostname, password, remote_records, output_dir)
-		# Convert record_dirs from string to list of directories
+		# Get list of imported directories for conversion
 		record_dirs = glob.glob(os.path.join(output_dir, "*-*"))
 	
 	# Convert bags

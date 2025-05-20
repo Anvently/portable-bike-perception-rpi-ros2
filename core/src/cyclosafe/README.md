@@ -16,7 +16,7 @@ Contient :
 	- [**ASerialSensor**](#aserialsensor) : modèle de noeud générique parsant des données envoyées via serial
 	- [**ACamera**](#acamera) : modèle de noeud caméra0
 	- [**Config**](#config) : destinée à l'intégration d'un node dans une launch description, pour uniformiser la déclaration des paramètres à travers plusieurs launch description
-- la [**launch description**](#launch-configuration) permettant de lancer l'ensemble des noeuds ensembles.
+- la [**launch description**](#launch-description) permettant de lancer l'ensemble des noeuds ensembles.
 
 # Noeuds executables
 
@@ -77,7 +77,7 @@ ros2 interface show cyclosafe_interfaces/msg/NavSatInfo
 > - **unité** : secondes
 
 > **start_time** : float
-> - peut-être précisée dans le cadre d'une launch configuration pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
+> - peut-être précisée dans le cadre d'une launch description pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 
@@ -112,7 +112,7 @@ Parse des distances lues sur une interface seriale sous la forme "RXXXX", et les
 > - **unité** : secondes
 
 > **start_time** : float
-> - peut-être précisée dans le cadre d'une launch configuration pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
+> - peut-être précisée dans le cadre d'une launch description pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 
@@ -150,7 +150,7 @@ La vitesse du son utilisée est de *340m/s*, soit la vitesse du son dans l'air �
 > - **unité** : secondes
 
 > **start_time** : float
-> - peut-être précisée dans le cadre d'une launch configuration pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
+> - peut-être précisée dans le cadre d'une launch description pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 
@@ -190,7 +190,7 @@ Ce script est adapté à la lecture des données envoyées par la gamme de sonar
 > - **unité** : secondes
 
 > **start_time** : float
-> - peut-être précisée dans le cadre d'une launch configuration pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
+> - peut-être précisée dans le cadre d'une launch description pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 > 
@@ -227,7 +227,7 @@ Les tests effectués sont non concluant, les mesures étant très instables et i
 > 	- valeur théorique minimum afin de permettre à l'onde envoyée de faire le chemin inverse sur une distance de 6.56 mètres.
 
 > **start_time** : float
-> - peut-être précisée dans le cadre d'une launch configuration pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
+> - peut-être précisée dans le cadre d'une launch description pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 
@@ -274,7 +274,7 @@ Dans les faits et au moment des tests, bien que le code actuel utilise la foncti
 > - **unité** : secondes
 
 > **start_time** : float
-> - peut-être précisée dans le cadre d'une launch configuration pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
+> - peut-être précisée dans le cadre d'une launch description pour référencer tous les noeuds sur un même départ. Non utilisée dans les faits car les timestamp attribués aux messages ne prennent pas compte de cette valeur.
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 
@@ -329,7 +329,7 @@ La caméra est configurée en mode vidéo avec la configuration donnée en param
 > - **défaut** : False
 
 > **start_time** : float
-> - peut-être précisée dans le cadre d'une launch configuration pour référencer tous les noeuds sur un même départ. Utilisé par la fonction save_files de ACamera pour nommer les images sur un temps relatif au début de l'enregistrement.
+> - peut-être précisée dans le cadre d'une launch description pour référencer tous les noeuds sur un même départ. Utilisé par la fonction save_files de ACamera pour nommer les images sur un temps relatif au début de l'enregistrement.
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 
@@ -380,7 +380,7 @@ Obsolete car :
 > - **défaut** : False
 
 > **start_time** : float
-> - peut-être précisé dans le cadre d'une launch configuration pour référencer tous les noeuds sur un même départ. Utilisé par la fonction save_files de ACamera pour nommer les images sur un temps relatif au début de l'enregistrement.
+> - peut-être précisé dans le cadre d'une launch description pour référencer tous les noeuds sur un même départ. Utilisé par la fonction save_files de ACamera pour nommer les images sur un temps relatif au début de l'enregistrement.
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 
@@ -388,17 +388,50 @@ Obsolete car :
 
 ## ASerialSensor
 
+Fournit une base commune à tous les noeuds ayant pour fonctionnement de parser des données envoyées via une interface sériale.
+
+### Méthodes abstraites
+
+> **publish(self, data: Any)**
+> - appelée lorsqu'une donnée complète a été parsée
+> - doit construire et publier le message sur le topic correspondant
+> - peut générer des exceptions
+
+> **parse(self, data: Any) -> Any | None**
+> - parse le contenu de self.buffer (qui contient la totalité des données sérielles lues jusqu'ici) afin d'en extraire une donnée pertinente.
+> - retourne la donnée en question si elle est complète (self.buffer sera alors réinitialisé)
+> - retourne None si aucune donnée n'a pu être parsée (self.buffer sera inchangé)
+> - peut générer des exceptions
+
+### Paramètres
+
+- **port**
+- **baud**
+- **period**
+- **start_time**
+- **unit**
+
+### Gestion des erreurs au runtime
+
+Gère automatiquement les erreurs de parsing et/ou d'interface sériales.
+
+Lorsque l'interface sériale n'est plus saine, la période de lecture est temporairement réglée sur 10s jusqu'à ce que la connexion soit rétablie.
+
+Lors d'erreur lié au parsing, la période de lecture est temporairement réglée sur 3s jusqu'à la prochaine extraction de donnée complète.
+
+Les logs du noeud peuvent être consultées afin de détecter les sources d'erreur.
+
 ## ACamera
 
 Fournit une base commune à des noeuds caméras utilisant des librairies différentes pour capturer les images.
 
 ### Méthodes abstraites
 
-> **init_camera()**
+> **init_camera(self)**
 > - appelée à l'initialisation de la classe
 > - générer des exceptions en cas d'erreur
 
-> **capture() -> numpy.ndarray**
+> **capture(self) -> numpy.ndarray**
 > - prend une photo et la retourne sous forme d'un numpy array qui peut-être donné en paramètre à *cv2.imencode()*
 > - pour les images en niveaux de gris, retourne un tableau 2D
 > - pour les images en couleur, retourne un tableau 3D au format BGR
@@ -416,13 +449,214 @@ Fournit une base commune à des noeuds caméras utilisant des librairies différ
 
 ACamera expose le noeud à l'utilisation du service *cyclosafe_interfaces/srv/SaveImages*.
 
-Utilisé en conjonction avec un cache d'images **queue_size > 0**. Permet de demander au noeud l'enregistrement vers des fichiers des images prises dans les X dernières secondes.
+Utilisé en conjonction avec un cache d'images **queue_size > 0**. Permet de demander au noeud l'enregistrement vers des fichiers des images prises dans les X dernières millisecondes.
 
+<ins>**Exemple**</ins> :
 
+~~~
+ros2 run cyclosafe camera_pi --ros-args -p queue_size:=200 -p interval:=0.5
+~~~
+Dans un autre terminal :
+~~~
+ros2 service call /save_images cyclosafe_interfaces/srv/SaveImages '{time: 1000, path: /home/npirard/Downloads}' 
+~~~
+Enregistre les images prises pendant la dernière seconde vers */home/npirard/Downloads*
 
+<ins>**Résultat</ins>** :
+~~~
+requester: making request: cyclosafe_interfaces.srv.SaveImages_Request(time=1000, path='./Downloads')
+
+response:
+cyclosafe_interfaces.srv.SaveImages_Response(result=0)
+~~~
+
+Le nom de chaque image correspond au timestamp (au moment de la prise de la photo) relatif au paramètre **start_time** du noeud. Ainsi si l'image une image est prise *31.5s* après le début des enregistrements, elle se nommera *out_path/31500.jpg*.
+
+La propriété **result** de la réponse indique si l'opération a échoué ou non:
+- **result=0** : succès
+- **result=1** : succès partiel, certaines images ont été enregistrées mais le cache n'était pas suffisamment grand pour respecter la contrainte de temps donné par **time**.
+- **result=2** : échec, voir les logs du noeud camera pour le détail de l'erreur
 
 ## Config
 
-# Launch configuration
+Classe helper qui a pour but d'uniformiser la déclaration d'un capteur (et de ses différentes propriétés) à travers différentes launch descriptions (principalement celle du package cyclosafe et celle du viewer).
+
+Elle déclare l'objet Sensor, et SensorTypeEnum (qui lui est associé).
+
+Essentiellement elle permet, via la classe **Sensor()**, de wrapper l'instanciation d'un **Node()** dans les launch description en automatisant la résolution des ports et des couleurs associées aux capteurs pour leur future visualisation dans Rviz.
+
+Cette classe étant aussi utilisée par [**cyclosafe_viewer**](url), elle permet de faire correspondre à une certaine config d'enregistrement la visualisation qui lui est associée.
+
+Voir [**config.py**](launch/config.py) pour un exemple d'utilisation.
+
+Les paramètres sont donnés sous forme de *kwargs* lors de l'instanciation.
+
+## Paramètres
+
+> **package** : string
+> - nom du package auquel appartient le noeud
+> - **requis**
+
+> **executable** : string
+> - nom de l'executablee du noeud
+> - **requis**
+
+> **namespace** : string
+> - namespace utilisé par le noeud
+> - **requis**, peut être vide
+
+> **port** : string
+> - nom du package auquel appartient le noeud
+> - **requis**, peut être **None** ou vide
+> - Si **None**: **port_hint** sera utilisé pour essayer de résoudre le port définitif
+
+> **type** : SensorTypeEnum
+> - type de capteur
+> - **requis**
+> - Valeurs possibles : 
+> 	- SensorTypeEnum.RangeSensor (=0)
+> 	- SensorTypeEnum.Lidar360Sensor (=1)
+> 	- SensorTypeEnum.GPSSensor (=2)
+> 	- SensorTypeEnum.CameraSensor (=3)
+
+> **enable** : bool
+> - défaut: **True**
+> - permet de prendre en compte ou non le capteur dans la config
+
+> **parameters** : [dict[str, Any]]
+> - défaut: **""**
+> - contient une list d'un seul dictionnaire de paramètres qui seront transmis à ROS.
+> - si le **port** est dynamiquement résolu grâce à **port_hint**, les paramètres ayant pour nom **port**, **serial_port** ou **port_name** seront mis à jour.
+> - défaut: **[]**
+
+> **description** : str
+> - purement indicatif
+
+> **transform** : [str]
+> - défaut: **None**
+> - lorsque défini, correspond à la liste des arguments qui seront transmis à l'execution d'un **static_transform** lors de la visualisation
+> **Obsolete** : préférer l'utilisation d'un modèle URDF pour la visualisation.
+> - <ins>**Exemple**</ins> :
+> 	- ["--x", "5.0", "--y", "0.0", "--z", "0.0", "--roll", "-1.57", "--pitch", "1.57", "--yaw", "0", "--frame-id", "world", "--child-frame-id", "my_sensor_frame"],
+> 	- Transpose la frame (*référentiel*) du capteur dans la frame world
+
+> **description** : str
+> - défaut: **""**
+> - purement indicatif
+
+> **topic** : str
+> - défaut: **"range"**
+> - topic sur lequel seront publiés les données
+> - surtout utilisé par les outils de visualisation afin d'identifier les capteurs dans les rosbag
+
+> **color** : str | std_msgs.msg.ColorRGBA
+> - défaut : **None**
+> - si **"auto"**, la couleur est automatiquement attribuée en fonction de l'ordre de déclaration du capteur
+> - accepte les objets ColorRGBA ou des valeurs littérales comme **red, green, magenta, ...**
+> - sera utilisé pour colorier certaines données dans les outils de visualisation.
+
+> **port_hint** : str
+> - défaut: **None**
+> - A utiliser en conjonction avec **port = None**
+> - Contient une partie de l'id vendeur d'une interface sériale (trouvable dans */dev/serial/by-id/...*) à partir duquel le port final va tenter d'être résolu.
+> - <ins>**Exemple**</ins> :
+> 	- le pattern **"if00-port0"** peut renvoyer **/dev/serial/by-id/e40dc7ec375aee118e528bdc8ffcc75d-if00-port0**
+> 	- il s'agit symlink qui point vers **../../ttyUSB1**
+> 	- le port définitif sera donc : **/dev/serial/by-id/../../ttyUSB1**
+
+> **delay** : float
+> - défaut: **None**
+> - **unité** : secondes
+> - indique un délai au lancement du noeud
+> - peut-être utiliser pour inciter les noeuds à se lancer dans un certain ordre
+> - **Attention** : il n'y aucune garantie que cet ordre sera respecté
+
+> **log_level** : str
+> - défaut: **"info""**
+> - permet d'indiquer pour un noeud un niveau de log potentiellement différent du reste de la config 
+> - prend la priorité sur l'argument **log_level** de la launch description
+
+# Launch description
+
+C'est le script responsable de la déclaration de l'ensemble des noeuds à lancer et de leur paramètres.
+
+Voir la documentation associée aux launch descriptions sur ROS2 :
+
+https://docs.ros.org/en/foxy/Tutorials/Intermediate/Launch/Creating-Launch-Files.html
+
+Ou : https://roboticsbackend.com/ros2-launch-file-example/
+
+## Usage
+
+~~~
+ros2 launch cyclosafe cyclsoafe.launch.py record:=true save:=false
+~~~
+
+## Paramètres
+
+> **config** : str
+> - défaut: **"""**
+> - précise un chemin vers une config personnalisée à lancer
+> - par défaut, utilise le fichier **config.py** situé dans le même dossier que la launch description.
+
+> **record** : str
+> - défaut: **"false""**
+> - si **true**, le programme **rosbag record** sera lancé et l'ensemble des messages publiés par les noeuds seront enregistrés dans un rosbag.
+
+> **out_path** : str
+> - défaut: **""**
+> - indique le répertoire d'enregistrement du dossier
+> - si **""**,  le répertoire utilisé correspond à la variable d'environnement **$CYCLOSAFE_RECORD**
+> - le nom du dossier contenant les enregistrement sera: ***out_path/YYYYMMDD-HHMMSS***
+
+> **save** : str
+> - défaut: **"false""**
+> - si **true**, le noeud [**hub**](../cyclosafe_hub/README.md) sera démarré et enregistrera les mesures dans des fichiers isolés au format CSV.
+> - **Obsolete** : non mis à jour depuis longtemps
+> 	- gère les données publiées sous forme de *sensors_msgs/msg/range* et les images
+> 	- ne gère que les données gps publiées sous forme de *sensor_msgs/msg/NavSatFix* (et non de *cyclosafe_interfaces/msg/NavSatInfo*)
+> 	- contrairement au rosbag, ne compresse pas les données
+
+> **log_level** : str
+> - défaut: **"info""**
+> - permet d'indiquer le niveau de log pour l'ensemble des noeuds ROS. Peut-être surchargé par l'argument **log_level** de la classe Sensor
+> - **Valeurs possibles**:
+> 	- debug
+> 	- info
+> 	- warning
+> 	- error
+> 	- fatal
+
+## Spécificités
+
+La structure de [**cyclosafe.launch.py**](launch/cyclosafe.launch.py) n'est pas tout à fait standard dans la mesure où :
+- Elle repose lourdement sur la déclaration préalable d'une liste globale de [**Sensor**](#config) importée depuis un fichier extérieur ([**config.py**](launch/config.py)).
+  
+  L'avantage est de centraliser tout ce qui peut varier d'un test à l'autre sur un seul fichier. On peut par exemple avoir un fichier **config1.py** et **config2.py** qui correspond à un certain prototype avec des capteurs spécifiques ou des paramètres différents.
+  
+  Si on veut ensuite visualiser les données prises par la **config1** et celle par la **config2**, on peut le faire simplement en précisant à **cyclosafe_viewer** la config adéquate.
+
+- Elle utilise une **fonction opaque** pour résoudre la description au runtime.
+
+  En effet l'essentiel de la description dépend des paramètres donnés ou du contenu du fichier [**config.py**](launch/config.py). Or une launch description correspondant en quelque sorte à une recette de lancement qui n'est pas paramètrable directement.
+
+  L'utilisation de **OpaqueFunction()** permet de déclarer une fonction qui sera executé avec le contexte du runtime avant de de renvoyer la description définitive.
+
+### Résumé des étapes de lancement
+
+1. **Execution de la fonction opaque launch_setup()** avec le contexte (cad. les arguments transmis avec la commande **ros2 launch cyclosafe cyclosafe.launch.py [...args])**
+2. **Résolution des arguments**
+3. **Prise du start_time**, valeur qui sera transmise en paramètre à chacun des noeuds lancés
+4. **Optionnel : lancement de l'enregistrement du rosbag** si l'argument **record** est à **true**
+5. **Optionnel : lancement du noeud hub** si l'argument **save** est à **true**
+6. **Lancement de chaque noeud** à partir de la liste des capteurs importée depuis **config.py**
+   - les noeuds avec **enable=false** sont ignorés
+   - **start_time** est transmis à chaque noeud
+   - un délai est éventuellement ajouté en fonction de l'agument **delay**
+   - le **log_level** associé au noeud est ajusté sur celui spécifique au noeud, ou à défaut celui de la config
+7. La description finale est renvoyée pour être lancée
+
+
+
 
 

@@ -7,9 +7,10 @@ from enum import IntEnum
 class SensorTypeEnum(IntEnum):
 	RangeSensor = 0,
 	Lidar360Sensor = 1,
-	GPSSensor = 2
+	GPSSensor = 2,
+	CameraSensor = 3
 
-class SerialSensor:
+class Sensor:
 
 	colors = [
 		ColorRGBA(r=1.0,g=0.0, b=0.0, a=0.25),
@@ -48,7 +49,7 @@ class SerialSensor:
 	
 		if (port == None):
 			if port_hint:
-				self.port = SerialSensor.resolve_port(port_hint)
+				self.port = Sensor.resolve_port(port_hint)
 		else:
 			self.port = port
 		self.check_port()
@@ -57,12 +58,12 @@ class SerialSensor:
 			self.color = color
 		elif isinstance(color, str):
 			if color == "auto":
-				self.color = SerialSensor.colors[SerialSensor.color_index]
-				SerialSensor.color_index = (SerialSensor.color_index + 1) % len(SerialSensor.colors)
-			elif color in SerialSensor.colors_str:
-				self.color = SerialSensor.colors_str[color]
+				self.color = Sensor.colors[Sensor.color_index]
+				Sensor.color_index = (Sensor.color_index + 1) % len(Sensor.colors)
+			elif color in Sensor.colors_str:
+				self.color = Sensor.colors_str[color]
 			else:
-				raise Exception(f"Invalid string color {color}. Valids:  {list(SerialSensor.colors_str.keys())}")
+				raise Exception(f"Invalid string color {color}. Valids:  {list(Sensor.colors_str.keys())}")
 		elif not isinstance(self.color, ColorRGBA):
 			raise Exception(f"Invalid color value {color}. Accept ColorRGBA object or string 'auto/red/green/...'")
 

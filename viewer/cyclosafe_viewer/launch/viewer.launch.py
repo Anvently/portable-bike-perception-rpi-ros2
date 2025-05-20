@@ -6,19 +6,35 @@ from launch.substitutions import TextSubstitution, LaunchConfiguration
 # from rclpy.clock import Clock
 import os, sys
 from ament_index_python.packages import get_package_share_directory
+import importlib.util
+from typing import List
+
 
 package_dir = get_package_share_directory('cyclosafe_viewer')
 launch_dir = os.path.join(package_dir, 'launch')
 sys.path.insert(0, launch_dir)
-from config import sensors_list
-from cyclosafe import SerialSensor, SensorTypeEnum
+from cyclosafe import Sensor, SensorTypeEnum
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
+def import_sensors_list(config_path=None):
+    if config_path and os.path.exists(config_path):
+        module_name = os.path.basename(config_path).replace('.py', '')
+        spec = importlib.util.spec_from_file_location(module_name, config_path)
+        config_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config_module)
+        return config_module.sensors_list
+    else:
+        # Import from default config.py
+        from config import sensors_list
+        return sensors_list
+
+
 launch_args = [
     DeclareLaunchArgument('bag', default_value=TextSubstitution(text=""), description="Specify a bag from which the data will be played"),
     DeclareLaunchArgument('map', default_value=TextSubstitution(text="false"), description="Enable live mapping from open street satellite image"),
+    DeclareLaunchArgument('config', default_value=TextSubstitution(text=""), description="Optional path to a custom config file containing sensors_list"),
 ]
 
 
@@ -28,6 +44,10 @@ def setup_directory(parent_dir: str, time_start: float) -> str:
 def launch_setup(context):
     bag = LaunchConfiguration('bag').perform(context)
     map_arg = str2bool(LaunchConfiguration('map').perform(context))
+    config_path = LaunchConfiguration('config').perform(context)
+
+    sensors_list: List[Sensor] = import_sensors_list(config_path if config_path else None)
+
     rviz_config_path = os.path.join(
             get_package_share_directory('cyclosafe_viewer'),
             'launch',

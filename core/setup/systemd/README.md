@@ -16,7 +16,7 @@ Ces services utilisent à chaque démarrage le fichier d'environnement .env du w
 
 ## cyclosafed.service
 
-C'est le service responsable de lancer la launch configuration principale de cyclosafe. Voir [launch configuration](../link)
+C'est le service responsable de lancer la launch description principale de cyclosafe. Voir [**cyclosafe.launch.py**](../../src/cyclosafe/README.md#launch-description)
 
 S'il est activé (**sudo systemctl enable cyclosafed.service**), les mesures sont prises dès le démarrage du raspberry.
 
@@ -34,7 +34,7 @@ Lors d'une fermeture brutale causée par un timeout de la procédure d'arrêt (d
 - une corruption possible du fichier .mcap en cours d'écriture (vérifiable avec **ros2 bag info ***chemin_du_dossier_bag*****)
 - une absence du fichier **metadata.yaml** contenant les métadonnées sur le bag et référencant l'ensemble des différentes fichiers .mcap (compressés ou non). Après avoir décompresser l'ensemble des bags en .zstd, celui-ci peut-être reconstruit à l'aide de **ros2 bag reindex ***chemin_du_dossier_bag*****.
 
-> Note: Le [script d'import des enregistrements](link) inclue une fonction permettant de réparer automatiquement les corruptions listées ci-dessus.
+> Note: Le [**script d'import des enregistrements**](../../../scripts/README.md#réparation-des-corruptions) inclue une fonction permettant de réparer automatiquement les corruptions listées ci-dessus.
 
 ### Valeurs paramètrables
 

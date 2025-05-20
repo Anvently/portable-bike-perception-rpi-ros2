@@ -5,21 +5,36 @@ from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 import time
 import os, sys
+import importlib.util
+from typing import List
 
 package_dir = get_package_share_directory('cyclosafe')
 launch_dir = os.path.join(package_dir, 'launch')
 sys.path.insert(0, launch_dir)
-from cyclosafe import SerialSensor, SensorTypeEnum
-from config import sensors_list
+from cyclosafe import Sensor, SensorTypeEnum
+
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
+
+def import_sensors_list(config_path=None):
+    if config_path and os.path.exists(config_path):
+        module_name = os.path.basename(config_path).replace('.py', '')
+        spec = importlib.util.spec_from_file_location(module_name, config_path)
+        config_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config_module)
+        return config_module.sensors_list
+    else:
+        # Import from default config.py
+        from config import sensors_list
+        return sensors_list
 
 launch_args = [
     DeclareLaunchArgument('out_path', default_value=TextSubstitution(text=""), description="Path in which a data directory for this simulation will be created"),
     DeclareLaunchArgument('log_level', default_value=TextSubstitution(text="info"), description="Log level for all nodes"),
     DeclareLaunchArgument('record', default_value=TextSubstitution(text="false"), description="Capture every topic in a bag"),
     DeclareLaunchArgument('save', default_value=TextSubstitution(text="false"), description="If true, hub node won't be started and data will not be written. Use in with record=true in order to only record data from ROS perspective."),
+    DeclareLaunchArgument('config', default_value=TextSubstitution(text=""), description="Optional path to a custom config file containing sensors_list"),
 ]
 
 def setup_directory(parent_dir: str, time_start: float) -> str:
@@ -55,8 +70,11 @@ def launch_setup(context):
     log_level = LaunchConfiguration('log_level').perform(context)
     record = str2bool(LaunchConfiguration('record').perform(context))
     save = str2bool(LaunchConfiguration('save').perform(context))
+    config_path = LaunchConfiguration('config').perform(context)
     time_start = time.time()
     print(f"Simulation start time = {time_start}")
+
+    sensors_list: List[Sensor] = import_sensors_list(config_path if config_path else None)
 
     ld = []
     if record or save:
@@ -82,22 +100,6 @@ def launch_setup(context):
                 ],
                 arguments=['--ros-args', '--log-level', log_level],
             )])
-    ld.extend([Node(
-        package='cyclosafe',
-        executable='camera_pi',
-        namespace='',
-        output='screen',
-        emulate_tty=True,
-        parameters=[
-        {'queue_size': 0,
-            'resolution': [600, 400],
-            'interval': 0.1,
-            'compression': 90,
-            'preview': False,
-            'start_time': float(time_start)}
-        ],
-        arguments=['--ros-args', '--log-level', log_level],
-    )])
     for sensor in sensors_list:
         if sensor.enable == False or sensor.port == None:
             continue
