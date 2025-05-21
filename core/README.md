@@ -11,7 +11,7 @@ git clone https://github.com/Anvently/Cyclosafe-firmware ~/cyclosafe
 cd ~/cyclosafe/core
 ~~~
 
-Si le raspberry n'a pas accès à internet, privilégiez une installation locale.
+Si le raspberry n'a pas accès à internet, privilégiez [**une installation hors ligne**](#installation-hors-ligne).
 
 Installation complète
 ~~~
