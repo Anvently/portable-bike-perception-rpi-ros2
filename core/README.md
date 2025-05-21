@@ -90,7 +90,7 @@ https://roboticsbackend.com/category/ros2/
 
 ## Installation hors-ligne
 
-Si vous avez déjà accès au raspberry en ssh ou si le dossier core est déjà sur le raspberry, vous pouvez ignorer cette section et procéder à l'installation du [**core/**](core/) sur le raspberry.
+Si vous avez déjà accès au raspberry en ssh ou si le dossier core est déjà sur le raspberry, vous pouvez ignorer cette section et procéder à l'installation du [**core/**](./) sur le raspberry.
 
 Autrement il est possible de procéder à une installation complètement vierge depuis l'hôte vers le raspberry.
 
