@@ -81,6 +81,7 @@ sensors_list = [
 		delay=5.0
 	),
 	Sensor(
+		enable=False,
 		type=SensorTypeEnum.GPSSensor,
 		package="cyclosafe",
 		executable="gps",
