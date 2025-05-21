@@ -19,6 +19,7 @@ if [ -f $CYCLOSAFE_WORKSPACE/install/setup.bash ]; then
   elif [ -f /opt/ros/jazzy/setup.bash ]; then
     source /opt/ros/jazzy/setup.bash
 	echo "Ros was sourced but cyclosafe does not appear to be builded"
+	echo "Use cy_core_build to build workspace."
 	ROS_INSTALLED=1
 	CYCLOSAFE_READY=0
   else

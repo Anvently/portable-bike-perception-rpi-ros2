@@ -1,5 +1,11 @@
 # CYCLOSAFE
 
+> The aim of the CycloSafe project is to rigorously quantify all the dangers to which cyclists are exposed during their journeys, so that we can better target concrete actions to improve their safety.
+> 
+> To do this, we have equipped a bicycle with LIDARs (Light Detection and Ranging), a camera and a GNSS antenna.
+
+Ce repo contient le firmware destiné à tourner sur un **raspberry** pour faire fonctionner l'ensemble des capteurs et **prendre les mesures**, ainsi que les différents outils pour **exporter**, **visualiser** et **analyser** les données prises.
+
 ## Structure
 
 > [**core/**](core/README.md) : répertoire destiné à être installé sur le raspberry. Contient :
