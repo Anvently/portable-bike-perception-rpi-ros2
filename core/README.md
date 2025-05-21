@@ -4,13 +4,22 @@ Ce repo contient tous les packages et utilitaires nécessaires à la prise des m
 
 ## Installation
 
-~~~
-git clone [url] cyclosafe
-cd cyclosafe
-# Installation complète
-./setup/install.sh
+Suppose un accès internet sur le raspberry.
 
-# Pour configurer les services seulement
+~~~
+git clone https://github.com/Anvently/Cyclosafe-firmware ~/cyclosafe
+cd ~/cyclosafe/core
+~~~
+
+Si le raspberry n'a pas accès à internet, privilégiez une installation locale.
+
+Installation complète
+~~~
+./setup/install.sh
+~~~
+
+Pour configurer les services seulement
+~~~
 ./setup/systemd/setup_services.sh
 ~~~
 
@@ -78,3 +87,41 @@ La suite de tutoriel basés sur **turtlesim** est une bonne façon d'appréhende
 **Excellente source de tutoriels et compléments*** : 
 
 https://roboticsbackend.com/category/ros2/
+
+## Installation hors-ligne
+
+Si vous avez déjà accès au raspberry en ssh ou si le dossier core est déjà sur le raspberry, vous pouvez ignorer cette section et procéder à l'installation du [**core/**](core/) sur le raspberry.
+
+Autrement il est possible de procéder à une installation complètement vierge depuis l'hôte vers le raspberry.
+
+### Configurer le sous-réseau
+
+La première étape est de permettre la connexion ssh vers raspberry.
+
+Pour cela suivez les [**instructions de configuration réseau**](#usage), pour configurer les profils réseaux de l'hôte du raspberry (pour une installation complète il est aussi nécessaire que le raspberry ait accès à Internet).
+
+Une fois le réseau configuré, vous pouvez simplement copier le dossier `core` vers le raspberry à l'aide de la commande suivante (remplacer `user` par l'utilisateur choisi lors de l'installation de raspberry OS) :
+
+Depuis l'hôte :
+~~~
+scp -r ./core user@192.168.2.2:/home/user/cyclosafe/core
+~~~
+
+Connectez-vous ensuite en ssh :
+
+~~~
+ssh user@192.168.2.2
+~~~
+
+Vous avez désormais accès au raspberry.
+
+Vous pouvez quitter la fenêtre ssh avec CTRL-D ou en fermant le terminal.
+
+Pour poursuivre l'installation :
+
+~~~
+cd /home/$USER/cyclosafe/core
+cat README.md
+~~~
+
+[**Voir les instructions**](#usage)

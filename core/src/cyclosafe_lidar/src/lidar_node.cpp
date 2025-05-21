@@ -103,7 +103,7 @@ class LidarNode : public rclcpp::Node {
 						this->_publish(static_cast<double>(frame.payload.distance) / 100.0);
 				} else {
 					auto start_point = std::chrono::high_resolution_clock::now();
-					// Timeout is set to half of period 
+					// Timeout is set to period
 					auto timeout = std::chrono::milliseconds(static_cast<unsigned int>((_period) * 1000.0));
 					do {
 						frame = _driver->readFrame(0ms);

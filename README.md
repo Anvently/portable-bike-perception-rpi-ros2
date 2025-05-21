@@ -11,3 +11,6 @@
 > [**scripts/**](scripts/README.md) : contient des scripts utiles à la récupération et l'export des données
 
 > [**viewer/**](viewer/README.md) : répertoire destiné à être installé sur l'hôte. Contient un ensemble d'outils pour visualiser et analyser les données..
+
+> [**network.md**](network.md) : instructions pour la configuration réseau sur l'hôte et sur le raspberry permettant l'interaction entre les deux machines
+

@@ -8,7 +8,7 @@ Chaque noeud peut-être lancé indépendemment ou l'ensemble des noeuds sont lan
 
 ## cyclosafe
 
-[**src/cyclosafe/README**](src/cyclosafe/README)
+[**src/cyclosafe/README.md**](src/cyclosafe/README.md)
 
 Noeud central du projet.
 
@@ -30,7 +30,7 @@ Contient :
 
 ## cyclosafe_hub (obsolete)
 
-[**src/cyclosafe_hub/README**](src/cyclosafe_hub/README)
+[**src/cyclosafe_hub/README.md**](src/cyclosafe_hub/README.md)
 
 Noeud en cpp qui a pour but d'aggréger des données venant de différents topics et de les enregistrer au format csv dans des fichiers isolés. Commande également l'enregistrement des photos via un service adressé au noeud camera.
 
@@ -40,19 +40,19 @@ Rendu obsolete par l'utilisation de rosbag, qui gère l'enregistrement, la séri
 
 Définit les interfaces ROS 2 propres au projet, à savoir :
 - ***cyclosafe_interfaces/msg/NavSatinfo*** : extension de sensor_msgs/msg/NavSatFix intégrant des données supplémentaires comme l'altitude, la vitesse, le nombre de satellites utilisées et la dop.
-- ***cyclosafe_interfaces/srv/SaveImages (obsolte)*** : service permettant l'interaction entre le noeud hub et les noeuds caméras. Demande au noeud caméra d'enregistrer les images prises sur les X dernières secondes.
+- ***cyclosafe_interfaces/srv/SaveImages (obsolte)*** : service permettant l'interaction entre le noeud hub et le noeud. Demande au noeud caméra d'enregistrer les images prises sur les X dernières secondes.
 
-[**src/cyclosafe_interfaces/README**](src/cyclosafe_interfaces/README)
+[**src/cyclosafe_interfaces/README.md**](src/cyclosafe_interfaces/README.md)
 
 ## cyclosafe_lidar
 
-[**src/cyclosafe_lidar/README**](src/cyclosafe_lidar/README)
+[**src/cyclosafe_lidar/README.md**](src/cyclosafe_lidar/README.md)
 
 Package cpp qui permet d'intégrer les lidars de la gamme Benewake à ROS2. Implémente un driver via l'interface sériale et un noeud pour publier les données sous forme de sensor_msgs/msg/Range.
 
-## cyclosafe_stl_ros2
+## ldlidar_stl_ros2
 
-[**src/cyclosafe_stl_ros2/README**](src/cyclosafe_stl_ros2/README)
+[**src/ldlidar_stl_ros2/README.md**](src/ldlidar_stl_ros2/README.md)
 
 Clone de https://github.com/Anvently/ldlidar_stl_ros2
 
@@ -62,7 +62,7 @@ Implémente le driver du lidar STL-27 et l'intègre à ROS2.
 
 ## rplidar_ros2
 
-[**src/rplidar_ros2/README**](src/rplidar_ros2/README)
+[**src/rplidar_ros2/README.md**](src/rplidar_ros2/README.md)
 
 Clone de https://github.com/CreedyNZ/rplidar_ros2
 

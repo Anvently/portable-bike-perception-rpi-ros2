@@ -477,6 +477,8 @@ La propriété **result** de la réponse indique si l'opération a échoué ou n
 - **result=1** : succès partiel, certaines images ont été enregistrées mais le cache n'était pas suffisamment grand pour respecter la contrainte de temps donné par **time**.
 - **result=2** : échec, voir les logs du noeud camera pour le détail de l'erreur
 
+Si une image a déjà été enregistrée dans le dossier donné en paramètre, elle n'est pas enregistrée en double.
+
 ## Config
 
 Classe helper qui a pour but d'uniformiser la déclaration d'un capteur (et de ses différentes propriétés) à travers différentes launch descriptions (principalement celle du package cyclosafe et celle du viewer).

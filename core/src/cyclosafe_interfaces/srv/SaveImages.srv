@@ -1,9 +1,9 @@
-uint32 time
-string path
+uint32 time # milliseconds
+string path # folder where to save images
 ---
 
-uint8 SUCCESS = 0
-uint8 PARTIAL_SUCCESS = 1
-uint8 FAILURE = 2
+uint8 SUCCESS = 0 # time constraint were respected
+uint8 PARTIAL_SUCCESS = 1 # time constraint partially respected (some images were missing)
+uint8 FAILURE = 2 # an error occured or invalid argument
 
 uint8 result
