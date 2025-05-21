@@ -25,8 +25,15 @@ Contient :
 - l'implémentation de classes utilisées par des noeuds ou d'autres packages :
 	- [**ASerialSensor**](src/cyclosafe/README.md#aserialsensor) : modèle de noeud générique parsant des données envoyées via serial
 	- [**ACamera**](src/cyclosafe/README.md#acamera) : modèle de noeud caméra0
-	- [**Config**](src/cyclosafe/README.md#config) : destinée à l'intégration d'un node dans une launch description, pour uniformiser la déclaration des paramètres à travers plusieurs launch description
 - la [**launch description**](src/cyclosafe/README.md#launch-description) permettant de lancer l'ensemble des noeuds ensembles.
+
+## cyclosafe_config
+
+[**src/cyclosafe_config/README.md**](src/cyclosafe_config/README.md)
+
+Package python dont la seule fonction est d'exporter les classes `Sensor` et `SensorTypeEnum`, utiles à l'intégration d'un node dans une launch description, en permettant d'uniformiser la déclaration des paramètres à travers plusieurs launch description.
+
+Ces classes sont également utilisées par l'environnement [**viewer/**](../viewer/README.md), raison pour laquelle elles sont isolées dans un package.
 
 ## cyclosafe_hub (obsolete)
 

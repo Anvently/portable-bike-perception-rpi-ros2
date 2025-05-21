@@ -2,7 +2,7 @@ from typing import List, Any
 from std_msgs.msg import ColorRGBA
 import os
 from enum import IntEnum
-from cyclosafe import Sensor, SensorTypeEnum
+from cyclosafe_config import Sensor, SensorTypeEnum
 
 sensors_list = [
 	Sensor(

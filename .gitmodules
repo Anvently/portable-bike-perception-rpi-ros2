@@ -1,6 +1,6 @@
-[submodule "viewer/mapviz"]
-	path = viewer/mapviz
+[submodule "viewer/src/mapviz"]
+	path = viewer/src/mapviz
 	url = git@github.com:swri-robotics/mapviz.git
-[submodule "viewer/rviz_satellite"]
-	path = viewer/rviz_satellite
+[submodule "viewer/src/rviz_satellite"]
+	path = viewer/src/rviz_satellite
 	url = git@github.com:nobleo/rviz_satellite.git

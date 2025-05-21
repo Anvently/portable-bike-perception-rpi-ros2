@@ -11,7 +11,7 @@ from typing import List
 package_dir = get_package_share_directory('cyclosafe')
 launch_dir = os.path.join(package_dir, 'launch')
 sys.path.insert(0, launch_dir)
-from cyclosafe import Sensor, SensorTypeEnum
+from cyclosafe_config import Sensor, SensorTypeEnum
 
 
 def str2bool(v):
