@@ -56,15 +56,15 @@ sudo systemctl disable cyclosafed.service # Désactiver
 
 ### Détails sur l'installation
 
-[**setup/README**](setup/README)
+[**setup/README**](setup/README.md)
 
 ### Scripts
 
-[**scripts/README**](scripts/README)
+[**scripts/README**](scripts/README.md)
 
 ### Services systemd
 
-[**setup/systemd/README**](setup/systemd/README)
+[**setup/systemd/README**](setup/systemd/README.md)
 
 ### Documentation ROS 2
 
