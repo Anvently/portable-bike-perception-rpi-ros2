@@ -39,7 +39,7 @@ class GPSConverterNode(Node):
 
 		self.declare_parameter("topic_src", "/gps")
 		self.declare_parameter("topic", "/nav_fix")
-		self.declare_parameter("gpx_enabled", True)
+		self.declare_parameter("gpx_enabled", False)
 		self.declare_parameter("gpx_file_path", "")
 		self.declare_parameter("gpx_track_name", "ROS2 GPS Track")
 

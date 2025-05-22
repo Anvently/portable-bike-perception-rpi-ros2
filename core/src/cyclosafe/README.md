@@ -1,6 +1,6 @@
 # cyclosafe package
 
-Noeud central du projet.
+Package python central du projet.
 
 Contient :
 - l'ensemble des noeuds de capteur écrits en python, à savoir :

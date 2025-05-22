@@ -32,7 +32,7 @@ Service ayant plusieurs fonctions :
 - log des heures de démarrage et d'extinction du raspberry dans *****$CYCLOSAFE_LOGS**/on_off.log*** + cause de l'extinction (batterie ou bouton)
 - lance le script python (**gpio.py**)
 - test la valeur de retour du script et déclenche l'arrêt du raspbbery ssi le code d'erreur correspond à un appui sur le bouton ou à un voltage trop faible sur la batterie.
-- déclenche l'arrêt du raspberry via ***sudo systemctl stop cyclosafe.service***. Respecte le délai configuré (*$SHUTDOWN_DELAY*), vérifie que le service a bien été arrêté (log de warning le cas échéant) et passe le raspberry en mode halt (extinction du bus d'alimentation, du bus USB, et consommation minimale de 23mA environ).
+- déclenche l'arrêt du raspberry via ***sudo systemctl stop cyclosafe.service***. Respecte le délai configuré (`$SHUTDOWN_DELAY`), vérifie que le service a bien été arrêté (log de warning le cas échéant) et passe le raspberry en mode halt (extinction du bus d'alimentation, du bus USB, et consommation minimale de 23mA environ).
 
 ### Variables d'environnement liées
 

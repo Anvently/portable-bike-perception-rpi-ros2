@@ -204,7 +204,7 @@ Thème sur lequel sont publiés des [**messages**](#message) et auquel un [**noe
 ## URDF - *Unified Robot Description Format*
 Format XML standardisé pour décrire la structure physique d'un robot, incluant ses liens (links), articulations (joints), propriétés visuelles et de collision.
 
-**viewer.launch.py** utilise un modèle [URDF](#urdf---unified-robot-description-format) pour positionner dans l'espace des modèles 3D du vélo et des capteurs, et pour définir les transformations à effectuer pour replacer les données dans l'espace.
+**viewer.launch.py** utilise un modèle [URDF](#urdf---unified-robot-description-format) pour positionner dans l'espace les modèles 3D du vélo et des capteurs, et pour définir les transformations à effectuer pour replacer les données dans l'espace.
 
 Fonctionne avec le [package](#package) `robot_state_publisher` qui prend en entrée une description [URDF](#urdf---unified-robot-description-format) et génère automatiquement l'arbre de transformation [`tf2`](#tf2) associé.
 

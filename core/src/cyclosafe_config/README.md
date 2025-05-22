@@ -1,3 +1,5 @@
+# cyclosafe_config
+
 Package python dont la seule fonction est d'exporter les classes `Sensor` et `SensorTypeEnum`, utiles à l'intégration d'un node dans une launch description, en permettant d'uniformiser la déclaration des paramètres à travers plusieurs launch description.
 
 Ces classes sont également utilisées par l'environnement [**viewer/**](../../../viewer/README.md), raison pour laquelle elles sont isolées dans un package.

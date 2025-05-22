@@ -16,18 +16,19 @@ Ce dossier contient l'ensemble des packages et utilitaires permettant de visuali
       - [cy\_viewer\_clean](#cy_viewer_clean)
     - [Visualiser les données à partir d'un bag](#visualiser-les-données-à-partir-dun-bag)
     - [Visualiser les données en direct](#visualiser-les-données-en-direct)
+  - [Activer mapviz et rviz\_satellite (facultatif)](#activer-mapviz-et-rviz_satellite-facultatif)
 
 ## Structure
 
 > [**./**](core/README.md) : répertoire courant, correspond aussi au workspace  utilisé par **ROS2** dans lequel les packages sont installés.
 > 
 > [**src/**](core/README.md) : répertoire contenant le code source des outils de visualisation et d'analyse, c'est àdire:
->   - [**cyclosafe_config**](src/cyclosafe_config/README.md) : symlink vers le package python cyclosafe_config du [**core/**](../core/), nécessaire  sur l'hôte car utilisé par `cyclosafe_viewer`.
->   - [**cyclosafe_interfaces**](src/cyclosafe_interfaces/README.md) : symlink vers le package python cyclosafe_interfaces du [**core/**](../core/), nécessaire  sur l'hôte car utilisé par le script [`gpx_exporter`](../scripts/README.md#gpx_exporterpy).
+>   - [**cyclosafe_config**](../core/src/cyclosafe_config/README.md) : symlink vers le package python cyclosafe_config du [**core/**](../core/), nécessaire  sur l'hôte car utilisé par `cyclosafe_viewer`.
+>   - [**cyclosafe_interfaces**](../core/src/cyclosafe_interfaces/README.md) : symlink vers le package python cyclosafe_interfaces du [**core/**](../core/), nécessaire  sur l'hôte car utilisé par le script [`gpx_exporter`](../scripts/README.md#gpx_exporterpy).
 >   - [**cyclosafe_player**](src/cyclosafe_player/README.md) : package python permettant de jouer et de contrôler la lecture de rosbag et de visualiser graphiquement des distances
 >   - [**cyclosafe_viewer**](src/cyclosafe_viewer/README.md) : package python permettant de visualiser les données sur Rviz
->   - [**mapviz**](src/mapviz/README.md) : package extérieur permettant de visualiser des données ROS2 (comme RViz) sur des cartes et de les intégrer à des outils cartographiques.
->   - [**rviz_satellite**](src/rviz_satellite/README.md) : package extérieur permettant d'intégrer des tuiles cartographiques sur Rviz à partir de coordonnées GPS.
+>   - [**mapviz (submodule)**](src/mapviz/README.md) : package extérieur permettant de visualiser des données ROS2 (comme RViz) sur des cartes et de les intégrer à des outils cartographiques.
+>   - [**rviz_satellite (submodule**](src/rviz_satellite/README.md) : package extérieur permettant d'intégrer des tuiles cartographiques sur Rviz à partir de coordonnées GPS.
 >
 > [**setup/**](setup/) : contient des scripts permettant de [**sourcer plus facilement**](#sourcer-le-workspace) l'environnement de travail et de [**déclarer des alias**](#alias-fournis-par-le-script-bashrc)
 
@@ -251,3 +252,16 @@ ros2 launch cyclosafe_viewer viewer.launch.py
 Cette launch description ouvre une fenêtre `Rviz`.
 
 > Aucune configuration réseau particulière n'est nécessaire. ROS2 publie par défaut ses messages sur le réseau.
+
+
+## Activer mapviz et rviz_satellite (facultatif)
+
+Ces deux packages sont des submodule git et ne sont pas donc pas clonés avec le reste du repo.
+
+Tant que l'option `map` de [**viewer.launch.py**](src/cyclosafe_viewer/README.md#viewerlaunchpy) n'est pas utilisée, leur absence ne posera aucun problème.
+
+Pour les initialiser et les cloner :
+~~~
+git submodule init ./src/mapviz ./src/rviz_satellite
+git submodule update ./src/mapviz ./src/rviz_satellite
+~~~
