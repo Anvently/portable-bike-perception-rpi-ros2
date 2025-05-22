@@ -1,1 +1,1 @@
-from Config import Sensor, SensorTypeEnum
+from .Config import Sensor, SensorTypeEnum

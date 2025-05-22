@@ -3,7 +3,7 @@
     <visual>
       <origin xyz="0.96 0.00 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://cyclosafe/urdf/model/bicycle.obj" scale="0.028 0.028 0.028"/>
+        <mesh filename="package://cyclosafe_viewer/urdf/model/bicycle.obj" scale="0.028 0.028 0.028"/>
       </geometry>
       <material name="material_name">
         <!-- Note: Le fichier MTL associé à l'OBJ sera automatiquement utilisé -->
@@ -13,7 +13,7 @@
     <!-- <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://cyclosafe/urdf/model/bicycle.obj" scale="1.0 1.0 1.0"/>
+        <mesh filename="package://cyclosafe_viewer/urdf/model/bicycle.obj" scale="1.0 1.0 1.0"/>
       </geometry>
     </collision> -->
     <!-- <inertial> -->
@@ -84,7 +84,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <mesh filename="package://cyclosafe/urdf/model/tf-02.stl" scale="0.001 0.001 0.001" />
+        <mesh filename="package://cyclosafe_viewer/urdf/model/tf-02.stl" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="ldlidar_mat">
         <color rgba="0.8 0.8 0.8 0.8"/>
@@ -112,7 +112,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="-1.57 3.143 0.0"/>
       <geometry>
-        <mesh filename="package://cyclosafe/urdf/model/tf-mini-plus.stl" scale="0.001 0.001 0.001" />
+        <mesh filename="package://cyclosafe_viewer/urdf/model/tf-mini-plus.stl" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="ldlidar_mat">
         <color rgba="0.8 0.8 0.8 0.8"/>
@@ -168,7 +168,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://cyclosafe/urdf/model/LD19.stl" scale="0.001 0.001 0.001" />
+        <mesh filename="package://cyclosafe_viewer/urdf/model/LD19.stl" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="ldlidar_mat">
         <color rgba="0.8 0.8 0.8 0.8"/>
@@ -196,7 +196,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 -1.57"/>
       <geometry>
-        <mesh filename="package://cyclosafe/urdf/model/rplidar_c1.stl" scale="0.00098 0.00098 0.00098" />
+        <mesh filename="package://cyclosafe_viewer/urdf/model/rplidar_c1.stl" scale="0.00098 0.00098 0.00098" />
       </geometry>
       <material name="ldlidar_mat">
         <color rgba="0.8 0.8 0.8 0.8"/>

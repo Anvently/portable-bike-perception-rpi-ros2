@@ -42,7 +42,7 @@ def setup_directory(parent_dir: str, time_start: float) -> str:
     pass
 
 def launch_setup(context):
-    bag = LaunchConfiguration('bag').perform(context)
+    bag = os.path.expanduser(LaunchConfiguration('bag').perform(context))
     map_arg = str2bool(LaunchConfiguration('map').perform(context))
     config_path = LaunchConfiguration('config').perform(context)
 
@@ -144,7 +144,7 @@ def launch_setup(context):
 
      # Nœuds pour le model publisher
     # Lecture du contenu du fichier URDF
-    urdf_path = os.path.join(get_package_share_directory('cyclosafe'), 'urdf', 'model.urdf.xml')
+    urdf_path = os.path.join(get_package_share_directory('cyclosafe_viewer'), 'urdf', 'model.urdf.xml')
     with open(urdf_path, 'r') as file:
         robot_description = file.read()
     ld.extend([

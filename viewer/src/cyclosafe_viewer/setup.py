@@ -26,8 +26,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-			'gps_converter = cyclosafe.gps_converter:main',
-			'range_circle_transform = cyclosafe.range_circle_transform:main',
+			'gps_converter = cyclosafe_viewer.gps_converter:main',
+			'range_circle_transform = cyclosafe_viewer.range_circle_transform:main',
         ],
     },
 )

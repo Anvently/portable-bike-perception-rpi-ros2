@@ -7,12 +7,36 @@ Ce document donne des instructions sur :
 - les paramètres réseaux à configurer sur le raspberry et sur l'hôte pour permettre une connection ssh
 - les paramètres réseaux à configurer sur l'hôte pour activer l'ip-forwarding sur l'hôte et permettre au raspberry d'utiliser l'accès internet de celui-ci.
 
-### Structure réseau
+
+## Sommaire
+- [Configuration réseau pour ssh et ip-forwarding](#configuration-réseau-pour-ssh-et-ip-forwarding)
+  - [Sommaire](#sommaire)
+  - [Structure réseau](#structure-réseau)
+  - [Utilisation](#utilisation)
+    - [Se connecter en ssh](#se-connecter-en-ssh)
+    - [Copier des fichiers depuis l'hôte vers le raspberry](#copier-des-fichiers-depuis-lhôte-vers-le-raspberry)
+    - [Copier des fichiers depuis le raspberry vers l'hôte](#copier-des-fichiers-depuis-le-raspberry-vers-lhôte)
+    - [Outils utiles](#outils-utiles)
+  - [Mise en place sur le raspberry](#mise-en-place-sur-le-raspberry)
+    - [Configurer le profil sur le raspberry](#configurer-le-profil-sur-le-raspberry)
+    - [Activer le serveur ssh](#activer-le-serveur-ssh)
+  - [Mise en place sur l'hôte](#mise-en-place-sur-lhôte)
+    - [Profil réseau](#profil-réseau)
+    - [ip-forwarding (sur l'hôte)](#ip-forwarding-sur-lhôte)
+      - [Pour activer l'ip forwarding](#pour-activer-lip-forwarding)
+      - [L'accès internet de l'hôte et la connexion au raspberry sont sur le même interface.](#laccès-internet-de-lhôte-et-la-connexion-au-raspberry-sont-sur-le-même-interface)
+      - [L'accès internet de l'hôte est obtenu via une autre interface (**ex**: wifi) que celle sur laquelle est connectée le raspberry.](#laccès-internet-de-lhôte-est-obtenu-via-une-autre-interface-ex-wifi-que-celle-sur-laquelle-est-connectée-le-raspberry)
+    - [Activer le serveur ssh sur l'hôte](#activer-le-serveur-ssh-sur-lhôte)
+
+
+## Structure réseau
 
 Le sous-réseau qui va être configuré a pour addresse `192.168.2.1/24`, c'est à dire est l'ensemble des adresses commencant par `192.168.2.XXX`.
 
+L'adresse du sous-réseau est un choix arbitraire, destiné à éviter les conflits avec les adresses du réseau local, qui sont traditionnellement `192.168.1.1/24`.
+
 Dans ce sous-réseau, il y a deux appareils :
-- l'hôte qui a pour adresse `192.168.2.1` et qui fait office de routeur vers internet
+- l'hôte qui a pour adresse `192.168.2.1` et qui fait office de routeur vers internet (puisqu'il a la première addresse du sous-réseau)
 - le raspberry qui a pour addresse `192.168.2.2`
 
 ## Utilisation
@@ -44,6 +68,24 @@ scp user@192.168.2.2:/home/user/file_to_copy out_path_on_host
 # Pour copier un dossier
 scp -r user@192.168.2.2:/home/user/folder_to_copy out_path_on_host
 ~~~
+
+### Outils utiles
+
+<ins>**Extension VSCode Remote-SSH**</ins> :
+
+L'extension Remote-SSH sur VS-Code permet d'ouvrir un répertoire et éditer sur l'hôte un dossier situé sur le guest. Très utile pour effectuer et tester des modifications en direct sur le raspberry sans avoir à `git commit` tous les changements.
+
+<ins>**nmap**</ins> :
+
+En cas de doute sur l'ip du raspberry ou de conflit avec d'autre addresses, le réseau local peut-être scanné avec la commande `nmap` pour déterminer l'adresse des appareils s'y trouvant.
+
+Exemple :
+
+~~~
+sudo nmap -sn 192.168.2.1/24
+~~~
+
+Détecte toutes les adresses commencant par `192.168.2.XXX` sur le réseau.
 
 ## Mise en place sur le raspberry
 
@@ -133,7 +175,7 @@ Dans ce cas il est nécessaire de configurer les ip-tables afin de rediriger le 
    ETHERNET_INTERFACE=enx34298f731b2e
    WIFI_INTERFACE=wlp2s0
    ~~~
-2. Configurer le NAT avec iptables :
+2. Configurer le NAT et l'ip-forwarding avec iptables :
    ~~~
    sudo iptables -t nat -A POSTROUTING -o $WIFI_INTERFACE -j MASQUERADE
    sudo iptables -A FORWARD -i $ETHERNET_INTERFACE -o $WIFI_INTERFACE -j ACCEPT
@@ -146,6 +188,21 @@ Dans ce cas il est nécessaire de configurer les ip-tables afin de rediriger le 
    Cela suppose un accès internet, mais à ce stade vous devriez y avoir accès.
 
    Pendant l'installation, il vous sera demandé si vous sera proposé d'enregistrer les règles actuelles.
+
+   Les règles seront enregistrées dans `/etc/iptables/rules.v4`
+   > Pour restaurer les règles, vous pouvez executer les commandes suivantes :
+   > ~~~
+   > # Supprimer les règles de NAT
+   >sudo iptables -t nat -D POSTROUTING -o wlp2s0 -j MASQUERADE
+   >
+   ># Supprimer les règles de forwarding
+   >sudo iptables -D FORWARD -i enx34298f731b2e -o wlp2s0 -j ACCEPT
+   >sudo iptables -D FORWARD -i wlp2s0 -o enx34298f731b2e -m state --state RELATED ESTABLISHED -j ACCEPT
+   > 
+   > # Sauvegarder les changements
+   > sudo iptables-save | sudo tee /etc/iptables/rules.v4
+   > ~~~
+
 ### Activer le serveur ssh sur l'hôte
 
 Cet étape n'est pas indispensable.

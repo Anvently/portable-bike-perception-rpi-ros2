@@ -2,6 +2,24 @@
 
 Ce repo contient tous les packages et utilitaires nécessaires à la prise des mesures. Cela correspond à l'ensemble des noeuds et des scripts qui doivent tourner sur le raspberry.
 
+- [Cyclosafe core](#cyclosafe-core)
+	- [Installation](#installation)
+	- [Usage](#usage)
+		- [Sourcer l'environnement](#sourcer-lenvironnement)
+		- [Sourcer l'environnement à l'ouverture d'un nouveau terminal](#sourcer-lenvironnement-à-louverture-dun-nouveau-terminal)
+		- [Pour compiler l'ensemble des packages](#pour-compiler-lensemble-des-packages)
+		- [Démarrer la prise de mesure](#démarrer-la-prise-de-mesure)
+		- [Activer/désactiver la prise de mesures avec enregistrement au démarrage du raspberry](#activerdésactiver-la-prise-de-mesures-avec-enregistrement-au-démarrage-du-raspberry)
+	- [Documentation](#documentation)
+		- [Détails sur les packages et les différents noeuds](#détails-sur-les-packages-et-les-différents-noeuds)
+		- [Détails sur l'installation](#détails-sur-linstallation)
+		- [Scripts](#scripts)
+		- [Services systemd](#services-systemd)
+		- [Documentation ROS 2](#documentation-ros-2)
+	- [Installation hors-ligne](#installation-hors-ligne)
+		- [Configurer le sous-réseau](#configurer-le-sous-réseau)
+
+
 ## Installation
 
 Suppose un accès internet sur le raspberry.
@@ -98,7 +116,7 @@ Autrement il est possible de procéder à une installation complètement vierge 
 
 La première étape est de permettre la connexion ssh vers raspberry.
 
-Pour cela suivez les [**instructions de configuration réseau**](#usage), pour configurer les profils réseaux de l'hôte du raspberry (pour une installation complète il est aussi nécessaire que le raspberry ait accès à Internet).
+Pour cela suivez les [**instructions de configuration réseau**](../network.md), pour configurer les profils réseaux de l'hôte du raspberry (pour une installation complète il est aussi nécessaire que le raspberry ait accès à Internet).
 
 Une fois le réseau configuré, vous pouvez simplement copier le dossier `core` vers le raspberry à l'aide de la commande suivante (remplacer `user` par l'utilisateur choisi lors de l'installation de raspberry OS) :
 

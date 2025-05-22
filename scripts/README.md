@@ -1,5 +1,16 @@
 Contient des scripts et utilitaires destinés à faciliter la récupération des données.
 
+- [gpx\_exporter.py](#gpx_exporterpy)
+  - [Usage](#usage)
+  - [Exemple](#exemple)
+  - [Paramètres](#paramètres)
+- [import\_recordings.py](#import_recordingspy)
+  - [Usage](#usage-1)
+  - [Exemple](#exemple-1)
+  - [Paramètres](#paramètres-1)
+  - [Procédure normale](#procédure-normale)
+  - [Documentation et suppléments sur rosbag](#documentation-et-suppléments-sur-rosbag)
+
 # gpx_exporter.py
 
 Permet d'exporter les données GPS contenues dans un rosbag vers un format gpx.
