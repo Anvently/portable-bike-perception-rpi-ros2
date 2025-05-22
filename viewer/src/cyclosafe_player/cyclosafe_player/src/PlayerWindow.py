@@ -186,7 +186,7 @@ class RosbagPlayerWindow(QMainWindow):
 		# Timer for updating UI
 		self.update_timer = QTimer()
 		self.update_timer.timeout.connect(self.update_ui)
-		self.update_timer.start(50)  # 50 ms update rate
+		self.update_timer.start(10)  # 50 ms update rate
 
 	def open_bag(self, file_path: str = None):
 		"""Open a bag file and load its contents, with support for zstd compression."""
