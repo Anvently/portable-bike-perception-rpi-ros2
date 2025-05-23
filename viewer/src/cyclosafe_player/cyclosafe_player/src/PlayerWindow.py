@@ -404,29 +404,60 @@ class RosbagPlayerWindow(QMainWindow):
 	def process_message(self, topic, msg, timestamp):
 		"""Process a message from the bag."""
 		if topic in self.selected_topics and topic in self.publishers:
+			topic_type_str = self.bag_info.topic_info[topic].msg_type
 			# Publier le message
+			if topic == "/lidar2_tf_02/range":
+				msg.field_of_view = 0.0523599
+			elif topic == "/lidar1_tof/range":
+				msg.field_of_view = 0.00523599
 			self.publishers[topic].publish(msg)
 			
 			# Pour les CompressedImage, mettre à jour la miniature
-			topic_type_str = self.bag_info.topic_info[topic].msg_type
 			if topic_type_str == 'sensor_msgs/msg/CompressedImage':
 				img = compressed_image_to_qimage(self, msg)
-				
-				# Rotation de 90° de l'image
+
+				# Rotation de 180° de l'image
 				transform = QTransform().rotate(180)
 				rotated_img = img.transformed(transform)
-
 				pixmap = QPixmap.fromImage(rotated_img).scaledToWidth(400, Qt.SmoothTransformation)
 
-				# Afficher ou mettre à jour l'image
+				# Afficher ou mettre à jour l'image dans le layout principal
 				if not hasattr(self, 'image_label'):
 					self.image_label = QLabel()
 					self.image_label.setAlignment(Qt.AlignCenter)
-					# self.image_label.setFixedWidth(200)
 					self.image_preview_layout.addWidget(self.image_label)
 
 				self.image_label.setPixmap(pixmap)
 				self.image_label.setToolTip(f"{topic} @ {timestamp:.2f}s")
+
+				# Créer et afficher une fenêtre indépendante
+				if not hasattr(self, 'image_window') or not self.image_window.isVisible():
+					self.image_window = QWidget()
+					# self.image_window.setWindow
+					self.image_window.setWindowTitle(None)
+					
+					# Layout pour la fenêtre sans marges
+					window_layout = QVBoxLayout()
+					window_layout.setContentsMargins(0, 0, 0, 0)  # Supprimer les marges
+					window_layout.setSpacing(0)  # Supprimer l'espacement
+					
+					self.image_window_label = QLabel()
+					self.image_window_label.setAlignment(Qt.AlignCenter)
+					self.image_window_label.setScaledContents(True)  # L'image s'adapte au label
+					
+					window_layout.addWidget(self.image_window_label)
+					self.image_window.setLayout(window_layout)
+
+				# Mettre à jour l'image dans la fenêtre indépendante
+				self.image_window_label.setPixmap(pixmap)
+				self.image_window_label.setToolTip(f"{topic} @ {timestamp:.2f}s")
+
+				# Afficher la fenêtre si elle n'est pas visible
+				if not self.image_window.isVisible():
+					self.image_window.show()
+					# Optionnel : positionner la fenêtre à côté de la fenêtre principale
+					main_geometry = self.geometry()
+					self.image_window.move(main_geometry.x() + main_geometry.width() + 10, main_geometry.y())
 
 		
 		# Update timeline

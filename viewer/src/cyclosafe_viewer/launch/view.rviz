@@ -10,7 +10,8 @@ Panels:
         - /TF1/Tree1
         - /Marker1/Topic1
         - /AerialMap1
-        - /AerialMap1/Status1
+        - /Range1
+        - /Range2
       Splitter Ratio: 0.5
     Tree Height: 714
   - Class: rviz_common/Selection
@@ -67,7 +68,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 29
+      Max Intensity: 42
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: LaserScan
@@ -184,7 +185,7 @@ Visualization Manager:
       Max Color: 255; 255; 255
       Max Intensity: 255
       Min Color: 0; 0; 0
-      Min Intensity: 7
+      Min Intensity: 5
       Name: LaserScan
       Position Transformer: XYZ
       Selectable: true
@@ -315,6 +316,34 @@ Visualization Manager:
         Value: false
       Value: true
       Zoom: 16
+    - Alpha: 0.5
+      Buffer Length: 1
+      Class: rviz_default_plugins/Range
+      Color: 237; 51; 59
+      Enabled: true
+      Name: Range
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /lidar1_tof/range
+      Value: true
+    - Alpha: 0.5
+      Buffer Length: 1
+      Class: rviz_default_plugins/Range
+      Color: 46; 194; 126
+      Enabled: true
+      Name: Range
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /lidar2_tf_02/range
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -361,25 +390,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 11.986396789550781
+      Distance: 5.931882858276367
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.03843606263399124
-        Y: -0.051476143300533295
-        Z: 0.9193632006645203
+        X: 0.5759066343307495
+        Y: -0.16603489220142365
+        Z: 0.7712370753288269
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4853987693786621
+      Pitch: 0.4303995370864868
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 0.7754009366035461
+      Yaw: 1.8054219484329224
     Saved: ~
 Window Geometry:
   Displays:

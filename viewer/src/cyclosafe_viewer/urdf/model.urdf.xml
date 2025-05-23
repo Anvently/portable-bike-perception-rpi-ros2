@@ -104,7 +104,7 @@
   <joint name="tf02_range_joint" type="fixed">
     <parent link="tf-02"/>
     <child link="lidar2_tf_02/range"/>
-    <origin xyz="0 0.026 0" rpy="0 0 0" />
+    <origin xyz="0 0.026 0" rpy="0 0.02 1.57" />
   </joint>
 
   <!-- TF-mini-plus lidar -->
@@ -132,7 +132,7 @@
   <joint name="tf-mini-plus_range_joint" type="fixed">
     <parent link="tf-mini-plus"/>
     <child link="lidar2_tf_mini_plus/range"/>
-    <origin xyz="-0.018 0.021 0.009" rpy="0 0 0" />
+    <origin xyz="-0.018 0.021 0.009" rpy="0 0 1.57" />
   </joint>
 
   <!-- Waveshare lidar -->
@@ -151,7 +151,7 @@
   <joint name="tof_lidar_to_board" type="fixed">
     <parent link="board_base"/>
     <child link="tof_lidar"/>
-    <origin xyz="0.068 0.067 0.012" rpy="0 0 0" />
+    <origin xyz="0.068 0.067 0.012" rpy="0 0 1.57" />
   </joint>
 
   <link name="lidar1_tof/range">

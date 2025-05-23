@@ -420,7 +420,7 @@ namespace Benewake {
 			virtual std::string getModelName() const = 0;
 
 			virtual double	getFov() const {
-				return 1.0;
+				return (0.0174533);
 			}
 
 			static std::unique_ptr<ADriver> build_driver(const std::string& model_name, std::shared_ptr<Serial> serial_port) {
@@ -442,7 +442,7 @@ namespace Benewake {
 			}
 
 			virtual std::string getModelName() const {return ("tf-02");}
-			virtual double	getFov() const {return (3.0);}
+			virtual double	getFov() const {return (0.0523599);}
 
 			virtual void	setFrameRate(unsigned int rate) const override {
 				if (_free_running == true)
@@ -487,7 +487,7 @@ namespace Benewake {
 			}
 
 			virtual std::string getModelName() const {return ("tf-mini-plus");}
-			virtual double	getFov() const {return (3.6);}
+			virtual double	getFov() const {return (0.10472);}
 
 			virtual void	setFrameRate(unsigned int rate) const override {
 
@@ -550,7 +550,7 @@ namespace Benewake {
 			}
 
 			virtual std::string getModelName() const {return ("tf-s20l");}
-			virtual double	getFov() const {return (2.0);}
+			virtual double	getFov() const {return (0.0349066);}
 
 			virtual void	setFrameRate(unsigned int rate) const override {
 				if (_free_running == true)

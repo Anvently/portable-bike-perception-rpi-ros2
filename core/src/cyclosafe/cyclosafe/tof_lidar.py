@@ -8,7 +8,7 @@ import time, logging
 from rclpy.node import Node
 from serial import Serial, serialutil
 
-FOV = 0.3
+FOV = 0.00523599
 MS_TO_NS = (1000 * 1000)
 TOF_FRAME_HEADER = 0x57  #Define frame header 定义帧头
 TOF_FUNCTION_MARK = 0x00 #Define function code 定义功能码
