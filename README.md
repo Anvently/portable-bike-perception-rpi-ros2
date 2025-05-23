@@ -6,8 +6,7 @@
 
 Ce repo contient le firmware destiné à tourner sur un **raspberry** pour faire fonctionner l'ensemble des capteurs et **prendre les mesures**, ainsi que les différents outils pour **exporter**, **visualiser** et **analyser** les données prises.
 
-![visualisation démo des données prises sur Rviz](./viewer/src/cyclosafe_viewer/resource/doc/cyclosafe-demo.mp4)
-<video src="./viewer/src/cyclosafe_viewer/resource/doc/cyclosafe-demo.mp4" controls preload></video>
+https://github.com/user-attachments/assets/d5b68dda-f3fe-4f50-86e3-c243446fb8e7
 
 ## Structure
 
