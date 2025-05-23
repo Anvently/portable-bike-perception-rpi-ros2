@@ -8,6 +8,8 @@ Ce repo contient le firmware destiné à tourner sur un **raspberry** pour faire
 
 ![visualisation démo des données prises sur Rviz](./viewer/src/cyclosafe_viewer/resource/doc/cyclosafe-demo.mp4)
 
+https://github.com/Anvently/Cyclosafe-firmware/blob/master/viewer/src/cyclosafe_viewer/resource/doc/cyclosafe-demo.mp4
+
 ## Structure
 
 > [**core/**](core/README.md) : répertoire destiné à être installé sur le raspberry. Contient :
