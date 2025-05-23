@@ -1,5 +1,7 @@
 # cyclosafe_viewer
 
+![rviz_visualisation_demo](./resource/doc/rviz_demo.png)
+
 Package python implémentant plusieurs choses
 
 - la launch description [**viewer.launch.py**](#) permettant de lancer simultanément tous les outils de visualisation à partir de données en directes ou d'un [`rosbag`](../../ROS2.md#bag-ou-rosbag) à revisionner.
@@ -144,7 +146,7 @@ Format XML standardisé pour décrire la structure physique d'un robot, incluant
 Fonctionne avec le [package](#package) `robot_state_publisher` qui prend en entrée une description [URDF](#urdf---unified-robot-description-format) et génère automatiquement l'arbre de transformation [`tf2`](#tf2) associé.
 
 ## Arbre de transformation des frames
- ![alt ](../../../ressources/frames.png)
+ ![tf2-tree-graph ](./resource/doc/frames.png)
 
 La frame racine du modèle URDF est le `bicycle_link`.
 

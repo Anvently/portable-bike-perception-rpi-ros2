@@ -51,9 +51,6 @@ def detect_peaks(sonar_data, threshold_drop=3.0, min_duration_sec=0.3, recovery_
 	"""
 	if not sonar_data:
 		return []
-		
-	baseline =	5.0
-	min_peak_drop = 4.5
 
 	peaks = []
 	current_peak: Peak = None
@@ -64,20 +61,20 @@ def detect_peaks(sonar_data, threshold_drop=3.0, min_duration_sec=0.3, recovery_
 	
 	for i, (time, range_val) in enumerate(sonar_data):
 		# Début potentiel d'un pic
-		if range_val < min_peak_drop and current_peak is None:
+		if range_val < threshold_drop and current_peak is None:
 			current_peak = Peak(time, range_val)
 			# current_peak = Peak(sonar_data[i - 1][0] if i != 0 else sonar_data[i][0], range_val)
 
 		# Pendant un pic potentiel
 		elif current_peak is not None:
-			if range_val < min_peak_drop:
+			if range_val < threshold_drop:
 				# Toujours dans le pic, ajouter la valeur
 				current_peak.add_sample(time, range_val)
 				
 				# Si on était en période de rétablissement temporaire, on ne l'est plus
 				in_recovery = False
 				
-			elif range_val >= min_peak_drop:  # range_val >= min_peak_drop
+			elif range_val >= threshold_drop:  # range_val >= min_peak_drop
 				if not in_recovery:
 					# Début d'une période de rétablissement potentielle
 					in_recovery = True

@@ -1,6 +1,6 @@
 # cyclosafe_player
 
-![player window demo](../../../ressources/cyclosaf_player_window.png)
+![player window demo](./resource/doc/cyclosafe_player_window.png)
 
 - [cyclosafe\_player](#cyclosafe_player)
 	- [Fonctionnalités](#fonctionnalités)
@@ -15,7 +15,11 @@
 		- [Dépassement et croisement](#dépassement-et-croisement)
 		- [Pics de détection](#pics-de-détection)
 	- [Détection des pics](#détection-des-pics)
+		- [Visualisation des pics](#visualisation-des-pics)
 	- [Import/export en CSV](#importexport-en-csv)
+		- [Import depuis un CSV](#import-depuis-un-csv)
+		- [Export vers un CSV](#export-vers-un-csv)
+		- [Format](#format)
 	- [Onglet analyses](#onglet-analyses)
 	- [Pourquoi ne pas avoir utilisé `ros2 bag play` ou `rqt_bag` ?](#pourquoi-ne-pas-avoir-utilisé-ros2-bag-play-ou-rqt_bag-)
 		- [`ros2 bag play`](#ros2-bag-play)
@@ -63,6 +67,8 @@ Cet outil a été l'objet d'une multitude de modifications à mesure que les bes
 Il est très utile à l'analyse mais son architecture n'a pas été bien pensée dès le début, les outils étant trop imbriqués les uns dans les autres.
 
 Ce document a pour but de présenter les différentes fonctionnalités et fera peu état des choix d'implémentations.
+
+Ayant été développée au moment de nombreux tests basés sur les sonars, la section du code concernant l'analyse des pics mentionne **"sonar"** plutôt que **"range_sensor"**. Dans les faits les analyses effectuées s'appliquent également aux lidars, ou à tout noeud-capteur  publiant des messages de type `sensor_msgs/msg/Range`.
 
 ## Ouverture des rosbag
 
@@ -141,13 +147,103 @@ Contient des propriétés supplémentaires sur la nature du pic :
 
 ## Détection des pics
 
-WIP
+Algorithme très rudimentaire permettant de détecter les moments où les distances publiées sur un topic de type `sensor_msgs/msg/Range` passent en dessous d'un certain seuil.
+
+L'algorithme prend les paramètres suivants :
+
+> `treshold_drop` : float
+> - **Défaut** : 3.0
+> - **Unit** : m
+> - seuil en dessous duquel une distance est considérée comme un pic valide
+
+> `min_duration_sec` : float
+> - **Défaut** : 0.3
+> - **Unit** : s
+> - durée minimal d'un pic pour qu'il soit valide (c'est à dire la durée pendant laquelle `distance < treshold_drop`)
+
+> `recovery_tolerance` : float
+> - **Défaut** : 0.3
+> - **Unit** : s
+> - durée pendant laquelle la distance peut brièvement repasser au dessus de la valeur seuil pendant un pic, sans que celui-ci soit considéré comme interrompu. Destiné à limiter l'influence du bruit sur un pic.
+
+L'algorithme est lancé automatiquement avec les paramètres par défaut à l'ouverture d'un bag.
+
+Il peut être relancé avec des paramètres personnalisés dans l'onglet `Outils`.
+
+Des marqueurs sont créés pour chaque pic détecté dans une catégorie dédiée.
+
+### Visualisation des pics
+
+Par défaut, les pics sont automatiquement mis en évidence au fur et à mesure de la lecture, afin de tout de suite identifier les vrais positifs lors d'un dépassement. 
+
+Cette option est désactivable par topic dans l'onglet `Analyses`.
 
 ## Import/export en CSV
 
-WIP
+Outil permettant l'export ou l'import des données au format CSV, et la mise en corrélation des croisements/dépassements avec les pics détectés.
+
+### Import depuis un CSV
+
+Dans le cadre d'un import, le but est surtout de générer automatiquement les marqueurs dépassements/croisements à partir de timestamp et des informations liées au véhicule dans un CSV.
+
+### Export vers un CSV
+
+Chaque croisement et dépassement est considéré comme un évènement d'intérêt et exporter sous forme ligne.
+
+Pour chaque croisement/dépassement (pour chaque ligne) sont identifiées et ajoutées des informations sur la présence/absence de pics pour chacun des topics `sensor_msgs/msg/Range`.
+
+Les données à exporter et leur format sont personnalisables.
+
+> **Remarque** : En l'état le nom des catégories de marqueurs à exporter est figé à `sonarN_peaks`. Pour l'utiliser avec des lidars il faudrait revoir la façon dont ces catégories sont créées.
+
+### Format
+
+Le champ format définit la structure et les champs du CSV à importer ou exporter.
+
+<ins>**Exemple**</ins> :
+
+`0$bag=bag,
+1$time=temps,
+3$vehicle=type de véhicule,
+4$color=couleur,
+5$type=direction,
+7$shape=forme,
+8$distance=distance,
+28$sonar1.mean=sonar1 mean distance,
+29$sonar1.std_dev=sonar1 std dev,
+30$sonar1.min=sonar1 min,
+31$sonar1.sample_count=sonar1 sample count,
+32$sonar1.duration=sonar1 duration,
+33$sonar1.delta=sonar1 delta`
+- `0` : facultatif, précise l'indice de la colonne correspondante. Peut-être omis, auquel cas l'index est défini au précédent index + 1.
+- `$bag` : donnée à laquelle correspond la colonne. Les types valides sont :
+  - `$bag` : nom du bag
+  - `$time` : timestamp de l'évènement (relatif au début de l'enregistrement)
+  - `$vehicle` : type de de véhicule (voiture, moto, bus, etc...)
+  - `$color` : couleur du véhicule
+  - `$type` : direction de l'évènement ("Dépassement" ou "Croisement")
+  - `$shape` : forme du nuages de points sur le lidar 360°
+  - `$distance` : distance de dépassement
+  - `$[sensor_name].mean` : si présence d'un pic, distance moyenne du pic
+  - `$[sensor_name].std_dev` : si présence d'un pic, écart-type du pic
+  - `$[sensor_name].min` : si présence d'un pic, distance minimale du pic
+  - `$[sensor_name].max` : si présence d'un pic, distance maximale du pic
+  - `$[sensor_name].duration` : si présence d'un pic, durée du pic
+  - `$[sensor_name].sample_count` : si présence d'un pic, nombre d'échantillons (de mesures) que contient le pic.
+  - `$[sensor_name].delta` : si présence d'un pic, différence entre la distance de l'évènement avec la distance moyenne mesurée par le pic.
+- `=bag` : facultatif, entête de la colonne dans le fichier de sortie. Si omise, sera égale au nom de la donnée correspondante.
+- `,` : séparateur entre deux colonnes
+- Le format est insensible aux sauts de ligne et aux espaces.
+
+Deux champs (colonnes) sont séparés par une virgule (`,`).
+
+
 
 ## Onglet analyses
+
+Permet d'activer/désactiver la mise en évidence des pics pour chacun des topics `sensor_msgs/msg/Range`.
+
+Affiche également des détails sur les pics présents à l'instant T de la lecture.
 
 ## Pourquoi ne pas avoir utilisé `ros2 bag play` ou `rqt_bag` ?
 
