@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "easyeda")(type "KiCad")(uri "${KIPRJMOD}/libs/easyeda/easyeda.kicad_sym")(options "")(descr ""))
+  (lib (name "raspi-4_lib")(type "KiCad")(uri "${KIPRJMOD}/libs/raspi-4-lib/libraries/RPi_Hat.kicad_sym")(options "")(descr ""))
+)
