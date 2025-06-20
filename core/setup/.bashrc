@@ -28,12 +28,12 @@ if [ -f $CYCLOSAFE_WORKSPACE/install/setup.bash ]; then
 	CYCLOSAFE_READY=0
 fi
 
-MSG="Ros is not installed or the cyclosafe environment was not sourced."
+MSG="Ros2 Jazzy is not installed or the cyclosafe environment was not sourced. If using a different ROS distro, some features may not work properly."
 
 if [ $ROS_INSTALLED -eq 1 ]; then
 	alias cy_core_build="cd $CYCLOSAFE_WORKSPACE; colcon build --symlink-install --parallel-workers=2; source ./setup/.bashrc; cd -"
 	alias cy_core_clean="cd $CYCLOSAFE_WORKSPACE; rm -rf build/ install/ log/; source ./setup/.bashrc; cd -"
 else
-	alias cy_core_build="$MSG"
-	alias cy_core_clean="$MSG"
+	alias cy_core_build="echo $MSG"
+	alias cy_core_clean="echo $MSG"
 fi
