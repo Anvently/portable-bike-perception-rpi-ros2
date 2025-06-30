@@ -1,0 +1,5 @@
+*.zip
+kicad.step
+simulation/
+kicad-backups/
+jlcpcb/
