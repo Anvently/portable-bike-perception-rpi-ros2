@@ -11,10 +11,14 @@ Script ayant plusieurs fonctions :
 - monitoring du bouton d'extinction : Retourne 255 (-1) lors de l'appui du bouton
 - contrôle des leds : clignotement des led
 - monitoring de la batterie : mesure la tension toutes les 10s. Retourne 254 (-2) si la tension est inférieure à la tension minimale.
+- monitoring de l'espace de stockage restant : un espace insuffisant déclenche le voyant de stockage plein mais ne provoque pas l'arrêt de raspberry
 
 ### Valeurs par défaut (paramètrables dans gpio.py)
 
-- **BTN_RST_GPIO=16** : gpio pin auquel est connecté le bouton d'arrêt. Configuré au démarrage du noeud (et dans ***/boot/firmware/config.txt***) comme étant en pull-up (un appui correspond à une tension aux bornes du pin de 0V)
+- **BTN_RST_GPIO=16** : gpio pin auquel est connecté le bouton d'arrêt.
+- **LED_BATTERY_GPIO=9** : gpio pin de la led batterie faible
+- **LED_BUZY_GPIO=7** : gpio pin de la led d'état
+- **LED_SD_CARD_GPIO=10** : gpio pin de la led stockage plein
 - **BUTTON_SHUTDOWN=255** : valeur de retour (alias code d'erreur) pour un appui sur le bouton. **NE PAS MODIFIER (à moins de corriger le script gpio.sh en conséquence)**
 - **BUTTON_SHUTDOWN=254** : valeur de retour (alias code d'erreur) pour une batterie faible (voltage trop faible). **NE PAS MODIFIER (à moins de corriger le script gpio.sh en conséquence)**
 - **NBR_CELLS=2** : nombre d'accus dans la batterie
