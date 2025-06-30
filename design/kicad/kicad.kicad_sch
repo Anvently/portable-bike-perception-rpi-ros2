@@ -4,6 +4,13 @@
 	(generator_version "9.0")
 	(uuid "66b17f4a-7c8a-4c83-8093-7a0c1545eccc")
 	(paper "A4")
+	(title_block
+		(title "Projet cyclosafe : Module d'extension pour Raspberry")
+		(date "2025-06-16")
+		(rev "V1")
+		(company "IGN")
+		(comment 1 "Nicolas Pirard")
+	)
 	(lib_symbols
 		(symbol "Connector:Raspberry_Pi_4"
 			(exclude_from_sim no)

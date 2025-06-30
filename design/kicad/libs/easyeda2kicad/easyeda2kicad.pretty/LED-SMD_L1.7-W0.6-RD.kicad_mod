@@ -145,7 +145,7 @@
 		(uuid "48657ed3-b662-4b21-be84-72a83983783c")
 	)
 	(embedded_fonts no)
-	(model "C:/Users/npirard.IGN/Documents/cyclosafe/design/kicad/libs/easyeda2kicad/easyeda2kicad.3dshapes/LED-SMD_L1.7-W0.6-H1.2.wrl"
+	(model "${KIPRJMOD}/libs/easyeda2kicad/easyeda2kicad.3dshapes/LED-SMD_L1.7-W0.6-H1.2.wrl"
 		(offset
 			(xyz -0 -0.36 0.3)
 		)

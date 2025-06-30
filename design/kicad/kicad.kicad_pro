@@ -535,7 +535,7 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "kicad.step",
+      "step": "../docs/kicad.stl",
       "svg": "",
       "vrml": ""
     },
@@ -667,7 +667,7 @@
     },
     "net_format_name": "",
     "page_layout_descr_file": "",
-    "plot_directory": "../../../Téléchargements/",
+    "plot_directory": "/home/npirard/cyclosafe/design/docs/",
     "space_save_all_events": true,
     "spice_current_sheet_as_root": false,
     "spice_external_command": "spice \"%I\"",
