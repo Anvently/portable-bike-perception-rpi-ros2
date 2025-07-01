@@ -125,7 +125,7 @@ Définit l'ensemble des variables d'environnement utilisées par cyclosafe.
 
 > **SHUTDOWN_DELAY** : temps imparti à l'arrêt du service [**cyclosafed.service**](systemd/README#cyclosafedservice) pour se terminer correctement avant d'éteindre le raspberry.
 
-> **LOW_BATTERY_POURCENT** : pourcentage de batterie (valuer flottante de 0 à 1) en dessous duquel s'allume le boyant batterie faible 
+> **LOW_BATTERY_PERCENT** : pourcentage de batterie (valuer flottante de 0 à 1) en dessous duquel s'allume le boyant batterie faible 
 
 > **LOW_STORAGE_TRESHOLD** : espace de stockage (en MO) disponible en dessous duquel s'allume le voyant de stockage plein.
 

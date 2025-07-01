@@ -53,8 +53,8 @@ BUS_CHARGE_VOLTAGE = NBR_CELLS * CHARGE_VOLTAGE
 BATTERY_VOLTAGE_TRESHOLD = BUS_CHARGE_VOLTAGE - (NBR_CELLS * VOLTAGE_RANGE)
 
 # Voltage treshold when battery is less than 20%
-LOW_BATTERY_POURCENT = int(os.getenv("LOW_BATTERY_POURCENT", "0.2"))
-LOW_BATTERY_TRESHOLD = BATTERY_VOLTAGE_TRESHOLD + (LOW_BATTERY_POURCENT * NBR_CELLS * VOLTAGE_RANGE)
+LOW_BATTERY_PERCENT = int(os.getenv("LOW_BATTERY_PERCENT", "0.2"))
+LOW_BATTERY_TRESHOLD = BATTERY_VOLTAGE_TRESHOLD + (LOW_BATTERY_PERCENT * NBR_CELLS * VOLTAGE_RANGE)
 
 # When free storage is less than this threshold (in MB), the SD_CARD led will be turned on.
 LOW_STORAGE_TRESHOLD = int(os.getenv("LOW_STORAGE_TRESHOLD", "512")) # (512MB)
@@ -104,14 +104,17 @@ class GPIOController():
 		elif bus_voltage < LOW_BATTERY_TRESHOLD:
 			self.turn_on(LED_BATTERY_GPIO)
 
-	def routine(self):
+	def routine(self, blink = True):
 		shutdown_type = 0
 		try:
 			count = 0
 			while button_pressed == False:
 				if count % 20 == 0: # 20 * 0.5 = 10, every 10s
 					self.check_battery_state()
-				self.toggle(LED_BUZY_GPIO)
+				if count % 60 == 0: # 60 * 0.5 = 30, every 30s:
+					self.check_sd_card()
+				if blink:
+					self.toggle(LED_BUZY_GPIO)
 				time.sleep(0.5)
 				count += 1
 			shutdown_type = BUTTON_SHUTDOWN
@@ -123,7 +126,11 @@ class GPIOController():
 
 	def check_sd_card(self) -> bool:
 		mb_available = psutil.disk_usage("/").free / 1024 / 1024
-		return (mb_available < LOW_STORAGE_TRESHOLD)
+		if (mb_available < LOW_STORAGE_TRESHOLD):
+			self.turn_on(LED_SD_CARD_GPIO)
+			return False
+		self.turn_off(LED_SD_CARD_GPIO)
+		return True
 
 
 gpio_controler = GPIOController()
@@ -137,10 +144,15 @@ def host_shutdown(GPIO, level, tick):
 
 def main(args=None):
 	global gpio_controler
-	pi.set_pull_up_down(BTN_RST_GPIO, pigpio.PUD_UP)
+	# pi.set_pull_up_down(BTN_RST_GPIO, pigpio.PUD_UP)
 	pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
 	pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
-	gpio_controler.routine()
+	if gpio_controler.check_sd_card() == False:
+		gpio_controler.routine(blink=False)
+		# If SD card is full at startup, no recording will start
+		# So we don't want to blink the buzy led
+	else:
+		gpio_controler.routine()
 	
 	sys.exit(0)
 

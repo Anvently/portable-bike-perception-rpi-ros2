@@ -9,6 +9,9 @@ echo "log directory: $CYCLOSAFE_LOGS"
 echo "scripts path: $SCRIPTS_PATH"
 echo "gps serial port: $GPS_SERIAL_PORT"
 echo "shutdown delay: $SHUTDOWN_DELAY"
+echo "led brightness: $LED_BRIGHTNESS"
+echo "low battery percent: $LOW_BATTERY_PERCENT"
+echo "low storage treshold: $LOW_STORAGE_TRESHOLD MB"
 
 export CYCLOSAFE_RECORD=$CYCLOSAFE_RECORD
 

@@ -17,6 +17,6 @@ Contient les fichiers relatifs à la fabrication du boitier destiné à recevoir
 
 Le dossier [`kicad/`](kicad/) contient le projet Kicad 9.0 d'un PCB sur lequel viennent se brancher les différents capteurs et composants actifs (LEDs et bouton d'extinction).
 
-Il prend la forme d'un hat pour raspberry et vient se connecter via le header de 40 pins.
+Il prend la forme d'un hat pour raspberry et se connecte via le header de 40 pins.
 
 
