@@ -453,7 +453,7 @@
 		(uuid "04ea47f8-4621-46ef-a511-924f8897c15d")
 	)
 	(embedded_fonts no)
-	(model "C:/Users/npirard.IGN/Documents/cyclosafe/design/kicad/libs/easyeda2kicad/easyeda2kicad.3dshapes/HDR-TH_40P-P2.54-V-F-R2-C20-S2.54-2.wrl"
+	(model "${KIPRJMOD}/libs/easyeda2kicad/easyeda2kicad.3dshapes/HDR-TH_40P-P2.54-V-F-R2-C20-S2.54-2.wrl"
 		(offset
 			(xyz 0 -0 2.1)
 		)

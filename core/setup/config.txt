@@ -1,7 +1,6 @@
 
 #Cyclosafe specific
 
-dtoverlay=gpio_pin=16,gpio_pull=up
 dtoverlay=disable-bt
 enable_uart=1
 

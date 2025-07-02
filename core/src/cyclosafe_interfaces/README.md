@@ -73,7 +73,7 @@ int32 actives_sat
 
 # srv/SaveImages
 
-Service permettant l'interaction entre le [**noeud hub**](../cyclosafe_hub/README.md) et le [**noeud caméra**](../cyclosafe/README.md#acamera). Demande au noeud caméra d'enregistrer les images prises sur les X dernières millisecondes (`time`) au `path` .demandé
+Service permettant l'interaction entre un précédent noeud hub (devenu obsolete avec l'utilisation de ROS bag) et le [**noeud caméra**](../cyclosafe/README.md#acamera). Demande au noeud caméra d'enregistrer les images prises sur les X dernières millisecondes (`time`) au `path` .demandé
 
  ~~~
  $ ros2 interface show cyclosafe_interfaces/srv/SaveImages

@@ -10,6 +10,12 @@ touch "$LOG_FILE"
 
 echo "[INFO] $(date) - Powered on" | tee -a "$LOG_FILE"
 
+DISK_USAGE=$(df -BM / | awk 'NR==2{print $4}' | sed 's/M//')
+
+if [ $DISK_USAGE -lt $LOW_STORAGE_TRESHOLD ]; then
+	echo "[INFO] $(date) - Low storage detected. No data will be recorded" | tee -a "$LOG_FILE"
+fi
+
 cd $SCRIPT_DIR
 export PYTHONPATH=$SCRIPT_DIR:$PYTHONPATH
 python3 "$PYTHON_SCRIPT"

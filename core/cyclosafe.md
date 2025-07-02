@@ -8,10 +8,8 @@ Chaque noeud peut-être lancé indépendemment ou l'ensemble des noeuds sont lan
 - [Structure](#structure)
 	- [cyclosafe](#cyclosafe)
 	- [cyclosafe\_config](#cyclosafe_config)
-	- [cyclosafe\_hub (obsolete)](#cyclosafe_hub-obsolete)
 	- [cyclosafe\_interfaces](#cyclosafe_interfaces)
 	- [cyclosafe\_lidar](#cyclosafe_lidar)
-	- [ldlidar\_stl\_ros2](#ldlidar_stl_ros2)
 	- [rplidar\_ros2](#rplidar_ros2)
 
 
@@ -46,19 +44,11 @@ Package python dont la seule fonction est d'exporter les classes `Sensor` et `Se
 
 Ces classes sont également utilisées par l'environnement [**viewer/**](../viewer/README.md), raison pour laquelle elles sont isolées dans un package.
 
-## cyclosafe_hub (obsolete)
-
-[**src/cyclosafe_hub/README.md**](src/cyclosafe_hub/README.md)
-
-Noeud en cpp qui a pour but d'aggréger des données venant de différents topics et de les enregistrer au format csv dans des fichiers isolés. Commande également l'enregistrement des photos via un service adressé au noeud camera.
-
-Rendu obsolete par l'utilisation de rosbag, qui gère l'enregistrement, la sérialisation et la compression de toutes les données publiées.
-
 ## cyclosafe_interfaces
 
 Définit les interfaces ROS 2 propres au projet, à savoir :
 - ***cyclosafe_interfaces/msg/NavSatinfo*** : extension de sensor_msgs/msg/NavSatFix intégrant des données supplémentaires comme l'altitude, la vitesse, le nombre de satellites utilisées et la dop.
-- ***cyclosafe_interfaces/srv/SaveImages (obsolte)*** : service permettant l'interaction entre le noeud hub et le noeud. Demande au noeud caméra d'enregistrer les images prises sur les X dernières secondes.
+- ***cyclosafe_interfaces/srv/SaveImages (obsolete)*** : service permettant l'interaction entre le noeud hub (supprimé) et le noeud caméra. Demande au noeud caméra d'enregistrer les images prises sur les X dernières secondes.
 
 [**src/cyclosafe_interfaces/README.md**](src/cyclosafe_interfaces/README.md)
 
@@ -67,16 +57,6 @@ Définit les interfaces ROS 2 propres au projet, à savoir :
 [**src/cyclosafe_lidar/README.md**](src/cyclosafe_lidar/README.md)
 
 Package cpp qui permet d'intégrer les lidars de la gamme Benewake à ROS2. Implémente un driver via l'interface sériale et un noeud pour publier les données sous forme de sensor_msgs/msg/Range.
-
-## ldlidar_stl_ros2
-
-[**src/ldlidar_stl_ros2/README.md**](src/ldlidar_stl_ros2/README.md)
-
-Clone de https://github.com/Anvently/ldlidar_stl_ros2
-
-Il s'agit d'un fork de https://github.com/ldrobotSensorTeam/ldlidar_stl_ros2 afin de corriger une erreur de compilation liée à un **#include** manquant.
-
-Implémente le driver du lidar STL-27 et l'intègre à ROS2.
 
 ## rplidar_ros2
 
