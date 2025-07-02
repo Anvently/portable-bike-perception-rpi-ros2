@@ -1,0 +1,40 @@
+Cat‚gorie;Quantit‚;Nom de la piŠce;Fonction;Masse;Type;Origine
+COMPOSANTS;;;;;;
+;1;Raspberry Pi 4 Model B;Firmware;75.00;PCB;Achat
+;1;Ups-hat;Batterie;120.00;PCB;Achat
+;1;Pcb custom;Electronique;30.00;PCB;Fabrication par un tiers
+;1;Raspberry Pi HQ Camera;Capteur;30.4;Capteur;Achat
+;1;Objectif CS-8 25mm;Capteur;40.00;Accessoire;Achat
+;2;Slamtec rplidar c1 v3;Capteur;110.00;Capteur;Achat
+;1;Assemblage F;Fixation;90.00;Structure;Impression
+;1;Collier;Fixation;37.00;Structure;Impression
+;1;L76x_gps_module v3;Capteur;5.00;PCB;Achat
+;1;Boitier bas;Structure;130.00;Structure;Impression
+;1;Boitier haut;Structure;101.00;Structure;Impression
+;1;Carte SD ;Firmware;2.00;Accessoire;Achat
+;2;Accu 18650 - 3400mAh;Batterie;46.00;Accessoire;Achat
+;1;Couvercle carte SD;Structure;3.3;Structure;Impression
+;1;Ficelle pour pin de verrouillage (diamŠtre < 2mm);Fixation;1.00;Accessoire;Achat
+;1;Pin de verrouillage;Fixation;1.65;Structure;Impression
+;;;;;;
+QUINCAILLERIE;;;;;;
+;1;Vis perc‚e … tˆte … six pans creux ANSI B18.3.1M - M2.5x0.45 x 6 Acier de classe 2 Standard v1;Trappe carte sd;0.487 ;Quincaillerie;Achat
+;4;Standoff mf - M2.5 x L12 -  5mm v1;Entretoise raspberry;1.999 ;Quincaillerie;Achat
+;4;Standoff mf - M2.5 x L15 - 5mm v1;Entretoise hat;2.393 ;Quincaillerie;Achat
+;8;Vis perc‚e … tˆte … six pans creux ANSI B18.3.1M - M2.5x0.45 x 12 Acier de classe 2 Standard v1;Lidars;0.702 ;Quincaillerie;Achat
+;2;Vis perc‚e … tˆte … six pans creux ANSI B18.3.1M - M2x0.4 x 8 Acier de classe 2 Standard v1;GPS;0.341 ;Quincaillerie;Achat
+;3;Vis perc‚e … tˆte … six pans creux ANSI B18.3.1M - M3x0.5 x 6 Acier de classe 2 Standard v1;Boitiers;0.796 ;Quincaillerie;Achat
+;8;Vis perc‚e … tˆte … six pans creux ANSI B18.3.1M - M2.5x0.45 x 10 Acier de classe 2 Standard v1;Ups hat & cam‚ra;0.63 ;Quincaillerie;Achat
+;1;Vis perc‚e hexagonale M3x0,5x40;Axe centrale du pin de blocage;2.569;Quincaillerie;Achat
+;2;Vis perc‚e haxgonale M4x0,7x40;Collier;4.776;Quincaillerie;Achat
+;;;;;;
+INSERT;;;;;;
+;2;M4x8x6;Collier;2.00;Quincaillerie;Achat
+;1;M3x4x4,5;Emboitement sup‚rieur;1.00;Quincaillerie;Achat
+;2;M3x3x4,5;Emboitement lat‚ral;1.00;Quincaillerie;Achat
+;4;M2,5x4x3,5;Raspberry;1.00;Quincaillerie;Achat
+;2;M2x5x3,5;Gps;1.00;Quincaillerie;Achat
+;5;M2,5x5x3,5;couvercle sd + camera;1.00;Quincaillerie;Achat
+;;;;;;
+;;;;;;
+;;;;;;
