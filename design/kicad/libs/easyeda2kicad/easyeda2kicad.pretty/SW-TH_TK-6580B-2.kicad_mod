@@ -329,7 +329,7 @@
 		(uuid "6205465e-d946-42a7-9bca-86459318c584")
 	)
 	(embedded_fonts no)
-	(model "C:/Users/npirard.IGN/Documents/cyclosafe/design/kicad/libs/easyeda2kicad/easyeda2kicad.3dshapes/SW-TH_TK-6580B-2.wrl"
+	(model "${KIPRJMOD}/libs/easyeda2kicad/easyeda2kicad.3dshapes/SW-TH_TK-6580B-2.wrl"
 		(offset
 			(xyz 0 -5.85 0)
 		)

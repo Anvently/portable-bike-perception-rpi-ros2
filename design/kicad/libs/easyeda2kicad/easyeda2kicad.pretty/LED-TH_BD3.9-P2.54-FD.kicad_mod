@@ -1,29 +1,194 @@
-(module easyeda2kicad:LED-TH_BD3.9-P2.54-FD (layer F.Cu) (tedit 5DC5F6A4)
+(footprint "LED-TH_BD3.9-P2.54-FD"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at 0 -4 0)
+		(layer "F.SilkS")
+		(uuid "bdd91dec-a6b4-4dd3-bb1f-7e9ae7514b0c")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "LED-TH_BD3.9-P2.54-FD"
+		(at 0 4 0)
+		(layer "F.Fab")
+		(uuid "e09717c7-5885-451d-ba1e-e1974546202a")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "5cd65cd8-e522-4ae2-9f23-9285f497fcdc")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "af3bd4f7-e189-40d2-8280-d30777ce4350")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
 	(attr through_hole)
-	(fp_text reference REF** (at 0 -4.0) (layer F.SilkS)
-		(effects (font (size 1 1) (thickness 0.15)))
+	(fp_line
+		(start -0.76 -1.14)
+		(end -0.25 -1.65)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "113bd4b1-0951-4f3d-b61d-9ef1bef6cf0f")
 	)
-	(fp_text value LED-TH_BD3.9-P2.54-FD (at 0 4.0) (layer F.Fab)
-		(effects (font (size 1 1) (thickness 0.15)))
+	(fp_line
+		(start -0.51 -1.65)
+		(end -0.63 -1.65)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "042d98d2-e077-4360-9ec1-804c3c4310ed")
 	)
-	(fp_text user %R (at 0 0) (layer F.Fab)
-		(effects (font (size 1 1) (thickness 0.15)))
+	(fp_line
+		(start -0.25 -1.65)
+		(end -0.51 -1.65)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "5f736836-9a86-42ec-8274-5e5850c38851")
 	)
-	(fp_line (start -0.76 -1.14) (end -0.25 -1.65) (layer F.SilkS) (width 0.25))
-	(fp_line (start -0.25 -1.65) (end -0.51 -1.65) (layer F.SilkS) (width 0.25))
-	(fp_line (start -0.51 -1.65) (end -0.63 -1.65) (layer F.SilkS) (width 0.25))
-	(fp_line (start -0.25 -1.65) (end -0.25 -1.27) (layer F.SilkS) (width 0.25))
-	(fp_line (start 0.13 -1.14) (end 0.63 -1.65) (layer F.SilkS) (width 0.25))
-	(fp_line (start 0.63 -1.65) (end 0.38 -1.65) (layer F.SilkS) (width 0.25))
-	(fp_line (start 0.38 -1.65) (end 0.25 -1.65) (layer F.SilkS) (width 0.25))
-	(fp_line (start 0.63 -1.65) (end 0.63 -1.27) (layer F.SilkS) (width 0.25))
-	(pad 1 thru_hole rect (at -1.27 0.00 0.00) (size 1.52 1.52) (layers *.Cu *.Mask)(drill 0.9144))
-	(pad 2 thru_hole circle (at 1.27 0.00 0.00) (size 1.52 1.52) (layers *.Cu *.Mask)(drill 0.9144))
-	(fp_circle (center -1.65 1.95) (end -1.62 1.95) (layer F.Fab) (width 0.06))
-	(fp_circle (center 0.00 0.00) (end 2.20 0.00) (layer F.SilkS) (width 0.20))
-	(model "${EASYEDA2KICAD}/easyeda2kicad.3dshapes/LED-TH-3mm_R.wrl"
-		(offset (xyz -0.120 -0.000 0.000))
-		(scale (xyz 1 1 1))
-		(rotate (xyz 0 0 0))
+	(fp_line
+		(start -0.25 -1.65)
+		(end -0.25 -1.27)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "97a21b7c-cd88-4afb-a8ed-1ba7715fd423")
+	)
+	(fp_line
+		(start 0.13 -1.14)
+		(end 0.63 -1.65)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "1608a830-fb68-4fc7-9618-94a72ee098bf")
+	)
+	(fp_line
+		(start 0.38 -1.65)
+		(end 0.25 -1.65)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "5a0fa154-aeef-4c50-8d8c-a21a007d0f68")
+	)
+	(fp_line
+		(start 0.63 -1.65)
+		(end 0.38 -1.65)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "d55fc1fb-51cc-4a52-9ba3-a280bbe0333b")
+	)
+	(fp_line
+		(start 0.63 -1.65)
+		(end 0.63 -1.27)
+		(stroke
+			(width 0.25)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "e170a707-8428-4373-8908-28c707395bf6")
+	)
+	(fp_circle
+		(center 0 0)
+		(end 2.2 0)
+		(stroke
+			(width 0.2)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "f1fae9f1-f141-496d-865e-ed625c561101")
+	)
+	(fp_circle
+		(center -1.65 1.95)
+		(end -1.62 1.95)
+		(stroke
+			(width 0.06)
+			(type solid)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "8badfc42-a0c7-47b5-9b5b-018a26f1deaa")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 0 0)
+		(layer "F.Fab")
+		(uuid "9cd3691e-bd28-45b0-a85a-30385a318b3b")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" thru_hole rect
+		(at -1.27 0)
+		(size 1.52 1.52)
+		(drill 0.9144)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "6c06bb45-56ad-44b7-b236-87944d107983")
+	)
+	(pad "2" thru_hole circle
+		(at 1.27 0)
+		(size 1.52 1.52)
+		(drill 0.9144)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "1c982eb3-3ade-44da-b0b9-e0bb8687353c")
+	)
+	(embedded_fonts no)
+	(model "${KIPRJMOD}/libs/easyeda2kicad/easyeda2kicad.3dshapes/LED-TH-3mm_R.wrl"
+		(offset
+			(xyz -0.12 -0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
 	)
 )

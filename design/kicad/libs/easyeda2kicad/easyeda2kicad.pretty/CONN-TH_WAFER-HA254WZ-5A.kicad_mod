@@ -313,7 +313,7 @@
 		(uuid "044cc8be-80c5-4618-8e0d-755bfb1ce668")
 	)
 	(embedded_fonts no)
-	(model "C:/Users/npirard.IGN/Documents/cyclosafe/design/kicad/libs/easyeda2kicad/easyeda2kicad.3dshapes/CONN-TH_WAFER-HA254WZ-5A.wrl"
+	(model "${KIPRJMOD}/libs/easyeda2kicad/easyeda2kicad.3dshapes/CONN-TH_WAFER-HA254WZ-5A.wrl"
 		(offset
 			(xyz 0 -0.4 2.9)
 		)

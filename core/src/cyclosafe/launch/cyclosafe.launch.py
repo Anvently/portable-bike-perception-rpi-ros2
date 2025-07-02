@@ -4,7 +4,7 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetEnvironment
 from launch_ros.actions import Node
 from launch.substitutions import TextSubstitution, LaunchConfiguration
 import time
-import os, sys
+import os, sys, psutil
 import importlib.util
 from typing import List
 
@@ -13,6 +13,7 @@ launch_dir = os.path.join(package_dir, 'launch')
 sys.path.insert(0, launch_dir)
 from cyclosafe_config import Sensor, SensorTypeEnum
 
+LOW_STORAGE_TRESHOLD = int(os.getenv("LOW_STORAGE_TRESHOLD", "512"))
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -33,9 +34,13 @@ launch_args = [
     DeclareLaunchArgument('out_path', default_value=TextSubstitution(text=""), description="Path in which a data directory for this simulation will be created"),
     DeclareLaunchArgument('log_level', default_value=TextSubstitution(text="info"), description="Log level for all nodes"),
     DeclareLaunchArgument('record', default_value=TextSubstitution(text="false"), description="Capture every topic in a bag"),
-    DeclareLaunchArgument('save', default_value=TextSubstitution(text="false"), description="If true, hub node won't be started and data will not be written. Use in with record=true in order to only record data from ROS perspective."),
     DeclareLaunchArgument('config', default_value=TextSubstitution(text=""), description="Optional path to a custom config file containing sensors_list"),
 ]
+
+def check_available_storage() -> bool:
+    if psutil.disk_usage("/").free / 1024 / 1024 < LOW_STORAGE_TRESHOLD:
+        return False
+    return True
 
 def setup_directory(parent_dir: str, time_start: float) -> str:
     if not parent_dir:
@@ -69,7 +74,6 @@ def launch_setup(context):
     parent_dir = LaunchConfiguration('out_path').perform(context)
     log_level = LaunchConfiguration('log_level').perform(context)
     record = str2bool(LaunchConfiguration('record').perform(context))
-    save = str2bool(LaunchConfiguration('save').perform(context))
     config_path = LaunchConfiguration('config').perform(context)
     time_start = time.time()
     print(f"Simulation start time = {time_start}")
@@ -77,29 +81,18 @@ def launch_setup(context):
     sensors_list: List[Sensor] = import_sensors_list(config_path if config_path else None)
 
     ld = []
-    if record or save:
-        path = setup_directory(parent_dir, time_start)
-        ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs"))])
-        if record:
+    if record:
+        if check_available_storage() == False:
+            print("Warning : low storage detected, no record will be made.")
+        else:
+            path = setup_directory(parent_dir, time_start)
+            ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs"))])
             ld.extend([
-                ExecuteProcess(
-                    cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
-                    output='screen'
-                )
+                    ExecuteProcess(
+                        cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
+                        output='screen'
+                    )
             ])
-        if save:
-            ld.extend([Node(
-                package='cyclosafe_hub',
-                executable='hub',
-                namespace='',
-                output='screen',
-                emulate_tty=True,
-                parameters=[
-                    { 'start_time': float(time_start),
-                    'out_path': path}
-                ],
-                arguments=['--ros-args', '--log-level', log_level],
-            )])
     for sensor in sensors_list:
         if sensor.enable == False or sensor.port == None:
             continue
