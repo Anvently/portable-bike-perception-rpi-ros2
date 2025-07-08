@@ -5,6 +5,8 @@ LOG_FILE="$CYCLOSAFE_LOGS/on_off.log"
 SCRIPT_DIR="$SCRIPTS_PATH"
 PYTHON_SCRIPT="gpio.py"
 
+echo $LOG_DIR $CYCLOSAFE_LOGS
+
 mkdir -p "$LOG_DIR"
 touch "$LOG_FILE"
 

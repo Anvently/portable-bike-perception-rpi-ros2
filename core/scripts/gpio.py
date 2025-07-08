@@ -16,7 +16,7 @@ LED_SD_CARD_GPIO = 10
 # Led are turned off via PWM with [0;255] scale.
 # Dutycycle is set to (LED_BRIGHTNESS * 255)
 # So full brightness is achieved with LED_BRIGHTNESS = 1.0 and half brightness with LED_BRIGHTNESS = 0.5
-LED_BRIGHTNESS = int(os.getenv("LED_BRIGHTNESS", "1.0")) # Full brightness
+LED_BRIGHTNESS = float(os.getenv("LED_BRIGHTNESS", "1.0")) # Full brightness
 
 pi = pigpio.pi()
 button_pressed = False
@@ -53,7 +53,7 @@ BUS_CHARGE_VOLTAGE = NBR_CELLS * CHARGE_VOLTAGE
 BATTERY_VOLTAGE_TRESHOLD = BUS_CHARGE_VOLTAGE - (NBR_CELLS * VOLTAGE_RANGE)
 
 # Voltage treshold when battery is less than 20%
-LOW_BATTERY_PERCENT = int(os.getenv("LOW_BATTERY_PERCENT", "0.2"))
+LOW_BATTERY_PERCENT = float(os.getenv("LOW_BATTERY_PERCENT", "0.2"))
 LOW_BATTERY_TRESHOLD = BATTERY_VOLTAGE_TRESHOLD + (LOW_BATTERY_PERCENT * NBR_CELLS * VOLTAGE_RANGE)
 
 # When free storage is less than this threshold (in MB), the SD_CARD led will be turned on.
