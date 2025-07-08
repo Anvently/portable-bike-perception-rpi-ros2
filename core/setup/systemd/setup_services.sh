@@ -47,6 +47,7 @@ function warning() {
 }
 
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+echo $parent_path
 cd "$parent_path"
 
 if [ "$EUID" -eq 0 ]; then
@@ -66,8 +67,11 @@ else
   USERNAME=$USER
 fi
 
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
+cd "$parent_path"
+
 HOME=$(eval echo ~$USERNAME)
-source .env
+source ../.env
 
 SCRIPTS_PATH="$CYCLOSAFE_WORKSPACE/scripts"
 
