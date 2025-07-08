@@ -8,7 +8,7 @@ HOST_IP=192.168.2.1
 
 echo Setting up nmcli config named "$CONFIG_NAME" on interface "$IF_NAME"
 
-sudo nmcli connection add "$CONFIG_NAME" ifname "$IF_NAME" ipv4.method manual ipv4.addresses $RASPI_IP/24 ipv4.gateway $HOST_IP ipv4.dns "8.8.8.8,8.8.4.4"
+sudo nmcli connection add con-name "$CONFIG_NAME" ifname "$IF_NAME" ipv4.method manual ipv4.addresses $RASPI_IP/24 ipv4.gateway $HOST_IP ipv4.dns "8.8.8.8,8.8.4.4"
 sudo nmcli connection up "$CONFIG_NAME"
 
 echo raspberry ip=$RASPI_IP
