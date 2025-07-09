@@ -60,115 +60,12 @@
     <origin xyz="-0.12 0.00 -0.070" rpy="0 0 0" />
   </joint>
 
-  <!-- Angle -->
-  <link name="angle_support">
-    <visual>
-      <origin xyz="0 0 0.0" rpy="1.57 0.0 0.0"/>
-      <geometry>
-        <box size="0.224 0.04 0.002"/>
-      </geometry>
-      <material name="wood">
-        <color rgba="0.8 0.8 0.8 0.8"/>
-      </material>
-    </visual>
-  </link>
-
-  <joint name="angle_to_board" type="fixed">
-    <parent link="board_base"/>
-    <child link="angle_support"/>
-    <origin xyz="0.0 0.0775 -0.025" rpy="0 0 0" />
-  </joint>
-
-  <!-- TF-02 lidar -->
-  <link name="tf-02">
-    <visual>
-      <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <mesh filename="package://cyclosafe_viewer/urdf/model/tf-02.stl" scale="0.001 0.001 0.001" />
-      </geometry>
-      <material name="ldlidar_mat">
-        <color rgba="0.8 0.8 0.8 0.8"/>
-      </material>
-    </visual>
-  </link>
-
-  <joint name="tf02_to_angle" type="fixed">
-    <parent link="angle_support"/>
-    <child link="tf-02"/>
-    <origin xyz="-0.017 0.00 0.0" rpy="0 0 0" />
-  </joint>
-
-  <link name="lidar2_tf_02/range">
-  </link>
-
-  <joint name="tf02_range_joint" type="fixed">
-    <parent link="tf-02"/>
-    <child link="lidar2_tf_02/range"/>
-    <origin xyz="0 0.026 0" rpy="0 0.02 1.57" />
-  </joint>
-
-  <!-- TF-mini-plus lidar -->
-  <link name="tf-mini-plus">
-    <visual>
-      <origin xyz="0 0 0" rpy="-1.57 3.143 0.0"/>
-      <geometry>
-        <mesh filename="package://cyclosafe_viewer/urdf/model/tf-mini-plus.stl" scale="0.001 0.001 0.001" />
-      </geometry>
-      <material name="ldlidar_mat">
-        <color rgba="0.8 0.8 0.8 0.8"/>
-      </material>
-    </visual>
-  </link>
-
-  <joint name="tf-mini-plus_to_angle" type="fixed">
-    <parent link="angle_support"/>
-    <child link="tf-mini-plus"/>
-    <origin xyz="0.058 0.00 -0.01" rpy="0 0 0" />
-  </joint>
-
-  <link name="lidar2_tf_mini_plus/range">
-  </link>
-
-  <joint name="tf-mini-plus_range_joint" type="fixed">
-    <parent link="tf-mini-plus"/>
-    <child link="lidar2_tf_mini_plus/range"/>
-    <origin xyz="-0.018 0.021 0.009" rpy="0 0 1.57" />
-  </joint>
-
-  <!-- Waveshare lidar -->
-  <link name="tof_lidar">
-    <visual>
-      <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
-      <geometry>
-        <box size="0.028 0.022 0.014"/>
-      </geometry>
-      <material name="ldlidar_mat">
-        <color rgba="0.8 0.8 0.8 0.8"/>
-      </material>
-    </visual>
-  </link>
-
-  <joint name="tof_lidar_to_board" type="fixed">
-    <parent link="board_base"/>
-    <child link="tof_lidar"/>
-    <origin xyz="0.068 0.067 0.012" rpy="0 0 1.57" />
-  </joint>
-
-  <link name="lidar1_tof/range">
-  </link>
-
-  <joint name="tof_lidar_range_joint" type="fixed">
-    <parent link="tof_lidar"/>
-    <child link="lidar1_tof/range"/>
-    <origin xyz="0 0.011 0" rpy="0 0 0" />
-  </joint>
-
   <!-- Horizontal lidar -->
   <link name="ldlidar_base">
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://cyclosafe_viewer/urdf/model/LD19.stl" scale="0.001 0.001 0.001" />
+        <mesh filename="package://cyclosafe_viewer/urdf/model/rplidar_c1.stl" scale="0.00098 0.00098 0.00098" />
       </geometry>
       <material name="ldlidar_mat">
         <color rgba="0.8 0.8 0.8 0.8"/>
