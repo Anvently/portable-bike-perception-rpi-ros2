@@ -68,12 +68,21 @@ else
 			exit 1
 		fi
 	fi
+  sudo apt update
+  sudo apt upgrade
 	sudo apt install ./ros-jazzy-desktop-0.3.2_20240525_arm64.deb
 	if ! [ $? -eq 0 ]; then
 		error "Failed to install ROS2 .deb package"
 		exit 1
 	fi
 fi
+
+sudo apt clean
+sudo apt autoclean
+sudo apt autoremove
+sudo rm -rf /usr/share/man/*
+sudo rm -rf /usr/share/doc/*
+sudo rm -rf /usr/share/info/*
 
 pip install --break-system-packages empy==3.3.4
 if ! [ $? -eq 0 ]; then
@@ -91,6 +100,6 @@ rosdep init
 rosdep update
 
 sudo apt update
-if ! sudo apt-get install -y cmake curl libopencv-dev python3-pip python3-opencv python3-numpy python3-smbus python3-pigpiod >/dev/null 2>&1; then
+if ! sudo apt-get install -y cmake curl libopencv-dev python3-pip python3-opencv python3-numpy python3-smbus python3-pigpiod python3-picamera2 python3-opencv >/dev/null 2>&1; then
     error "Failed to install dependencies but ros core was installed."
 fi

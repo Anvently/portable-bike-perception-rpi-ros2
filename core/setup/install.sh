@@ -55,6 +55,9 @@ if [ "$EUID" -eq 0 ]; then
   exit 1
 fi
 
+info "Please log in"
+sudo echo "dummy" > /dev/null
+
 uname -a | grep raspberrypi > /dev/null
 if [ $? -eq 1 ]; then
   error "This device does not appear to be a raspberry pi"
@@ -68,11 +71,16 @@ fi
 HOME=$(eval echo ~$USERNAME)
 source .env
 
+mkdir -p $CYCLOSAFE_RECORD
+mkdir -p $CYCLOSAFE_LOGS
+
 if [ $(cat /boot/firmware/cmdline.txt | grep -c ipv6.disable=1) -eq 0 ]; then
   info "Updating boot config files".
-  sudo $(cat ./cmdline.txt) >> /boot/firmware/cmdline.txt
-  sudo $(cat ./config.txt) >> /boot/firmware/config.txt
-  info "--- Boot config was updated. You must reboot the raspberry pi before making any further installation." 
+  sudo cp /boot/firmware/cmdline.txt /boot/firmware/cmdline.txt.backup
+  sudo cp /boot/firmware/config.txt /boot/firmware/config.txt.backup
+  sudo tee -a /boot/firmware/cmdline.txt < ./cmdline.txt > /dev/null
+  sudo tee -a /boot/firmware/config.txt < ./config.txt > /dev/null
+  info "--- Boot config was back up and updated. You must reboot the raspberry pi before making any further installation." 
   exit 0
 fi
 

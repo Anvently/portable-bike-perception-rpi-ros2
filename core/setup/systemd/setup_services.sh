@@ -67,7 +67,6 @@ else
   USERNAME=$USER
 fi
 
-parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 env_file=$(realpath $parent_path/../.env)
 
 HOME=$(eval echo ~$USERNAME)
