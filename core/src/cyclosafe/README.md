@@ -41,7 +41,7 @@ Hérite de ASerialPublisher.
 Parse les frames NMEA envoyées par un serial device pour publier les informations suivantes sous forme de *cyclosafe_interfaces/msg/NavSatInfo* sur le topic **/gps**:
 
 - **status** : no_fix, fix, fix (with GPS), fix (with GPS+Glonass), ...
-- **latitude/longitude**: en format DDMM.MMMMM
+- **latitude/longitude**: en format décimal
 - **altitude**: en mètres
 - **hdop/pdop**
 - **ground_speed**: en kilomètres/h
@@ -113,12 +113,6 @@ La caméra est configurée en mode vidéo avec la configuration donnée en param
 > - définit l'indice de qualité de la compression JPEG : 100 correspondant à la meilleure qualité.
 > - **défaut** : *95*
 > - **unité** : indice de 0 à 100
-
-> **period** : float
-> - interval auquel sont lues et parsées les données disponibles.
-> - Seule la **dernière** donnée valide est prise en compte. Exemple : je lis des données envoyées à 10Hz sur un interval de 5Hz, j'aurais 5 données/secondes (et non pas 10 données réparties sur 5 lectures) et la distance lue correspondra toujours à **la distance la plus récente**.
-> - **défaut** : *0.05*
-> - **unité** : secondes
 
 > **preview** : boolean
 > - détermine si une preview de la caméra doit être activé au démarrage. Fonctionne seulement avec la console physique du raspberry et pas avec les pseudo-ttys (ssh, screen command, etc...).

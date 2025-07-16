@@ -7,6 +7,9 @@ Contient des scripts et utilitaires destinés à faciliter la récupération des
 - [import\_recordings.py](#import_recordingspy)
   - [Usage](#usage-1)
   - [Exemple](#exemple-1)
+    - [Exporter en lisant directement la carte SD](#exporter-en-lisant-directement-la-carte-sd)
+    - [Exporter en SSH](#exporter-en-ssh)
+    - [Pour convertir/réparer seulement les données (avec des données déjà importées)](#pour-convertirréparer-seulement-les-données-avec-des-données-déjà-importées)
   - [Paramètres](#paramètres-1)
   - [Procédure normale](#procédure-normale)
   - [Documentation et suppléments sur rosbag](#documentation-et-suppléments-sur-rosbag)
@@ -67,9 +70,9 @@ Il est nécessaire de préciser l'une des deux options d'import (**-u** en ssh o
 
 ~~~
 $ ./import_recordings.py --help
-usage: import_recordings.py [-h] [-u HOSTNAME] [-c COPY] [-s SKIP_IMPORT] [-o OUTPUT]
+usage: import_recordings.py [-h] [-u HOSTNAME] [-c COPY] [-s SKIP_IMPORT] [-o OUTPUT] [-x]
 
-Import and convert rosbag files from a remote host.
+Import, decompress and merge rosbag files from a remote host to single bag file. Attemmpt to repair corrupted bags.
 
 options:
   -h, --help            show this help message and exit
@@ -80,16 +83,34 @@ options:
                         Skip import step and use specified local path for conversion
   -o OUTPUT, --output OUTPUT
                         Output directory for imported bags
+  -x, --clean           Delete bag/ directories locally after successful import and conversion
+
 
 ~~~
 
 ## Exemple
 
+### Exporter en lisant directement la carte SD
+
 ~~~
-./import_recordings.py -u npirard@192.168.2.2 -o ~/data/test/
+./import_recordings.py -x -c /dev/media/sda1/home/cycliste/data/ -o ~/data/test/
 ~~~
 
-Résultat
+- `-x` : nettoie les fichiers de transition après la fin de chaque conversion afin de minimiser l'espace occupé sur l'hôte
+- `-c /dev/media/sda1/home/cycliste/data/` : importer les bags depuis le chemin donné sur la carte SD.
+- `-o ~/data/test/` : exporte les enregistrements vers le dossier de sortie `~/data/test/` 
+
+### Exporter en SSH
+
+~~~
+./import_recordings.py -x -u cycliste@192.168.2.2 -o ~/data/test/
+~~~
+
+- `-x` : nettoie les fichiers de transition après la fin de chaque conversion afin de minimiser l'espace occupé sur l'hôte
+- `-u cycliste@192.168.2.2` : importer les bags depuis un raspberry connecté sur le réseau avec comme profil utilisateur `cycliste` et ayant pour ip `192.168.2.2`. Le mot de passe utilisateur sera demandé (`galileo`)
+- `-o ~/data/test/` : exporte les enregistrements vers le dossier de sortie `~/data/test/` 
+
+**Résultat** :
 ~~~
            INFO     Output directory: /home/npirard/data/test                 
 Enter SSH password: 
@@ -111,13 +132,17 @@ Attempting to repair /home/npirard/data/test/20250515-125326/bag
            INFO     All operations completed successfully! 
 ~~~
 
-**Pour convertir/réparer seulement les données** :
+### Pour convertir/réparer seulement les données (avec des données déjà importées)
+
+Suppose que les données ont déjà été importées sur l'hôte (manuellement) mais que la conversion/décompression n'a pas été faite.
 
 ~~~
 ./import_recordings.py -s ~/data/test/
 ~~~
 
-Résultat
+- `-s ~/data/test/` : spécifie le chemin où sont stockées les enregistrements.
+
+**Résultat :**
 
 ~~~
 INFO     Output directory: /home/npirard/data/pouet                                import_recordi:246
@@ -150,6 +175,11 @@ INFO     Output directory: /home/npirard/data/pouet                             
 > 	- **optionnel**
 > 	- Ignore la phase d'import
 > 	- Convertit seulement les données en réparant les éventuelles corruptions
+
+> **-c (--clean)**
+> 	- **optionnel**
+> 	- **par défaut** : false
+> 	- Supprime le dossier bag/ des enregistrements importés afin de réduire l'espace occupés sur l'hôte
 
 
 ## Procédure normale

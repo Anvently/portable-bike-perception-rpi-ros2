@@ -78,8 +78,7 @@ class GPIOController():
 			self.pos = 0
 		self.enable = True
 
-		self.ina219 = None
-		# self.ina219 = INA219(addr=0x42)
+		self.ina219 = INA219(1, addr=0x42)
 
 	def turn_on(self, gpio):
 		pi.set_PWM_dutycycle(gpio, int(LED_BRIGHTNESS * 255))
@@ -98,7 +97,7 @@ class GPIOController():
 	def check_battery_state(self):
 		if not self.ina219:
 			return
-		bus_voltage = self.ina219.getBusVoltage_V()
+		bus_voltage = self.ina219.get_bus_voltage_V()
 		if bus_voltage < BATTERY_VOLTAGE_TRESHOLD:
 			raise BatteryException()
 		elif bus_voltage < LOW_BATTERY_TRESHOLD:

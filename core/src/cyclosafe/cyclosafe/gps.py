@@ -72,8 +72,9 @@ class GPSPublisher(ASerialPublisher):
 			words = line.decode("utf-8").split(',')
 			message_type = words[0][3:]
 			if (message_type == "GLL"):
-				self.latitude = float(words[1]) if words[1] != '' else float('NaN')
-				self.longitude = float(words[3]) if words[3] != '' else float('NaN')
+				self.latitude = GPSPublisher.nmea_to_decimal(float(words[1])) if words[1] != '' else float('NaN')
+				self.longitude = GPSPublisher.nmea_to_decimal(float(words[3])) if words[3] != '' else float('NaN')
+				
 				update = True
 			elif (message_type == "GSA"):
 				self.hdop = float(words[16]) if words[16] != '' else float('NaN')
@@ -132,6 +133,26 @@ actives={self.active_sat},\
 hdop={self.hdop},\
 pdop={self.pdop}")
 		self.pub.publish(msg)
+
+	
+	def nmea_to_decimal(nmea_coord):
+		""" Convertit une coordonnée du format NMEA (DDMM.MMMMM) au format décimal.
+		Args:
+			nmea_coord (float): Coordonnée au format NMEA
+		Returns:
+			float: Coordonnée en format décimal
+		"""
+		nmea_str = str(nmea_coord)
+		words = nmea_str.split('.')
+		degres = 0
+		if len(words[0]) <= 2:
+			minutes = float(words[0] + '.' + words[1])
+		else:
+			degres = float(words[0][0:-2])
+			minutes = float(words[0][-2:] + '.' + words[1])
+		value = degres + (minutes / 60.0)
+		return value
+
 
 def main(args=None):
 	try:

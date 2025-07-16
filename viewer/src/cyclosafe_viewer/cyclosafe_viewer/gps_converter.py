@@ -68,8 +68,8 @@ class GPSConverterNode(Node):
 			fix = NavSatFix()
 			fix.header.stamp = msg.header.stamp
 			fix.status = msg.status
-			fix.latitude = nmea_to_decimal(msg.latitude) if not math.isnan(fix.latitude) else fix.latitude
-			fix.longitude = nmea_to_decimal(msg.longitude) if not math.isnan(fix.longitude) else fix.longitude
+			fix.latitude = msg.latitude if not math.isnan(fix.latitude) else fix.latitude
+			fix.longitude = msg.longitude if not math.isnan(fix.longitude) else fix.longitude
 			self.publisher.publish(fix)
 
 			if self.gpx_enabled:

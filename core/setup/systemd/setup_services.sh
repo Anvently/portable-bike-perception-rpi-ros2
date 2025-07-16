@@ -110,8 +110,8 @@ if [ $? -eq 4 ]; then
 cat << EOF | sudo tee /etc/systemd/system/gpiod.service
 [Unit]
 Description=gpio daemon controlling led blinking, button press and battery monitoring
-After=pigpiod.service
-Requires=pigpiod.service
+After=pigpiod.service gps_time.service
+Requires=pigpiod.service gps_time.service
 StartLimitIntervalSec=60
 StartLimitBurst=3
 

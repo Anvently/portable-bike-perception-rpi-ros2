@@ -7,9 +7,23 @@ Ce document donne des instructions sur :
 - les paramètres réseaux à configurer sur le raspberry et sur l'hôte pour permettre une connection ssh
 - les paramètres réseaux à configurer sur l'hôte pour activer l'ip-forwarding sur l'hôte et permettre au raspberry d'utiliser l'accès internet de celui-ci.
 
+## Scripts de configuration automatique
+
+### Sur le raspberry :
+
+~~~
+~/cyclosafe/core/setup/ip_config.sh
+~~~
+
+### Sur l'hôte
+
+[Voir les instructions dédiées à l'hôte](#mise-en-place-sur-lhôte)
 
 ## Sommaire
 - [Configuration réseau pour ssh et ip-forwarding](#configuration-réseau-pour-ssh-et-ip-forwarding)
+  - [Scripts de configuration automatique](#scripts-de-configuration-automatique)
+    - [Sur le raspberry :](#sur-le-raspberry-)
+    - [Sur l'hôte](#sur-lhôte)
   - [Sommaire](#sommaire)
   - [Structure réseau](#structure-réseau)
   - [Utilisation](#utilisation)
@@ -54,19 +68,19 @@ ssh user@192.168.2.2
 ### Copier des fichiers depuis l'hôte vers le raspberry
 
 ~~~
-scp file_to_copy user@192.168.2.2:/home/user/out_path_on_raspberry
+scp file_to_copy cycliste@192.168.2.2:/home/cycliste/out_path_on_raspberry
 
 # Pour copier un dossier
-scp -r folder_to_copy/ user@192.168.2.2:/home/user/out_path_on_raspberry
+scp -r folder_to_copy/ cycliste@192.168.2.2:/home/cycliste/out_path_on_raspberry
 ~~~
 
 ### Copier des fichiers depuis le raspberry vers l'hôte
 
 ~~~
-scp user@192.168.2.2:/home/user/file_to_copy out_path_on_host
+scp cycliste@192.168.2.2:/home/cycliste/file_to_copy out_path_on_host
 
 # Pour copier un dossier
-scp -r user@192.168.2.2:/home/user/folder_to_copy out_path_on_host
+scp -r cycliste@192.168.2.2:/home/cycliste/folder_to_copy out_path_on_host
 ~~~
 
 ### Outils utiles
@@ -209,7 +223,7 @@ Cet étape n'est pas indispensable.
 
 L'idée est de permettre au raspberry d'effectuer des requêtes ssh (ou scp) vers l'hôte.
 
-Par exemple cela peut être utile pour indiquer comme remote git l'adresse du repo sur l'hôte (exemple `ssh://npirard@192.168.2.1:/home/npirard/cyclosafe_repo`).
+Par exemple cela peut être utile pour indiquer comme remote git l'adresse du repo sur l'hôte (exemple `ssh://host-user@192.168.2.1:/home/host-user/cyclosafe_repo`).
 
 Dans cette configuration là, l'hôte n'a qu'à ```git commit``` les changements et ils peuvent récupéré sur le raspberry via ```git pull```.
 

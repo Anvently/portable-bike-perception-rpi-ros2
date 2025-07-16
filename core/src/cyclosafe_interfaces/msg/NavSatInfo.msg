@@ -15,10 +15,10 @@ std_msgs/Header header
 # Satellite fix status information.
 sensor_msgs/NavSatStatus status
 
-# Latitude [degrees]. Positive is north of equator; negative is south.
+# Latitude [decimal degrees]. Positive is north of equator; negative is south.
 float64 latitude
 
-# Longitude [degrees]. Positive is east of prime meridian; negative is west.
+# Longitude [decimal degrees]. Positive is east of prime meridian; negative is west.
 float64 longitude
 
 # Altitude [m]. Positive is above the WGS 84 ellipsoid

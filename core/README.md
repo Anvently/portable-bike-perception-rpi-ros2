@@ -3,7 +3,8 @@
 Ce repo contient tous les packages et utilitaires nécessaires à la prise des mesures. Cela correspond à l'ensemble des noeuds et des scripts qui doivent tourner sur le raspberry.
 
 - [Cyclosafe core](#cyclosafe-core)
-	- [Installation](#installation)
+	- [Flasher la carte SD](#flasher-la-carte-sd)
+	- [Installation (sans l'image du firmware)](#installation-sans-limage-du-firmware)
 	- [Usage](#usage)
 		- [Sourcer l'environnement](#sourcer-lenvironnement)
 		- [Sourcer l'environnement à l'ouverture d'un nouveau terminal](#sourcer-lenvironnement-à-louverture-dun-nouveau-terminal)
@@ -20,16 +21,39 @@ Ce repo contient tous les packages et utilitaires nécessaires à la prise des m
 		- [Configurer le sous-réseau](#configurer-le-sous-réseau)
 
 
-## Installation
+## Flasher la carte SD
 
-Suppose un accès internet sur le raspberry.
+> Suppose que vous vous êtes procuré l'image `cyclosafe_firmware.img.xz`.
+
+Une fois la carte SD branché dans le PC, exécutez la commande suivante (remplacer `/dev/sdX` par le nom de la carte SD détectée par l'OS (généralement `/dev/sda`)):
+
+~~~
+xz -dc cyclosafe_firmware.img.xz | sudo dd of=/dev/sdX bs=4M status=progress && sync && sudo eject /dev/sdX
+~~~
+
+- `xz -dc cyclosafe_firmware.img.xz` : décompresse l'image
+- `| sudo dd of=/dev/sdX bs=4M` : redirige l'image décompressée vers la carte SD. 
+- `&& sync` : vérifie que tout a bien été écrit sur le disque
+- `&& sudo eject /dev/sdX` : ejecte la carte SD qui peut désormais être arrachée.
+
+Au premier démarrage de la carte sur un raspberry, la taille de la partition sera étendu automatiquement en fonction de l'espace disponible sur la carte SD et les mesures démarreront aussitôt.
+
+## Installation (sans l'image du firmware)
+
+> Suppose un accès internet sur le raspberry.
+> Si le raspberry n'a pas accès à internet, privilégiez [**une installation hors ligne**](#installation-hors-ligne).
+
+> Si vous avez flashé une carte SD avec le firmware de cyclosafe, vous pouvez ignorer cette section car tout y est déjà installé.
+> 
+> Sinon veillez à flasher une distribution **64 bits de Raspberry OS** (il est recommandé d'utiliser la version **lite** sans interface graphique).
+>
+> Il est recommandé de nommer l'utilisateur par défaut `cycliste`, par cohérence avec les exemples donnés dans la documentation.
 
 ~~~
 git clone https://github.com/Anvently/Cyclosafe-firmware ~/cyclosafe
 cd ~/cyclosafe/core
 ~~~
 
-Si le raspberry n'a pas accès à internet, privilégiez [**une installation hors ligne**](#installation-hors-ligne).
 
 Installation complète
 ~~~
@@ -122,13 +146,13 @@ Une fois le réseau configuré, vous pouvez simplement copier le dossier `core` 
 
 Depuis l'hôte :
 ~~~
-scp -r ./core user@192.168.2.2:/home/user/cyclosafe/core
+scp -r ./core cyclist@192.168.2.2:/home/user/cyclosafe/core
 ~~~
 
 Connectez-vous ensuite en ssh :
 
 ~~~
-ssh user@192.168.2.2
+ssh cycliste@192.168.2.2
 ~~~
 
 Vous avez désormais accès au raspberry.

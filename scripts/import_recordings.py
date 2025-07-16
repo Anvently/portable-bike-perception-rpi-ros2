@@ -18,11 +18,12 @@ logger = logging.getLogger("rich")
 
 def parse_arguments():
 	"""Parse command line arguments."""
-	parser = argparse.ArgumentParser(description='Import and convert rosbag files from a remote host.')
+	parser = argparse.ArgumentParser(description='Import, decompress and merge rosbag files from a remote host to single bag file. Attemmpt to repair corrupted bags.')
 	parser.add_argument('-u', '--hostname', help='Hostname for SSH connection (user@host-ip)')
 	parser.add_argument('-c', '--copy', help='Path to a local source directory (e.g., mounted SD card) to copy from')
 	parser.add_argument('-s', '--skip_import', help='Skip import step and use specified local path for conversion')
 	parser.add_argument('-o', '--output', help='Output directory for imported bags')
+	parser.add_argument('-x', '--clean', action='store_true', help='Delete bag/ directories locally after successful import and conversion')
 	
 	args = parser.parse_args()
 	
@@ -80,58 +81,48 @@ def get_local_records(source_path):
 		logger.error(f"Error finding record directories: {e}")
 		sys.exit(1)
 
-def import_records(hostname, password, records, output_dir):
-	"""Import record directories from remote host."""
-	os.makedirs(output_dir, exist_ok=True)
+def import_single_record(hostname, password, record, output_dir):
+	"""Import a single record directory from remote host."""
+	record_name = os.path.basename(record)
+	target_dir = os.path.join(output_dir, record_name)
 	
-	total_records = len(records)
-	for i, record in enumerate(records, 1):
-		record_name = os.path.basename(record)
-		target_dir = os.path.join(output_dir, record_name)
-		
-		if os.path.exists(target_dir):
-			logger.info	(f"[{i}/{total_records}] Directory {target_dir} already exists, skipping...")
-			continue
-		
-		logger.info	(f"[{i}/{total_records}] Importing {record_name} to {output_dir}...")
-		os.makedirs(target_dir, exist_ok=True)
-		
-		try:
-			cmd = f"sshpass -p {password} scp -r {hostname}:{record} {output_dir}/"
-			logger.info	(f"Running: {cmd}")
-			subprocess.run(cmd, shell=True, check=True)
-			
-			logger.info	(f"Successfully imported {record_name}")
-		except subprocess.CalledProcessError as e:
-			logger.error(f"Error importing {record_name}: {e}")
-			logger.error(f"Command output: {e.stderr}")
-			continue
+	if os.path.exists(target_dir):
+		logger.info(f"Directory {target_dir} already exists, skipping import...")
+		return target_dir
 	
-	return output_dir
+	logger.info(f"Importing {record_name} to {output_dir}...")
+	os.makedirs(target_dir, exist_ok=True)
+	
+	try:
+		cmd = f"sshpass -p {password} scp -r {hostname}:{record} {output_dir}/"
+		logger.info(f"Running: {cmd}")
+		subprocess.run(cmd, shell=True, check=True)
+		
+		logger.info(f"Successfully imported {record_name}")
+		return target_dir
+	except subprocess.CalledProcessError as e:
+		logger.error(f"Error importing {record_name}: {e}")
+		logger.error(f"Command output: {e.stderr}")
+		return None
 
-def copy_records(source_records, output_dir):
-	"""Copy record directories from local source to output directory."""
-	os.makedirs(output_dir, exist_ok=True)
+def copy_single_record(source_record, output_dir):
+	"""Copy a single record directory from local source to output directory."""
+	record_name = os.path.basename(source_record)
+	target_dir = os.path.join(output_dir, record_name)
 	
-	total_records = len(source_records)
-	for i, record in enumerate(source_records, 1):
-		record_name = os.path.basename(record)
-		target_dir = os.path.join(output_dir, record_name)
-		
-		if os.path.exists(target_dir):
-			logger.info(f"[{i}/{total_records}] Directory {target_dir} already exists, skipping...")
-			continue
-		
-		logger.info(f"[{i}/{total_records}] Copying {record_name} to {output_dir}...")
-		
-		try:
-			shutil.copytree(record, target_dir)
-			logger.info(f"Successfully copied {record_name}")
-		except Exception as e:
-			logger.error(f"Error copying {record_name}: {e}")
-			continue
+	if os.path.exists(target_dir):
+		logger.info(f"Directory {target_dir} already exists, skipping copy...")
+		return target_dir
 	
-	return output_dir
+	logger.info(f"Copying {record_name} to {output_dir}...")
+	
+	try:
+		shutil.copytree(source_record, target_dir)
+		logger.info(f"Successfully copied {record_name}")
+		return target_dir
+	except Exception as e:
+		logger.error(f"Error copying {record_name}: {e}")
+		return None
 
 def create_out_options_file(record_dir):
 	"""Create out_options file for bag conversion."""
@@ -172,43 +163,40 @@ def create_out_options_file(record_dir):
 		f.write(out_options_content)
 	return out_options_path
 
-def convert_bags(record_dirs):
-	"""Convert rosbag files using ros2 bag convert command."""
-	total_records = len(record_dirs)
+def convert_single_bag(record_dir):
+	"""Convert rosbag files using ros2 bag convert command for a single record."""
+	record_name = os.path.basename(record_dir)
+	logger.info(f"Converting bags in {record_name}...")
+
+	out_dir = os.path.join(record_dir, "out")
+
+	if os.path.exists(os.path.join(out_dir, "metadata.yaml")):
+		logger.info(f"Converted bag already exist in {record_dir}, skipping...")
+		return True
 	
-	for i, record_dir in enumerate(record_dirs, 1):
-		record_name = os.path.basename(record_dir)
-		logger.info(f"[{i}/{total_records}] Converting bags in {record_name}...")
-		
-		bag_dir = os.path.join(record_dir, "bag")
-		if not os.path.exists(bag_dir):
-			logger.info(f"Bag directory not found in {record_dir}, skipping...")
-			continue
-		
-		out_dir = os.path.join(record_dir, "out")
+	bag_dir = os.path.join(record_dir, "bag")
+	if not os.path.exists(bag_dir):
+		logger.info(f"Bag directory not found in {record_dir}, skipping...")
+		return False	
 
-		if os.path.exists(os.path.join(out_dir, "metadata.yaml")):
-			logger.info(f"Converted bag already exist in {record_dir}, skipping...")
-			continue
-
-		if os.path.exists(os.path.join(record_dir, "bag", "metadata.yaml")) == False:
-			logger.warning(f"{record_dir} is missing a metadata.yaml")
-			if repair_bag(os.path.join(record_dir, "bag")) == False:
-				continue
-		
-		# Create out_options file
-		out_options_path = os.path.join(record_dir, "out_options")
-		out_options_path = create_out_options_file(record_dir)
-		
-		# Run conversion command
-		try:
-			cmd = f"ros2 bag convert -i {bag_dir} -o {out_options_path}"
-			logger.info(f"Running: {cmd}")
-			subprocess.run(cmd, shell=True, check=True, cwd=record_dir)
-			logger.info(f"Successfully converted bags in {record_name}")
-		except subprocess.CalledProcessError as e:
-			logger.error(f"Error converting bags in {record_name}: {e}")
-			continue
+	if os.path.exists(os.path.join(record_dir, "bag", "metadata.yaml")) == False:
+		logger.warning(f"{record_dir} is missing a metadata.yaml")
+		if repair_bag(os.path.join(record_dir, "bag")) == False:
+			return False
+	
+	# Create out_options file
+	out_options_path = create_out_options_file(record_dir)
+	
+	# Run conversion command
+	try:
+		cmd = f"ros2 bag convert -i {bag_dir} -o {out_options_path}"
+		logger.info(f"Running: {cmd}")
+		subprocess.run(cmd, shell=True, check=True, cwd=record_dir)
+		logger.info(f"Successfully converted bags in {record_name}")
+		return True
+	except subprocess.CalledProcessError as e:
+		logger.error(f"Error converting bags in {record_name}: {e}")
+		return False
 
 def repair_bag(bag_folder: str) -> bool:
 	"""
@@ -234,6 +222,53 @@ def repair_bag(bag_folder: str) -> bool:
 		logger.error(f"Error repairing bag in {bag_folder}: {e}")
 	return False
 
+def clean_local_bag_directory(record_dir):
+	"""Delete the bag/ directory locally after successful processing."""
+	bag_path = os.path.join(record_dir, "bag")
+	if not os.path.exists(bag_path):
+		return True
+	try:
+		shutil.rmtree(bag_path)
+		return True
+	except Exception as e:
+		logger.error(f"Error cleaning local bag directory {bag_path}: {e}")
+		return False
+
+def process_single_record(record, output_dir, hostname=None, password=None, is_copy=False, clean=False):
+	"""Process a single record: import/copy -> repair -> convert -> clean (if enabled)."""
+	record_name = os.path.basename(record)
+	logger.info(f"Processing record: {record_name}")
+	
+	# Step 1: Import or copy
+	if is_copy:
+		target_dir = copy_single_record(record, output_dir)
+	elif hostname:
+		target_dir = import_single_record(hostname, password, record, output_dir)
+	else:
+		# Skip import case - record is already local
+		target_dir = record
+	
+	if not target_dir:
+		logger.error(f"Failed to import/copy {record_name}, skipping...")
+		return False
+	
+	if record_name == "logs":
+		return True
+	
+	# Step 2: Convert (includes repair if needed)
+	conversion_success = convert_single_bag(target_dir)
+	
+	if not conversion_success:
+		logger.error(f"Failed to convert {record_name}")
+		return False
+	
+	# Step 3: Clean local bag directory if enabled and successful
+	if clean and conversion_success:
+		clean_local_bag_directory(target_dir)
+	
+	logger.info(f"Successfully processed record: {record_name}")
+	return True
+
 def main():
 	args = parse_arguments()
 	
@@ -244,6 +279,12 @@ def main():
 		output_dir = os.path.expanduser(f"~/data/import/")
 	
 	logger.info(f"Output directory: {output_dir}")
+	os.makedirs(output_dir, exist_ok=True)
+	
+	# Get password if needed for remote operations
+	password = None
+	if args.hostname:
+		password = getpass.getpass(prompt="Enter SSH password: ")
 	
 	# Determine record directories to process
 	if args.skip_import:
@@ -254,13 +295,23 @@ def main():
 			sys.exit(1)
 		
 		# Directory containing record directories specified
-		record_dirs = glob.glob(os.path.join(local_path, "*-*"))
+		records = glob.glob(os.path.join(local_path, "*-*"))
 		
-		if not record_dirs:
+		if not records:
 			logger.info(f"No record directories found in {local_path}")
 			sys.exit(1)
 		
-		logger.info(f"Found {len(record_dirs)} record directories in {local_path}")
+		logger.info(f"Found {len(records)} record directories in {local_path}")
+		
+		# Process each record individually
+		total_records = len(records)
+		successful_records = 0
+		for i, record in enumerate(records, 1):
+			logger.info(f"[{i}/{total_records}] Processing record from local path...")
+			success = process_single_record(record, output_dir, clean=args.clean)
+			if success:
+				successful_records += 1
+		
 	elif args.copy:
 		# Import from local source path (e.g., mounted SD card)
 		source_path = os.path.abspath(args.copy)
@@ -270,26 +321,34 @@ def main():
 			logger.info("No records to copy. Exiting.")
 			sys.exit(0)
 		
-		copy_records(local_records, output_dir)
-		# Get list of imported directories for conversion
-		record_dirs = glob.glob(os.path.join(output_dir, "*-*"))
+		# Process each record individually
+		total_records = len(local_records)
+		successful_records = 0
+		for i, record in enumerate(local_records, 1):
+			logger.info(f"[{i}/{total_records}] Processing record from local copy...")
+			success = process_single_record(record, output_dir, is_copy=True, clean=args.clean)
+			if success:
+				successful_records += 1
+		
 	else:
 		# Import from remote host
 		hostname = args.hostname
-		password = getpass.getpass(prompt="Enter SSH password: ")
 		remote_records = get_remote_records(hostname, password)
 		
 		if not remote_records:
 			logger.info("No records to import. Exiting.")
 			sys.exit(0)
 		
-		import_records(hostname, password, remote_records, output_dir)
-		# Get list of imported directories for conversion
-		record_dirs = glob.glob(os.path.join(output_dir, "*-*"))
+		# Process each record individually
+		total_records = len(remote_records)
+		successful_records = 0
+		for i, record in enumerate(remote_records, 1):
+			logger.info(f"[{i}/{total_records}] Processing record from remote host...")
+			success = process_single_record(record, output_dir, hostname=hostname, password=password, clean=args.clean)
+			if success:
+				successful_records += 1
 	
-	# Convert bags
-	convert_bags(record_dirs)
-	logger.info("All operations completed successfully!")
+	logger.info(f"Processing completed! Successfully processed {successful_records} out of {total_records} records.")
 
 if __name__ == "__main__":
 	main()

@@ -9,7 +9,7 @@ StartLimitBurst=3
 Type=simple
 User=npirard
 Restart=on-failure
-EnvironmentFile=/home/npirard/cyclosafe/setup/.env
+EnvironmentFile=/home/cycliste/cyclosafe/core/setup/.env
 ExecStart=/bin/bash -c "source $CYCLOSAFE_WORKSPACE/setup/.bashrc; ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false"
 TimeoutStopSec=5
 KillMode=mixed
