@@ -33,16 +33,16 @@ Script lancé au démarrage par [**gpiod.service**](../setup/systemd/README#gpio
 
 Service ayant plusieurs fonctions :
 
-- log des heures de démarrage et d'extinction du raspberry dans *****$CYCLOSAFE_LOGS**/on_off.log*** + cause de l'extinction (batterie ou bouton)
+- log des heures de démarrage et d'extinction du raspberry dans *****$CYCLOSAFE_LOGS**/cyclosafe.log*** + cause de l'extinction (batterie ou bouton)
 - lance le script python (**gpio.py**)
-- test la valeur de retour du script et déclenche l'arrêt du raspbbery ssi le code d'erreur correspond à un appui sur le bouton ou à un voltage trop faible sur la batterie.
+- teste la valeur de retour du script et déclenche l'arrêt du raspbbery ssi le code d'erreur correspond à un appui sur le bouton ou à un voltage trop faible sur la batterie.
 - déclenche l'arrêt du raspberry via ***sudo systemctl stop cyclosafe.service***. Respecte le délai configuré (`$SHUTDOWN_DELAY`), vérifie que le service a bien été arrêté (log de warning le cas échéant) et passe le raspberry en mode halt (extinction du bus d'alimentation, du bus USB, et consommation minimale de 23mA environ).
 
 ### Variables d'environnement liées
 
-**SHUTDOWN_DELAY** : ajuste le temps du sleep  entre la commande d'arrêt du service cyclosafed.service et l'extinction du raspberry. La valeur du sleep étant définie à **SHUTDOWN_DELAY + 1**.
+> **SHUTDOWN_DELAY** : ajuste le temps du sleep  entre la commande d'arrêt du service cyclosafed.service et l'extinction du raspberry. La valeur du sleep étant définie à **SHUTDOWN_DELAY + 1**.
 
-**CYCLOSAFE_LOGS** : définit le répertoire où on_off.log est enregistré
+> **CYCLOSAFE_LOGS** : définit le répertoire où on_off.log est enregistré
 
 ## battery_monitor.py
 
@@ -60,11 +60,27 @@ Script lancé au démarrage par [**gps_time.service**](../setup/systemd/README#g
 
 Mets à jour l'heure et la date du système à partir des frames NMEA envoyées par un GPS connecté en serial.
 
+Si le GPS n'a pas de pile ou si celle-ci est défectueuse, l'heure envoyée par le GPS ne sera pas correcte tant qu'il n'aura pas pu fixer la position. Pour pallier à cela, une date est considérée comme "valide" si elle est comprise entre le **17/07/2025** et le **17/07/2055**.
+
 ### Variables d'environnement liées
 
-**CYCLOSAFE_LOGS** : le script log ses tentatives dans ***$CYCLOSAFE_LOGS/gps_time_sync.log***
+> **CYCLOSAFE_LOGS** : le script log ses tentatives dans ***$CYCLOSAFE_LOGS/gps_time_sync.log***
 
-**GPS_SERIAL_PORT** : port serial auquel est connecté le GPS.
+> **GPS_SERIAL_PORT** : port serial auquel est connecté le GPS.
 
+## launch_wrapper.sh
 
+Script lancé au démarrage par [**cyclosafed.service**](../setup/systemd/README#cyclosafedservice).
 
+Service ayant plusieurs fonctions :
+
+- sourcer l'environnement ROS puis lancer la [**launch  description principale**](../src/cyclosafe/README.md#launch-description)
+  - si l'espace restant sur la carte SD est inférieur à `LOW_STORAGE_TRESHOLD`, les données mesurées ne seront pas enregistrées.
+- monitoring de la launch description de la [**launch  description principale**] : si un des noeuds ne se lance pas correctement ou s'arrête en cours d'exécution, l'ensemble des noeuds sont relancés.
+- log du démarrage/arrêt des mesures dans ***$CYCLOSAFE_LOGS/cyclosafe.log***
+
+### Variables d'environnement liées
+
+> **LOW_STORAGE_TRESHOLD** : espace de stockage (en MO) disponible en dessous duquel s'allume le voyant de stockage plein.
+
+> **CYCLOSAFE_LOGS** : définit le répertoire où on_off.log est enregistré

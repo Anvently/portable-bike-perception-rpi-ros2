@@ -1,61 +1,30 @@
 Contient des scripts et utilitaires destinés à faciliter la récupération des données.
 
-- [gpx\_exporter.py](#gpx_exporterpy)
+- [sd\_flash.sh](#sd_flashsh)
   - [Usage](#usage)
-  - [Exemple](#exemple)
-  - [Paramètres](#paramètres)
 - [import\_recordings.py](#import_recordingspy)
   - [Usage](#usage-1)
-  - [Exemple](#exemple-1)
+  - [Exemple](#exemple)
     - [Exporter en lisant directement la carte SD](#exporter-en-lisant-directement-la-carte-sd)
     - [Exporter en SSH](#exporter-en-ssh)
     - [Pour convertir/réparer seulement les données (avec des données déjà importées)](#pour-convertirréparer-seulement-les-données-avec-des-données-déjà-importées)
-  - [Paramètres](#paramètres-1)
+  - [Paramètres](#paramètres)
   - [Procédure normale](#procédure-normale)
-  - [Documentation et suppléments sur rosbag](#documentation-et-suppléments-sur-rosbag)
+  - [Paramètres](#paramètres-1)
 
-# gpx_exporter.py
+# sd_flash.sh
 
-Permet d'exporter les données GPS contenues dans un rosbag vers un format gpx.
+Script interactif automatisant le flash du firmware cyclosafe vers une carte SD.
+- Décompresse l'image tout en la flashant
+- Calcul de la taille restante disponible sur la carte SD et estime le nombre d'heure d'enregistrement correspondant
+- Ejecte la carte SD
 
 ## Usage
 
 ~~~
-$ python3 ./gpx_exporter.py --help
-usage: gpx_exporter.py [-h] -b BAG [-o OUTPUT_PATH] [-n NAME]
-
-Extrait les données GPS d'un bag ROS2 et les exporte au format GPX
-
-options:
-  -h, --help            show this help message and exit
-  -b BAG, --bag BAG     Chemin vers le fichier bag ROS2 (.mcap)
-  -o OUTPUT_PATH, --output-path OUTPUT_PATH
-                        Chemin du fichier GPX de sortie
-  -n NAME, --name NAME  Nom personnalisé pour la trace GPS
+# Remplacer /dev/sdX par le device auquel correspond la carte SD
+sudo ./sd_flash.sh ./cyclosafe_firmware.img.xz /dev/sdX
 ~~~
-
-## Exemple
-
-~~~
-$ python3 ./gpx_exporter.py -b ~/data/20250513-064355/out/_0.mcap
-[16:49:01] INFO     Traitement terminé. 24 points GPS extraits et enregistrés dans                 gpx_exporter.py:173
-                    /home/npirard/data/20250513-064355/out/trace.gpx   
-~~~
-
-## Paramètres
-
-> **-b (--bag)**
-> 	- **obligatoire**
-> 	- chemin vers le bag à partir duquel extraire les données gps
-
-> **-o (--output-path)**
-> 	- **optionnel**
-> 	- chemin de sortie pour la trace gpx
-> 	- si non indiqué, elle sera enregistrée dans le même répertoire que le bag
-
-> **-n (--name)**
-> 	- **optionnel**
-> 	- nom de la trace gpx (il ne s'agit pas du nom du fichier mais bien de la trace)
 
 # import_recordings.py
 
@@ -321,3 +290,47 @@ La procédure est la suivante :
 ## Documentation et suppléments sur rosbag
 
 https://github.com/ros2/rosbag2?tab=readme-ov-file#rosbag2
+
+
+# gpx_exporter.py
+
+Permet d'exporter les données GPS contenues dans un rosbag vers un format gpx.
+
+## Usage
+
+~~~
+$ python3 ./gpx_exporter.py --help
+usage: gpx_exporter.py [-h] -b BAG [-o OUTPUT_PATH] [-n NAME]
+
+Extrait les données GPS d'un bag ROS2 et les exporte au format GPX
+
+options:
+  -h, --help            show this help message and exit
+  -b BAG, --bag BAG     Chemin vers le fichier bag ROS2 (.mcap)
+  -o OUTPUT_PATH, --output-path OUTPUT_PATH
+                        Chemin du fichier GPX de sortie
+  -n NAME, --name NAME  Nom personnalisé pour la trace GPS
+~~~
+
+## Exemple
+
+~~~
+$ python3 ./gpx_exporter.py -b ~/data/20250513-064355/out/_0.mcap
+[16:49:01] INFO     Traitement terminé. 24 points GPS extraits et enregistrés dans                 gpx_exporter.py:173
+                    /home/npirard/data/20250513-064355/out/trace.gpx   
+~~~
+
+## Paramètres
+
+> **-b (--bag)**
+> 	- **obligatoire**
+> 	- chemin vers le bag à partir duquel extraire les données gps
+
+> **-o (--output-path)**
+> 	- **optionnel**
+> 	- chemin de sortie pour la trace gpx
+> 	- si non indiqué, elle sera enregistrée dans le même répertoire que le bag
+
+> **-n (--name)**
+> 	- **optionnel**
+> 	- nom de la trace gpx (il ne s'agit pas du nom du fichier mais bien de la trace)

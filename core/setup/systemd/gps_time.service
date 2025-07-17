@@ -2,13 +2,17 @@
 Description=Synchronisation de l'heure système via GPS
 After=network.target
 Wants=network.target
+StartLimitIntervalSec=50
+StartLimitBurst=5
 
 [Service]
-Type=oneshot
+Type=simple
 EnvironmentFile=/home/cycliste/cyclosafe/core/setup/.env
 ExecStart=/bin/bash -c "source $SCRIPTS_PATH/gps_time.sh"
-RemainAfterExit=yes
-StandardOutput=journal
+Restart=on-failure
+RestartSec=2
+TimeoutStartSec=30
+TimeoutStopSec=10
 
 [Install]
 WantedBy=multi-user.target

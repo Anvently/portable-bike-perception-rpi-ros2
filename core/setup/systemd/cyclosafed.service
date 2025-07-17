@@ -2,20 +2,22 @@
 Description=cyclosafe daemon
 After=gpiod.service
 Requires=gpiod.service
-StartLimitIntervalSec=60
+StartLimitIntervalSec=150
 StartLimitBurst=3
 
 [Service]
 Type=simple
-User=npirard
+User=cycliste
 Restart=on-failure
+RestartSec=5
 EnvironmentFile=/home/cycliste/cyclosafe/core/setup/.env
-ExecStart=/bin/bash -c "source $CYCLOSAFE_WORKSPACE/setup/.bashrc; ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false"
+ExecStart=/bin/bash -c "source $SCRIPTS_PATH/launch_wrapper.sh"
 TimeoutStopSec=5
 KillMode=mixed
 KillSignal=SIGINT
 RestartKillSignal=SIGINT
 SendSIGKILL=yes
+KillMode=control-group
 
 [Install]
 WantedBy=multi-user.target

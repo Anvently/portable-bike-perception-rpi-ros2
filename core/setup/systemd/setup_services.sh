@@ -83,20 +83,22 @@ cat << EOF | sudo tee /etc/systemd/system/cyclosafed.service
 Description=cyclosafe daemon
 After=gpiod.service
 Requires=gpiod.service
-StartLimitIntervalSec=60
+StartLimitIntervalSec=150
 StartLimitBurst=3
 
 [Service]
 Type=simple
 User=$USERNAME
 Restart=on-failure
+RestartSec=5
 EnvironmentFile=$env_file
-ExecStart=/bin/bash -c "source \$CYCLOSAFE_WORKSPACE/setup/.bashrc; ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false"
+ExecStart=/bin/bash -c "source \$SCRIPTS_PATH/launch_wrapper.sh"
 TimeoutStopSec=$SHUTDOWN_DELAY
 KillMode=mixed
 KillSignal=SIGINT
 RestartKillSignal=SIGINT
 SendSIGKILL=yes
+KillMode=control-group
 
 [Install]
 WantedBy=multi-user.target
@@ -110,8 +112,8 @@ if [ $? -eq 4 ]; then
 cat << EOF | sudo tee /etc/systemd/system/gpiod.service
 [Unit]
 Description=gpio daemon controlling led blinking, button press and battery monitoring
-After=pigpiod.service gps_time.service
-Requires=pigpiod.service gps_time.service
+After=pigpiod.service
+Requires=pigpiod.service
 StartLimitIntervalSec=60
 StartLimitBurst=3
 
@@ -140,13 +142,17 @@ cat << EOF | sudo tee /etc/systemd/system/gps_time.service
 Description=Synchronisation de l'heure système via GPS
 After=network.target
 Wants=network.target
+StartLimitIntervalSec=50
+StartLimitBurst=5
 
 [Service]
-Type=oneshot
+Type=simple
 EnvironmentFile=$env_file
-ExecStart=/bin/bash -c "source \$SCRIPTS_PATH/gps_time.sh"
-RemainAfterExit=yes
-StandardOutput=journal
+ExecStart=/bin/bash -c "source $SCRIPTS_PATH/gps_time.sh"
+Restart=on-failure
+RestartSec=2
+TimeoutStartSec=30
+TimeoutStopSec=10
 
 [Install]
 WantedBy=multi-user.target

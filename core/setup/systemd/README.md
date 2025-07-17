@@ -2,7 +2,7 @@
 
 Ce dossier contient des templates de configuration pour les différents services utilisés par cyclosafe.
 
-**Important**: pour une installation vierge, préférez l'utilisation du script setup_services.sh qui ajuste plus finement les paramètres en fonction des varaibles d'environnement configurées (notamment le délai de timeout). Les fichiers de configuration seront automatiquement créés et installés.
+**Important**: pour une installation vierge, préférez l'utilisation du script setup_services.sh qui ajuste plus finement les paramètres en fonction des varaibles d'environnement configurées. Les fichiers de configuration seront automatiquement créés et installés.
 
 Ces services utilisent à chaque démarrage le fichier d'environnement .env du workspace de cyclosafe.
 
@@ -20,8 +20,11 @@ C'est le service responsable de lancer la launch description principale de cyclo
 
 S'il est activé (**sudo systemctl enable cyclosafed.service**), les mesures sont prises dès le démarrage du raspberry.
 
-Il lance la commande **ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false** après avoir sourcé l'environnement ROS2.
+Il lance le script [`launch_wrapper.sh`](../../scripts/launch_wrapper.sh). Il s'agit d'un wrapper pour sourcer l'environnement ROS et executer la commande `ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false`.
 
+> **Note** : ce service est dépendant du bon fonctionnement des services [**gpiod.service**](#gpiodservice) et [**gps_time.service**](#gps_timeservice).
+
+> Si un des noeuds n'est pas correment lancé ou s'arrête, le service est relancé.
 
 ### Fermeture : SIGINT
 
@@ -51,6 +54,7 @@ Il est crucial que ce service démarre correctement car le script est responsabl
 - du monitoring du bouton d'extinction
 - du contrôle des leds
 - du monitoring de la tension de la batterie
+- du monitoring de l'espace restant sur la carte SD
 - de l'arrêt propre de cyclosafed.service
 
 ## gps_time.service

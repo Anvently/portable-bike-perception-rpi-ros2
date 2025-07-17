@@ -76,7 +76,7 @@ S'ajoute au fichier de configuration ***/boot/firmware/cmdline.txt*** (ce qui es
 
 > **ipv6.disable=1** : Désactive ipv6 pour éviter des problèmes DNS lors du téléchargement de certains paquets (notamment en passant par le réseau de l'IGN)
 
-> ***Note*** : si jamais le service systemd gpiod.service détecté perpétuellement un appui sur le bouton au démarrage et que le raspberry devient inaccessible, il est possible de modifier ***/boot/firmware/cmdline.txt*** via un lecteur de carte sd de cette façon là afin de masquer le service au démarrage :
+> ***Note*** : si jamais le service systemd gpiod.service détecte perpétuellement un appui sur le bouton au démarrage et que le raspberry devient inaccessible, il est possible de modifier ***/boot/firmware/cmdline.txt*** via un lecteur de carte sd de cette façon là afin de masquer le service au démarrage :
 >
 	> ipv6.disable=1 systemd.mask=gpiod.service
 
