@@ -1,3 +1,4 @@
+#!/bin/bash
 # Created on Tue Aug 05 2025
 # Updated on Tue Aug 05 2025
 #
@@ -11,7 +12,6 @@
 # https://cecill.info/licences/Licence_CeCILL_V2.1-en.html
 
 
-#!/bin/bash
 set -e
 LOG_DIR="$CYCLOSAFE_LOGS"
 LOG_FILE="$CYCLOSAFE_LOGS/cyclosafe.log"
