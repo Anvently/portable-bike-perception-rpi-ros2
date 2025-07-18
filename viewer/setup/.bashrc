@@ -22,12 +22,10 @@ if [ -f $CYCLOSAFE_WORKSPACE/install/setup.bash ]; then
 	ROS_INSTALLED=0
 fi
 
-MSG="Ros is not installed or the cyclosafe environment was not sourced."
-
 if [ $ROS_INSTALLED -eq 1 ]; then
 	alias cy_viewer_build="cd $CYCLOSAFE_WORKSPACE; colcon build --symlink-install; source ./setup/.bashrc; cd -"
 	alias cy_viewer_clean="cd $CYCLOSAFE_WORKSPACE; rm -rf build/ install/ log/; source ./setup/.bashrc; cd -"
 else
-	alias cy_viewer_build="$MSG"
-	alias cy_viewer_clean="$MSG"
+	alias cy_viewer_build="echo Ros is not installed or the cyclosafe environment was not sourced."
+	alias cy_viewer_clean="echo Ros is not installed or the cyclosafe environment was not sourced."
 fi

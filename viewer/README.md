@@ -123,14 +123,23 @@ Afin de simplifier ces opérations, il est fourni un script [**.bashrc**](./setu
 > - d'exporter des variables d'environnements propres au projet
 > - déclare des alias facilitant le build et l'installation des packages
 
-Depuis le répertoire courant, vous pouvez l'activer via :
+Afin d'utiliser les scripts fournis par cyclosafe et les variables d'environnement du projet, il est nécessaire de créer un fichier `./setup/.env`.
+
+Depuis le repertoire courant `viewer/` vous pouvez simplement exécuter ces commandes :
+
+~~~
+export CYCLOSAFE_WORKSPACE=$PWD
+eval "echo \"$(cat ./setup/.env.template)\"" > ./setup/.env
+~~~
+
+Depuis le répertoire courant (`viewer/`), vous pourrez ensuite sourcer le script via :
 ~~~
 source ./setup/.bashrc
 ~~~
 
 > Afin de ne pas avoir à répéter cette opération pour chaque nouveau terminal ouvert, vous pouvez l'ajouter au **.bashrc**  de votre dossier utilisateur (**~**) :
 > ~~~
-> $(cat ./setup/.bashrc) >> ~/.bashrc
+> echo source ./setup/.bashrc >> ~/.bashrc
 > ~~~
 > Le script sera désormais automatiquement executé à l'ouverture d'un terminal.
 
@@ -205,7 +214,7 @@ Afin de faciliter la routine de build et d'installation, le script **.bashrc** d
 
 ~~~
 $ type cy_viewer_build 
-cy_viewer_build is aliased to `cd /home/npirard/cyclosafe/viewer/; colcon build --symlink-install; source ./setup/.bashrc; cd -'
+cy_viewer_build is aliased to `cd /home/user/cyclosafe/viewer/; colcon build --symlink-install; source ./setup/.bashrc; cd -'
 ~~~
 Permet :
 - `cd $CYCLOSAFE_WORKSPACE` : se déplacer directement à la racine du workspace cyclosafe
@@ -216,7 +225,7 @@ Permet :
 
 ~~~
 $ type cy_viewer_clean
-cy_viewer_clean is aliased to `cd /home/npirard/cyclosafe/viewer/; rm -rf build/ install/ log/; source ./setup/.bashrc; cd -'
+cy_viewer_clean is aliased to `cd /home/user/cyclosafe/viewer/; rm -rf build/ install/ log/; source ./setup/.bashrc; cd -'
 ~~~
 Permet de nettoyer le workspace :
 - `cd $CYCLOSAFE_WORKSPACE` : se déplacer directement à la racine du workspace cyclosafe
