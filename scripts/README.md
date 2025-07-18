@@ -81,20 +81,20 @@ options:
 
 **Résultat** :
 ~~~
-           INFO     Output directory: /home/npirard/data/test                 
+           INFO     Output directory: /home/cycliste/data/test                 
 Enter SSH password: 
-           INFO     Retrieving record list from npirard@192.168.2.2...         
+           INFO     Retrieving record list from cycliste@192.168.2.2...         
            INFO     Found 9 record directories.                                
-           INFO     [1/9] Importing 20250515-125430 to /home/npirard/data/test...
+           INFO     [1/9] Importing 20250515-125430 to /home/user/data/test...
            INFO     Running: sshpass -p XXXX scp -r                        
-                    npirard@192.168.2.2:/home/npirard/data/20250515-125430                                            
-                    /home/npirard/data/test/        
+                    cycliste@192.168.2.2:/home/cycliste/data/20250515-125430                                            
+                    /home/user/data/test/        
 ...
 INFO     [2/8] Converting bags in 20250515-125326...                       
-           WARNING  /home/npirard/data/test/20250515-125326 is missing a metadata.yaml
-Attempting to repair /home/npirard/data/test/20250515-125326/bag
+           WARNING  /home/cycliste/data/user/20250515-125326 is missing a metadata.yaml
+Attempting to repair /home/cycliste/data/user/20250515-125326/bag
            INFO     Running: unzstd
-                    /home/npirard/data/test/20250515-125326/bag/bag_0.mcap.zstd
+                    /home/cycliste/data/user/20250515-125326/bag/bag_0.mcap.zstd
            INFO     Successfully uncompressed bag
            INFO     Running: ros2 bag reindex .
 ...
@@ -114,10 +114,10 @@ Suppose que les données ont déjà été importées sur l'hôte (manuellement) 
 **Résultat :**
 
 ~~~
-INFO     Output directory: /home/npirard/data/pouet                                import_recordi:246
-           INFO     Found 8 record directories in /home/npirard/data/test
+INFO     Output directory: /home/cycliste/data/pouet                                import_recordi:246
+           INFO     Found 8 record directories in /home/user/data/test
            INFO     [1/8] Converting bags in 20250516-175032...
-           INFO     Converted bag already exist in /home/npirard/data/test/20250516-175032,
+           INFO     Converted bag already exist in /home/user/data/test/20250516-175032,
                     skipping...                                
 ...
            INFO     All operations completed successfully!
@@ -160,7 +160,7 @@ INFO     Output directory: /home/npirard/data/pouet                             
 	La structure d'un enregistrement importé est la suivante :
 	~~~
 	$ tree ~/data/
-	/home/npirard/data/
+	/home/user/data/
 	└── 20250515-125326 # Date de l'enregistrement
 		├── bag # Dossier contenant les fichiers créés par rosbag
 		│   ├── bag_0.mcap.zstd
@@ -180,7 +180,7 @@ INFO     Output directory: /home/npirard/data/pouet                             
 
    Cela est fait via la commande suivante :
    ~~~
-   ros2 bag convert -i /home/npirard/data/20250515-125326/bag -o /home/npirard/data/20250515-125326/out/out_options
+   ros2 bag convert -i /home/user/data/20250515-125326/bag -o /home/user/data/20250515-125326/out/out_options
    ~~~
 
    Le fichier **out_options** dont il est question défini les paramètres de sortie de la conversion, notamment le nom de sortie du bag converti.
@@ -222,7 +222,7 @@ INFO     Output directory: /home/npirard/data/pouet                             
 3. On doit obtenir à la fin la structure suivante :
 	~~~
 	$ tree ~/data/
-	/home/npirard/data/
+	/home/user/data/
 	└── 20250515-125326 # Date de l'enregistrement
 		├── bag # Dossier contenant les fichiers créés par rosbag
 		│   ├── bag_0.mcap.zstd
@@ -260,7 +260,7 @@ Lorsque le raspberry s'éteint brutalement ou que [**cyclosafed.service**](../co
 <ins>**Exemple**</ins> :
 ~~~
 $ tree ~/data/20250515-125326
-/home/npirard/data/20250515-125326
+/home/user/data/20250515-125326
 ├── bag # Absence du fichier metadata.yaml
 │   ├── bag_0.mcap.zstd
 │   └── bag_1.mcap # Le dernier bag n'est pas compressé
@@ -317,7 +317,7 @@ options:
 ~~~
 $ python3 ./gpx_exporter.py -b ~/data/20250513-064355/out/_0.mcap
 [16:49:01] INFO     Traitement terminé. 24 points GPS extraits et enregistrés dans                 gpx_exporter.py:173
-                    /home/npirard/data/20250513-064355/out/trace.gpx   
+                    /home/user/data/20250513-064355/out/trace.gpx   
 ~~~
 
 ## Paramètres

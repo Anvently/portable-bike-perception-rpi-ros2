@@ -248,9 +248,9 @@ ros2 run cyclosafe camera_pi --ros-args -p queue_size:=200 -p interval:=0.5
 ~~~
 Dans un autre terminal :
 ~~~
-ros2 service call /save_images cyclosafe_interfaces/srv/SaveImages '{time: 1000, path: /home/npirard/Downloads}' 
+ros2 service call /save_images cyclosafe_interfaces/srv/SaveImages '{time: 1000, path: /home/user/Downloads}' 
 ~~~
-Enregistre les images prises pendant la dernière seconde vers */home/npirard/Downloads*
+Enregistre les images prises pendant la dernière seconde vers */home/user/Downloads*
 
 <ins>**Résultat</ins>** :
 ~~~
