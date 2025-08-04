@@ -430,34 +430,34 @@ class RosbagPlayerWindow(QMainWindow):
 				self.image_label.setPixmap(pixmap)
 				self.image_label.setToolTip(f"{topic} @ {timestamp:.2f}s")
 
-				# Créer et afficher une fenêtre indépendante
-				if not hasattr(self, 'image_window') or not self.image_window.isVisible():
-					self.image_window = QWidget()
-					# self.image_window.setWindow
-					self.image_window.setWindowTitle(None)
+				# # Créer et afficher une fenêtre indépendante
+				# if not hasattr(self, 'image_window') or not self.image_window.isVisible():
+				# 	self.image_window = QWidget()
+				# 	# self.image_window.setWindow
+				# 	self.image_window.setWindowTitle(None)
 					
-					# Layout pour la fenêtre sans marges
-					window_layout = QVBoxLayout()
-					window_layout.setContentsMargins(0, 0, 0, 0)  # Supprimer les marges
-					window_layout.setSpacing(0)  # Supprimer l'espacement
+				# 	# Layout pour la fenêtre sans marges
+				# 	window_layout = QVBoxLayout()
+				# 	window_layout.setContentsMargins(0, 0, 0, 0)  # Supprimer les marges
+				# 	window_layout.setSpacing(0)  # Supprimer l'espacement
 					
-					self.image_window_label = QLabel()
-					self.image_window_label.setAlignment(Qt.AlignCenter)
-					self.image_window_label.setScaledContents(True)  # L'image s'adapte au label
+				# 	self.image_window_label = QLabel()
+				# 	self.image_window_label.setAlignment(Qt.AlignCenter)
+				# 	self.image_window_label.setScaledContents(True)  # L'image s'adapte au label
 					
-					window_layout.addWidget(self.image_window_label)
-					self.image_window.setLayout(window_layout)
+				# 	window_layout.addWidget(self.image_window_label)
+				# 	self.image_window.setLayout(window_layout)
 
 				# Mettre à jour l'image dans la fenêtre indépendante
-				self.image_window_label.setPixmap(pixmap)
-				self.image_window_label.setToolTip(f"{topic} @ {timestamp:.2f}s")
+				# self.image_window_label.setPixmap(pixmap)
+				# self.image_window_label.setToolTip(f"{topic} @ {timestamp:.2f}s")
 
-				# Afficher la fenêtre si elle n'est pas visible
-				if not self.image_window.isVisible():
-					self.image_window.show()
-					# Optionnel : positionner la fenêtre à côté de la fenêtre principale
-					main_geometry = self.geometry()
-					self.image_window.move(main_geometry.x() + main_geometry.width() + 10, main_geometry.y())
+				# # Afficher la fenêtre si elle n'est pas visible
+				# if not self.image_window.isVisible():
+				# 	self.image_window.show()
+				# 	# Optionnel : positionner la fenêtre à côté de la fenêtre principale
+				# 	main_geometry = self.geometry()
+				# 	self.image_window.move(main_geometry.x() + main_geometry.width() + 10, main_geometry.y())
 
 		
 		# Update timeline

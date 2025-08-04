@@ -68,8 +68,8 @@ def get_local_records(source_path):
 	"""Get list of record directories from local source path."""
 	logger.info(f"Looking for record directories in {source_path}...")
 	try:
-		# Find directories that match the pattern (assuming *-* pattern as in the original code)
-		records = glob.glob(os.path.join(source_path, "*-*"))
+		entries = os.listdir(source_path)
+		records = [os.path.join(source_path, entry) for entry in entries if os.path.isdir(os.path.join(source_path, entry))]
 		
 		if not records:
 			logger.info("No record directories found in source path.")
@@ -110,14 +110,14 @@ def copy_single_record(source_record, output_dir):
 	record_name = os.path.basename(source_record)
 	target_dir = os.path.join(output_dir, record_name)
 	
-	if os.path.exists(target_dir):
+	if os.path.exists(target_dir) and record_name != "logs":
 		logger.info(f"Directory {target_dir} already exists, skipping copy...")
 		return target_dir
 	
 	logger.info(f"Copying {record_name} to {output_dir}...")
 	
 	try:
-		shutil.copytree(source_record, target_dir)
+		shutil.copytree(source_record, target_dir, dirs_exist_ok=True)
 		logger.info(f"Successfully copied {record_name}")
 		return target_dir
 	except Exception as e:

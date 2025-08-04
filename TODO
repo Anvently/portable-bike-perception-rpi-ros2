@@ -1,4 +1,12 @@
-
-- ajouter un copyright + créditer les différentes ressources
-- mettre au point une notice d'assemblage avec dessins par étape
-  
+- 3d :
+  - ajouter assemblage emboitement (réimprimer boitier)
+  - agrandir le diamètre du collier
+- code :
+  - préparer firmware (mettre à jour)
+  - préparer carte SD pour Mehdi
+  - fixer les sauts dans le temps dans cyclosafe_viewer
+  - adapter visu sonar pour simuler distance avec les lidars
+- vidéo :
+  - générer rendu 3D
+  - enregistrer animation
+  - enregistrer aperçu de cyclosafe_viewer

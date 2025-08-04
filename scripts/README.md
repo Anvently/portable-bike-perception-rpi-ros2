@@ -3,6 +3,7 @@ Contient des scripts et utilitaires destinés à faciliter la récupération des
 - [sd\_flash.sh](#sd_flashsh)
   - [Usage](#usage)
 - [import\_recordings.py](#import_recordingspy)
+  - [Dépendance](#dépendance)
   - [Usage](#usage-1)
   - [Exemple](#exemple)
     - [Exporter en lisant directement la carte SD](#exporter-en-lisant-directement-la-carte-sd)
@@ -34,6 +35,18 @@ Utilitaire permettant :
 - de réparer les éventuels enregistrements corrompus
 
 Il est nécessaire de préciser l'une des deux options d'import (**-u** en ssh ou **-c** pour une copie).
+
+## Dépendance
+
+Nécessite la libraire python `rich`.
+> <ins>Depuis un venv python</ins> :
+> ~~~
+> pip install rich
+> ~~~
+> <ins>Pour l'installer system-wide (peu recommandé)</ins> :
+> ~~~
+> pip install rich --break-system-packages
+> ~~~
 
 ## Usage
 

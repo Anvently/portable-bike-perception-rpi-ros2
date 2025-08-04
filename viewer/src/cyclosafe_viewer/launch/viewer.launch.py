@@ -119,7 +119,7 @@ def launch_setup(context):
             package="tf2_ros",
             executable="static_transform_publisher",
             output="screen" ,
-            arguments=["--x", "0.0", "--y", "-0.08", "--z", "0.0", "--roll", "0.00", "--pitch", "0.00", "--yaw", "0", "--frame-id", "world", "--child-frame-id", "bicycle_link"],
+            arguments=["--x", "0.0", "--y", "0.00", "--z", "0.0", "--roll", "0.00", "--pitch", "0.00", "--yaw", "0", "--frame-id", "world", "--child-frame-id", "bicycle_link"],
         ),
     ])
     gps_sensor = next((sensor for sensor in sensors_list if sensor.type == SensorTypeEnum.GPSSensor), None)

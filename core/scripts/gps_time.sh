@@ -116,8 +116,8 @@ sync_time_from_gps() {
             continue
         fi
         
-        # Formatter la date pour validation (YYYY-MM-DD)
-        local formatted_date=$(printf "%04d-%02d-%02d" "$year" "$month" "$day")
+        # Formatter la date pour validation (YYYY-MM-DD), $((10#$year)) sert à forcer bash à interpréter les valeurs comme des décimales plutôt que des octales
+        local formatted_date=$(printf "%04d-%02d-%02d" "$((10#$year))" "$((10#$month))" "$((10#$day))")
         
         # Valider la date
         if ! validate_date "$formatted_date"; then
