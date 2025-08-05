@@ -1,3 +1,16 @@
+# Created on Tue Aug 05 2025
+# Updated on Tue Aug 05 2025
+#
+#  This file is part of Cyclosafe
+# Copyright (c) 2025 Nicolas Pirard @Anvently
+#
+# This software is governed by the CeCILL license under French law and
+# abiding by the rules of distribution of free software. You can use,
+# modify and/or redistribute the software under the terms of the CeCILL
+# license as circulated by CEA, CNRS and INRIA at:
+# https://cecill.info/licences/Licence_CeCILL_V2.1-en.html
+
+
 from PyQt5.QtCore import  pyqtSignal, QThread
 import rosbag2_py
 from rclpy.serialization import deserialize_message
@@ -109,7 +122,8 @@ class BagReader(QThread):
 					sleep_time = (time_diff - self.current_time) / self.playback_speed
 					if sleep_time > 0:
 						self.current_time = time_diff
-						time.sleep(sleep_time)
+						if (sleep_time < 1):
+							time.sleep(sleep_time)
 			
 			self.message_read.emit(topic, msg, self.current_time)
 		

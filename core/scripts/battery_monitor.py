@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-	
+# Author : [luoyufeng yufeng.luo@dfrobot.com]
+# Source : https://github.com/DFRobotdl/INA219-Python?tab=readme-ov-file#credits
+# Modified by Anvently on 05/2025 (added constants and get_battery_pourcent())
 
 import smbus
 import time

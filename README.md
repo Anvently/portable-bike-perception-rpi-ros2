@@ -28,27 +28,32 @@ https://github.com/user-attachments/assets/d5b68dda-f3fe-4f50-86e3-c243446fb8e7
 
 ## License
 
-This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.
+This project is licensed under the **CeCILL v2.1** license, a free software license fully compliant with French law, **based on the GNU GPL** and the principles of open source and copyleft.
 
 You are **free to**:
-- Use, copy, and adapt this project for **non-commercial purposes**
-- Share your modified versions, provided they are also licensed under **CC BY-NC-SA 4.0**
-- Credit the original author ([Nicolas Pirard, @Anvently](https://github.com/Anvently)) in any derivative or redistributed version
+- Use, modify, and redistribute this project under the terms of the CeCILL v2.1 license
+- Use this project for both **academic** and **commercial** purposes, under the conditions of the CeCILL license
+- Access the source code and modify it, provided that any redistribution complies with the CeCILL terms
 
-You are **not allowed to**:
-- Use this project or any of its components for commercial purposes
-- Re-license or redistribute modified versions under a different license
+You must:
+- Include a copy of the CeCILL license with any redistributed version
+- Retain notices of authorship and copyright
+- Clearly indicate any modifications made
+
+Author: [Nicolas Pirard aka Anvently](https://github.com/Anvently)  
+Contact: [pirard.nicolas@hotmail.fr](mailto:pirard.nicolas@hotmail.fr)
+
+📄 Full license text: [CeCILL v2.1](http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html)
+
+📄 Version  française: [CeCILL v2.1](https://cecill.info/licences/Licence_CeCILL_V2.1-fr.html)
+
+---
 
 ## Commercial Use
 
-Commercial use of this project is **not permitted** under the terms of the CC BY-NC-SA 4.0 license.
+Although the CeCILL license allows commercial use under its terms, a **custom commercial license** may be granted with support or warranty.
 
-However, the author is open to granting commercial licenses on a case-by-case basis.  
-If you are interested in using this project (or part of it) for commercial purposes, please contact:
+If you are interested in using this project (or part of it) in a commercial product with additional guarantees, please contact:
 
-[pirard.nicolas@hotmail.fr](pirard.nicolas@hotmail.fr)
-
-A separate commercial licensing agreement will be required.
-
-📄 Full license text: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[pirard.nicolas@hotmail.fr](mailto:pirard.nicolas@hotmail.fr)
 

@@ -1,4 +1,17 @@
 #!/bin/bash
+# Created on Tue Aug 05 2025
+# Updated on Tue Aug 05 2025
+#
+#  This file is part of Cyclosafe
+# Copyright (c) 2025 Nicolas Pirard @Anvently
+#
+# This software is governed by the CeCILL license under French law and
+# abiding by the rules of distribution of free software. You can use,
+# modify and/or redistribute the software under the terms of the CeCILL
+# license as circulated by CEA, CNRS and INRIA at:
+# https://cecill.info/licences/Licence_CeCILL_V2.1-en.html
+
+
 # Configuration
 GPS_DEVICE=$GPS_SERIAL_PORT # À adapter selon votre port GPS
 BAUDRATE=115200 # À adapter selon votre appareil GPS

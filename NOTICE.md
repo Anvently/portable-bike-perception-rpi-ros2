@@ -8,14 +8,14 @@ This project includes or depends on the following third-party components, each u
 
 - Source: https://index.ros.org/doc/ros2/
 - License: Apache License 2.0  
-- Note: ROS 2 and its packages are **not** subject to the CC BY-NC-SA license of this project. They retain their original open source licensing.
+- Note: ROS 2 and its packages are **not** subject to the CeCILL license of this project. They retain their original open source licensing.
 
 ---
 
 ## Slamtec RPLIDAR Driver
 
 - Source: Provided by manufacturer
-- License: BSD-like license (2-Clause)
+- License: BSD 2-Clause license  
 - Copyright:
   - (c) 2009 - 2014 RoboPeak Team
   - (c) 2014 - 2018 Shanghai Slamtec Co., Ltd.
@@ -27,7 +27,7 @@ This project includes or depends on the following third-party components, each u
 
 - Source: [Ben's Better Dropper Post Seat Bag Adapters](https://www.printables.com/model/125810-bens-better-dropper-post-seat-bag-adapters-264-22-)
 - License: **CC BY-NC-SA 4.0**
-- Note: This model is redistributed or used under the same license and is not eligible for commercial use.
+- Note: This model remains under the original **CC BY-NC-SA** license and is **not** covered by CeCILL. It is redistributed or referenced under the original license and is not eligible for commercial use.
 
 ---
 
