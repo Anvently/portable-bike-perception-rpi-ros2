@@ -11,6 +11,7 @@
 	- [Ouverture des rosbag](#ouverture-des-rosbag)
 	- [Lecture et publication des données](#lecture-et-publication-des-données)
 	- [Courbes](#courbes)
+	- [Courbes pour les LiDARS](#courbes-pour-les-lidars)
 	- [Marqueurs](#marqueurs)
 		- [Dépassement et croisement](#dépassement-et-croisement)
 		- [Pics de détection](#pics-de-détection)
@@ -31,6 +32,7 @@ Ce package python implémente une interface basée sur `Qt` permettant :
 - d'ouvrir et de lire des [`rosbag`](../../ROS2.md#bag-ou-rosbag) avec `rosbag2_py`
 - de contrôler la vitesse de lecture des données et d'avancer ou reculer dans le temps
 - de visualiser les messages `sensor_msgs/msg/range` sur un graphique avec `pyqtgraph`
+- de visualiser la moyenne des points d'un `sensor_msgs/msg/LaserScan` détectés dans un cône paramètrable
 - fournit un outil pour annoter des **dépassements/croisements** (ou tout autre type d'évènement) dans les enregistrements via un système de **marqueurs** par **catégorie**.
   
   Ces marqueurs sont exportables/importables au format **json**.
@@ -70,6 +72,7 @@ Ce document a pour but de présenter les différentes fonctionnalités et fera p
 
 Ayant été développée au moment de nombreux tests basés sur les sonars, la section du code concernant l'analyse des pics mentionne **"sonar"** plutôt que **"range_sensor"**. Dans les faits les analyses effectuées s'appliquent également aux lidars, ou à tout noeud-capteur  publiant des messages de type `sensor_msgs/msg/Range`.
 
+
 ## Ouverture des rosbag
 
 Le bag à ouvrir doit être au format **.mcap**.
@@ -106,6 +109,22 @@ Via l'onglet `Courbes` peuvent afficher/masquer les courbes des distances publi�
 Ces courbes peuvent être interrompues si le capteurs envoie des `NaN`, correspondant à une absence de mesure ou à une mesure incertaine.
 
 Le facteur d'échelle de l'axe X et Y peut-être modifié en maintenant le clic droit de la souris enfoncé.
+
+## Courbes pour les LiDARS
+
+Etant donné que le prototype final n'inclue pas de sonars mais 2 lidars à 360° publiant des `sensor_msgs/msg/LaserScan`, il a été ajouté une fonction `emulateRange()` (dans [GraphWiget.py](./cyclosafe_player/src/GraphWidget.py)) permettant d'isoler certains points du LaserScan et de calculer pour ces points une distance moyenne permettant "d'émuler" le comportement d'un sonar orienté dans une certaine direction. 
+
+Cela permet de mettre à profit les différents outils de `cyclosafe_player` sur les données envoyées par les lidars.
+
+La plage de points à utiliser pour cette moyenne est définissable par topic au début du fichier [GraphWiget.py](./cyclosafe_player/src/GraphWidget.py):
+~~~
+# Update these values to configure which lidar points (all point between min and max radian) are
+# averaged to simulate a Range sensor.
+laser_scan_angles = {
+	"/lidar360_1/scan" : {'min': -1.6, 'max': -1.55},
+	"/lidar360_2/scan" : {'min': 1.55, 'max': 1.60},
+}
+~~~
 
 ## Marqueurs
 

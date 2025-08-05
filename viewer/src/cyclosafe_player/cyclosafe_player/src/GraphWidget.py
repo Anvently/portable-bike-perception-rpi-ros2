@@ -30,6 +30,14 @@ from cyclosafe_player.src.Marker import Marker, MarkerCategory, MarkerCategoryEn
 from cyclosafe_player.src.Csv import parse_csv_format
 import csv
 
+
+# Update these values to configure which lidar points (all point between min and max radian) are
+# averaged to simulate a Range sensor.
+laser_scan_angles = {
+	"/lidar360_1/scan" : {'min': -1.6, 'max': -1.55},
+	"/lidar360_2/scan" : {'min': 1.55, 'max': 1.60},
+}
+
 OVERTAKE_CATEGORY_NAME = "Dépassement"
 ONCOMING_CATEGORY_NAME = "Croisement"
 DEFAULT_CSV_FORMAT = \
@@ -103,9 +111,9 @@ class SonarDatas:
 		if color:
 			self.color = color
 		else:
-			idx = get_sonar_index(topic_name)
-			if idx != None: self.color = SonarDatas.DEFAULT_COLORS[idx]
-			else: self.color = SonarDatas.DEFAULT_COLORS[SonarDatas.nbr_instance % len(SonarDatas.DEFAULT_COLORS)]
+			# idx = get_sonar_index(topic_name)
+			# if idx != None: self.color = SonarDatas.DEFAULT_COLORS[idx]
+			self.color = SonarDatas.DEFAULT_COLORS[SonarDatas.nbr_instance % len(SonarDatas.DEFAULT_COLORS)]
 		self.datas: List[Tuple[float, float]] = []
 		self.highlight: bool = True
 		SonarDatas.nbr_instance += 1
@@ -134,7 +142,7 @@ class SonarGraphWidget(QWidget):
 		main_layout = QVBoxLayout(self)
 		
 		# Graph configuration header
-		config_header = QLabel("Graphique des sonars")
+		config_header = QLabel("Graphique des sonars (ou lidars)")
 		config_header.setStyleSheet("font-weight: bold;")
 		main_layout.addWidget(config_header)
 		
@@ -145,7 +153,7 @@ class SonarGraphWidget(QWidget):
 		self.plot_widget = PlotWidget()
 		self.plot_widget.setLabel('left', 'Distance', units='m')
 		self.plot_widget.setLabel('bottom', 'Temps', units='s')
-		self.plot_widget.setTitle('Données des sonars')
+		self.plot_widget.setTitle('Données des sonars (ou lidars)')
 		
 		# Enable Y grid by default
 		self.plot_widget.showGrid(x=False, y=True)
@@ -596,11 +604,14 @@ class SonarGraphWidget(QWidget):
 		for topic_str, topic in self.bag_info.topic_info.items():
 			if topic.msg_type == "sensor_msgs/msg/Range":
 				self.sonar_datas[topic_str] = SonarDatas(topic_str)
+			elif topic.msg_type == "sensor_msgs/msg/LaserScan":
+				self.sonar_datas[topic_str] = SonarDatas(topic_str)
 		
 		if (len(self.sonar_datas) == 0):
 			return
 		
-		msg_class = get_message("sensor_msgs/msg/Range")
+		range_msg_class = get_message("sensor_msgs/msg/Range")
+		laser_msg_class = get_message("sensor_msgs/msg/LaserScan")
 		
 		# Open the bag with rosbag2_py
 		reader = rosbag2_py.SequentialReader()
@@ -615,13 +626,73 @@ class SonarGraphWidget(QWidget):
 		while reader.has_next():
 			(tpc, raw_data, t) = reader.read_next()
 			if tpc in self.sonar_datas:
-				msg = deserialize_message(raw_data, msg_class)
-				# Calculate relative time in seconds
 				rel_time = (t - start_time) / 1e9
-				# Add range value
-				self.sonar_datas[tpc].datas.append((rel_time, msg.range))
+				
+				topic_info = self.bag_info.topic_info[tpc]
+				
+				if topic_info.msg_type == "sensor_msgs/msg/Range":
+					msg = deserialize_message(raw_data, range_msg_class)
+					self.sonar_datas[tpc].datas.append((rel_time, msg.range))
+					
+				elif topic_info.msg_type == "sensor_msgs/msg/LaserScan":
+					msg = deserialize_message(raw_data, laser_msg_class)
+					
+					average_range = self.emulateRange(msg, laser_scan_angles[tpc]['min'], laser_scan_angles[tpc]['max'])
+					self.sonar_datas[tpc].datas.append((rel_time, average_range))
 
-	
+	def emulateRange(self, laser_msg, rad_angle_start, rad_angle_end):
+		"""
+		Calculate the average range from LaserScan data within a specified angular range.
+		
+		Args:
+			laser_msg: sensor_msgs/msg/LaserScan message
+			rad_angle_start: Start angle in radians
+			rad_angle_end: End angle in radians
+		
+		Returns:
+			float: Average range value within the specified angular range
+		"""
+		# Get LaserScan parameters
+		angle_min = laser_msg.angle_min
+		angle_max = laser_msg.angle_max
+		angle_increment = laser_msg.angle_increment
+		ranges = laser_msg.ranges
+		
+		# Calculate indices corresponding to the desired angular range
+		# Clamp the angles to the laser scan's range
+		start_angle = max(rad_angle_start, angle_min)
+		end_angle = min(rad_angle_end, angle_max)
+		
+		# Convert angles to indices
+		start_index = int((start_angle - angle_min) / angle_increment)
+		end_index = int((end_angle - angle_min) / angle_increment)
+		
+		# Ensure indices are within bounds
+		start_index = max(0, start_index)
+		end_index = min(len(ranges) - 1, end_index)
+		
+		if start_index > end_index:
+			# No valid range data in the specified angular range
+			return float('inf')
+		
+		# Extract ranges within the specified angular range
+		selected_ranges = ranges[start_index:end_index + 1]
+
+		# Filter out invalid ranges (inf, nan, or out of bounds)
+		valid_ranges = []
+		for r in selected_ranges:
+			if (laser_msg.range_min <= r <= laser_msg.range_max and 
+				not (r != r) and  # Check for NaN
+				r != float('inf') and r != float('-inf')):
+				valid_ranges.append(r)
+
+		if not valid_ranges:
+			# No valid ranges found, return max range or inf
+			return float('nan')  # or return laser_msg.range_max
+		
+		# Calculate and return the average
+		return sum(valid_ranges) / len(valid_ranges)
+
 	def process_messages(self, data):
 		"""
 		From a list of tuples (rel_time, range_value),
