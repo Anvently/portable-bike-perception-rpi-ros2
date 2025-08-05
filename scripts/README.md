@@ -2,6 +2,7 @@ Contient des scripts et utilitaires destinés à faciliter la récupération des
 
 - [sd\_flash.sh](#sd_flashsh)
   - [Usage](#usage)
+  - [Personnaliser l'environnement et les paramètres de mesure](#personnaliser-lenvironnement-et-les-paramètres-de-mesure)
 - [import\_recordings.py](#import_recordingspy)
   - [Dépendance](#dépendance)
   - [Usage](#usage-1)
@@ -26,6 +27,12 @@ Script interactif automatisant le flash du firmware cyclosafe vers une carte SD.
 # Remplacer /dev/sdX par le device auquel correspond la carte SD
 sudo ./sd_flash.sh ./cyclosafe_firmware.img.xz /dev/sdX
 ~~~
+
+## Personnaliser l'environnement et les paramètres de mesure
+
+Une fois la carte SD flashée et montée (généralement `/media/$HOME/rootfs`), le fichier `/media/$HOME/rootfs/home/cycliste/cyclosafe/core/setup/.env` peut être modifié pour configuré [les différentes variables d'environnement](../core/setup/README.md#env).
+
+Les [paramètres des noeuds ROS](../core/src/cyclosafe/README.md#cyclosafe-package) tels que la fréquence de la caméra et sa résolution peuvent être configurés dans `/media/$HOME/rootfs/home/cycliste/cyclosafe/core/src/cyclosafe/launch/config.py`.
 
 # import_recordings.py
 
