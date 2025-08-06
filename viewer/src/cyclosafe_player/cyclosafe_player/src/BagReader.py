@@ -17,6 +17,7 @@ from rclpy.serialization import deserialize_message
 from rosidl_runtime_py.utilities import get_message
 import os, time
 from rclpy.time import Time, Duration
+from typing import Dict
 
 class BagInfo:
 	"""Class to extract and store bag information."""
@@ -30,6 +31,9 @@ class BagInfo:
 		self.extract_info()
 		
 	def extract_info(self):
+		if not (os.path.isfile(self.bag_path)):
+			raise Exception("Invalid bag")
+	
 		reader = rosbag2_py.SequentialReader()
 		
 		# Check if the path is a directory (for ROS2 bags) or a file (like mcap)
@@ -88,7 +92,8 @@ class BagReader(QThread):
 		self.current_time = 0
 		self.reader = None
 		self.playback_speed = 1.0
-	
+		self.onMessageCallbacks: Dict[str, any] = {}
+
 	def run(self):
 		self.reader = rosbag2_py.SequentialReader()
 		storage_options = rosbag2_py._storage.StorageOptions(uri=self.bag_path, storage_id='mcap')

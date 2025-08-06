@@ -97,7 +97,7 @@ def get_sonar_index(topic_name) -> int:
 			pass
 		return None
 
-class SonarDatas:
+class SensorDatas:
 	# Define default colors for sonar graphs
 	DEFAULT_COLORS = [QColor(255,0,0), QColor(0,255,0), QColor(0,0,255), 
 					QColor(255,255,0), QColor(0,255,255), QColor(255,0,255),
@@ -105,7 +105,7 @@ class SonarDatas:
 	
 	nbr_instance = 0
 
-	def __init__(self, topic_name:str, color:QColor = None):
+	def __init__(self, topic_name:str, msg_type:str, color:QColor = None):
 		self.topic_name = topic_name
 		# self.sonar_name = 
 		if color:
@@ -113,10 +113,11 @@ class SonarDatas:
 		else:
 			# idx = get_sonar_index(topic_name)
 			# if idx != None: self.color = SonarDatas.DEFAULT_COLORS[idx]
-			self.color = SonarDatas.DEFAULT_COLORS[SonarDatas.nbr_instance % len(SonarDatas.DEFAULT_COLORS)]
+			self.color = SensorDatas.DEFAULT_COLORS[SensorDatas.nbr_instance % len(SensorDatas.DEFAULT_COLORS)]
 		self.datas: List[Tuple[float, float]] = []
-		self.highlight: bool = True
-		SonarDatas.nbr_instance += 1
+		self.highlight: bool = True if msg_type != "cyclosafe_interfaces/msg/NavSatInfo" else False
+		self.msg_type = msg_type
+		SensorDatas.nbr_instance += 1
 
 	
 
@@ -131,7 +132,7 @@ class SonarGraphWidget(QWidget):
 		self.curves = {}
 		self.marker_categories: Dict[str, MarkerCategory] = {}  # Dictionary of marker types by name
 		self.marker_lines = {}  # List to track marker line objects on the plot
-		self.sonar_datas: Dict[str, SonarDatas] = {}
+		self.sonar_datas: Dict[str, SensorDatas] = {}
 		self.peaks: Dict[str, List[Peak]] = {}
 		self.previous_selected_marker = None
 		self.current_peaks: Dict[str, Marker] = {}
@@ -463,13 +464,14 @@ class SonarGraphWidget(QWidget):
 			self.on_import_markers(self.dft_markers_path)
 
 		# Auto-add sonar topics with default colors
-		for sonar in self.sonar_datas:
-			self.add_curve(sonar, False)
-			self.peaks[sonar] = detect_peaks(self.sonar_datas[sonar].datas, 
-				threshold_drop=3.0,
-				min_duration_sec=0.3, 
-				recovery_tolerance_sec=0.1,
-				feedback_handler=self.results_text_edit.setText)
+		for topic, sensor_data in self.sonar_datas.items():
+			self.add_curve(topic, False)
+			if sensor_data.msg_type != "cyclosafe_interfaces/msg/NavSatInfo":
+				self.peaks[topic] = detect_peaks(sensor_data.datas, 
+					threshold_drop=3.0,
+					min_duration_sec=0.3, 
+					recovery_tolerance_sec=0.1,
+					feedback_handler=self.results_text_edit.setText)
 		
 		self.results_text_edit.setText("Peak detection parameters: threshold=3.0, min_duration=0.3, recovery_tolerance=0.1\n")
 		self.handle_peak_detection_results(self.peaks)
@@ -503,7 +505,7 @@ class SonarGraphWidget(QWidget):
 		# Handle topic selection
 		if topic is None or topic is False:
 			topic, ok = QInputDialog.getItem(self, "Ajouter une courbe", 
-										"Sélectionner un topic Range:", 
+										"Sélectionner un topic ", 
 										topics, 0, False)
 		elif topic not in topics:
 			self.node.get_logger().warning(f"Could not load topic {topic} on graph")
@@ -582,7 +584,7 @@ class SonarGraphWidget(QWidget):
 				self.current_peaks[category_name] = None
 				self.update_sonar_info(sonar, "")
 	
-			if self.current_peaks.get(category_name, None) == None and self.sonar_datas[sonar].highlight == True:
+			if self.current_peaks.get(category_name, None) == None and self.sonar_datas[sonar].highlight == True and self.sonar_datas[sonar].msg_type != "cyclosafe_interfaces/msg/NavSatInfo":
 				peak_marker = find_peak_in_category(self.marker_categories[category_name], time_seconds, 0.25)
 				if peak_marker:
 					peak_marker.show()
@@ -603,15 +605,22 @@ class SonarGraphWidget(QWidget):
 
 		for topic_str, topic in self.bag_info.topic_info.items():
 			if topic.msg_type == "sensor_msgs/msg/Range":
-				self.sonar_datas[topic_str] = SonarDatas(topic_str)
+				self.sonar_datas[topic_str] = SensorDatas(topic_str, topic.msg_type)
 			elif topic.msg_type == "sensor_msgs/msg/LaserScan":
-				self.sonar_datas[topic_str] = SonarDatas(topic_str)
+				self.sonar_datas[topic_str] = SensorDatas(topic_str, topic.msg_type)
+			elif topic.msg_type == "cyclosafe_interfaces/msg/NavSatInfo":
+				self.sonar_datas[f"{topic_str}.gound_speed"] = SensorDatas(f"{topic_str}.gound_speed", topic.msg_type)
+				self.sonar_datas[f"{topic_str}.hdop"] = SensorDatas(f"{topic_str}.hdop", topic.msg_type)
+				self.sonar_datas[f"{topic_str}.pdop"] = SensorDatas(f"{topic_str}.pdop", topic.msg_type)
+				self.sonar_datas[f"{topic_str}.altitude"] = SensorDatas(f"{topic_str}.altitude", topic.msg_type)
+				self.sonar_datas[f"{topic_str}.actives_sat"] = SensorDatas(f"{topic_str}.actives_sat", topic.msg_type)
 		
 		if (len(self.sonar_datas) == 0):
 			return
 		
 		range_msg_class = get_message("sensor_msgs/msg/Range")
 		laser_msg_class = get_message("sensor_msgs/msg/LaserScan")
+		gps_msg_class = get_message("cyclosafe_interfaces/msg/NavSatInfo")
 		
 		# Open the bag with rosbag2_py
 		reader = rosbag2_py.SequentialReader()
@@ -625,20 +634,27 @@ class SonarGraphWidget(QWidget):
 		# Read all messages
 		while reader.has_next():
 			(tpc, raw_data, t) = reader.read_next()
-			if tpc in self.sonar_datas:
-				rel_time = (t - start_time) / 1e9
+			rel_time = (t - start_time) / 1e9
+			
+			topic_info = self.bag_info.topic_info[tpc]
+			
+			if topic_info.msg_type == "sensor_msgs/msg/Range":
+				msg = deserialize_message(raw_data, range_msg_class)
+				self.sonar_datas[tpc].datas.append((rel_time, msg.range))
 				
-				topic_info = self.bag_info.topic_info[tpc]
+			elif topic_info.msg_type == "sensor_msgs/msg/LaserScan":
+				msg = deserialize_message(raw_data, laser_msg_class)
 				
-				if topic_info.msg_type == "sensor_msgs/msg/Range":
-					msg = deserialize_message(raw_data, range_msg_class)
-					self.sonar_datas[tpc].datas.append((rel_time, msg.range))
-					
-				elif topic_info.msg_type == "sensor_msgs/msg/LaserScan":
-					msg = deserialize_message(raw_data, laser_msg_class)
-					
-					average_range = self.emulateRange(msg, laser_scan_angles[tpc]['min'], laser_scan_angles[tpc]['max'])
-					self.sonar_datas[tpc].datas.append((rel_time, average_range))
+				average_range = self.emulateRange(msg, laser_scan_angles[tpc]['min'], laser_scan_angles[tpc]['max'])
+				self.sonar_datas[tpc].datas.append((rel_time, average_range))
+
+			elif topic_info.msg_type == "cyclosafe_interfaces/msg/NavSatInfo":
+				msg = deserialize_message(raw_data, gps_msg_class)
+				self.sonar_datas[f"{tpc}.gound_speed"].datas.append((rel_time, msg.ground_speed))
+				self.sonar_datas[f"{tpc}.hdop"].datas.append((rel_time, msg.hdop))
+				self.sonar_datas[f"{tpc}.pdop"].datas.append((rel_time, msg.pdop))
+				self.sonar_datas[f"{tpc}.altitude"].datas.append((rel_time, msg.altitude))
+				self.sonar_datas[f"{tpc}.actives_sat"].datas.append((rel_time, msg.actives_sat))
 
 	def emulateRange(self, laser_msg, rad_angle_start, rad_angle_end):
 		"""

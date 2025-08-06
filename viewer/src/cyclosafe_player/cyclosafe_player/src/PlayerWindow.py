@@ -21,6 +21,7 @@ import os, tempfile, shutil, subprocess
 from cyclosafe_player.src.BagReader import BagInfo, BagReader
 from cyclosafe_player.src.GraphWidget import SonarGraphWidget
 from rosidl_runtime_py.utilities import get_message
+from .MapWidget import MapWidget
 
 # Pour convertir CompressedImage en QImage pour l'affichage
 def compressed_image_to_qimage(self, msg):
@@ -122,38 +123,40 @@ class RosbagPlayerWindow(QMainWindow):
 		main_content = QHBoxLayout()
 
 		left_layout = QVBoxLayout()
-		# Left column with tabs
+
+		# Création du QTabWidget (onglets à gauche)
 		tab_widget = QTabWidget()
 
-		# --- Tab 1: Topic list ---
-		topic_list_widget = QWidget()
-		topic_list_layout = QVBoxLayout()
-		topic_list_widget.setLayout(topic_list_layout)
+		# --- Onglet "Topics" ---
+		main_tab_widget = QWidget()
+		main_tab_layout = QVBoxLayout()
+		main_tab_widget.setLayout(main_tab_layout)
 
+		# Arbre des topics
 		self.topic_tree = QTreeWidget()
 		self.topic_tree.setHeaderLabels(["Topics", "Type", "Count"])
 		self.topic_tree.setColumnWidth(0, 300)
 		self.topic_tree.itemChanged.connect(self.topic_selection_changed)
-		topic_list_layout.addWidget(self.topic_tree)
+		main_tab_layout.addWidget(self.topic_tree)
 
-		tab_widget.addTab(topic_list_widget, "Topics")
+		# Carte GPS interactive
+		self.gps_map_widget = MapWidget()
+		self.gps_map_widget.setMinimumHeight(250)
+		self.gps_speed_label = QLabel("")
+		main_tab_layout.addWidget(self.gps_map_widget)
+		main_tab_layout.addWidget(self.gps_speed_label)
 
-		left_layout.addWidget(tab_widget)
-		# # --- Tab 2: Miniatures ---
-		# image_tab = QWidget()
-		# image_tab_layout = QVBoxLayout()
-		# image_tab.setLayout(image_tab_layout)
-
-		# scroll_area = QScrollArea()
-		# scroll_area.setWidgetResizable(True)
+		# Miniatures d’image
 		self.image_preview_container = QWidget()
 		self.image_preview_layout = QVBoxLayout()
 		self.image_preview_container.setLayout(self.image_preview_layout)
-		left_layout.addWidget(self.image_preview_container)
-		# scroll_area.setWidget(self.image_preview_container)
+		main_tab_layout.addWidget(self.image_preview_container)
 
-		# image_tab_layout.addWidget(scroll_area)
-		# tab_widget.addTab(image_tab, "Miniatures")
+		# Ajoute l'onglet à l'ensemble des tabs
+		tab_widget.addTab(main_tab_widget, "Topics")
+
+		# Ajoute le QTabWidget à la colonne de gauche
+		left_layout.addWidget(tab_widget)
 
 		main_content.addLayout(left_layout, 1)
 
@@ -275,6 +278,10 @@ class RosbagPlayerWindow(QMainWindow):
 				item.setCheckState(0, Qt.Checked)
 
 			self.sonar_graph.set_bag_info(self.working_path, self.bag_info, self.bag_path)
+			for topic_str, topic in self.bag_info.topic_info.items():
+				if topic.msg_type == "cyclosafe_interfaces/msg/NavSatInfo":
+					self.gps_map_widget.load_rosbag(self.bag_path, topic_str)
+					break
 
 			# Enable controls
 			self.play_button.setEnabled(True)
@@ -321,6 +328,7 @@ class RosbagPlayerWindow(QMainWindow):
 			self.bag_reader.message_read.connect(self.process_message)
 			self.bag_reader.finished.connect(self.playback_finished)
 			
+
 			# Set playback speed
 			speed_text = self.speed_combo.currentText()
 			speed = float(speed_text.rstrip('x'))
@@ -471,7 +479,10 @@ class RosbagPlayerWindow(QMainWindow):
 				# 	main_geometry = self.geometry()
 				# 	self.image_window.move(main_geometry.x() + main_geometry.width() + 10, main_geometry.y())
 
-		
+			elif topic_type_str == 'cyclosafe_interfaces/msg/NavSatInfo' and self.gps_map_widget:
+				self.gps_map_widget.set_current_position(msg.latitude, msg.longitude)
+				self.gps_speed_label.setText(f"{round(msg.ground_speed, 2)} km/h, {round(msg.altitude, 2)}m, hdop/pdop {round(msg.hdop, 2)}/{round(msg.pdop, 2)}, sats: {msg.actives_sat}")
+
 		# Update timeline
 		self.timeline_slider.blockSignals(True)
 		self.timeline_slider.setValue(int(timestamp * 100))

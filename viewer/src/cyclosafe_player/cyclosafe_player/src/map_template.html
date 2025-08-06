@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Carte GPS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    const map = L.map('map').setView([46.603354, 1.888334], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let currentPolyline = null;
+    let currentMarkers = [];
+    let lastTraceLength = 0;
+    let hasInitialized = false;
+
+    async function updateMap() {
+      try {
+        const res = await fetch('gps_data.json', {cache: "no-store"});
+        const data = await res.json();
+
+        const traceChanged = data.trace.length !== lastTraceLength;
+
+        // Nettoyer les éléments précédents
+        if (currentPolyline) {
+          map.removeLayer(currentPolyline);
+        }
+        currentMarkers.forEach(marker => map.removeLayer(marker));
+        currentMarkers = [];
+
+        if (data.trace && data.trace.length > 1) {
+          currentPolyline = L.polyline(data.trace, { color: 'blue' }).addTo(map);
+          
+          // Ne faire fitBounds que si la trace a changé ou au premier chargement
+          if (traceChanged || !hasInitialized) {
+            map.fitBounds(currentPolyline.getBounds());
+          }
+
+          const startMarker = L.marker(data.trace[0], { title: 'Début' }).addTo(map);
+          const endMarker = L.marker(data.trace[data.trace.length - 1], { title: 'Fin' }).addTo(map);
+          currentMarkers.push(startMarker, endMarker);
+        }
+
+        if (data.current) {
+          const currentMarker = L.circleMarker(data.current, {
+            color: 'orange',
+            radius: 10,
+            fillColor: 'yellow',
+            fillOpacity: 0.7
+          }).addTo(map).bindPopup('Position actuelle');
+          currentMarkers.push(currentMarker);
+        }
+
+        lastTraceLength = data.trace.length;
+        hasInitialized = true;
+
+      } catch (error) {
+        console.warn('Erreur lors du chargement des données GPS:', error);
+      }
+    }
+
+    // Première mise à jour
+    updateMap();
+
+    // Mise à jour périodique pour les données en temps réel
+    setInterval(updateMap, 1000);
+  </script>
+</body>
+</html>

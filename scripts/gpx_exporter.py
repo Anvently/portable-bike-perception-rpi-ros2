@@ -40,25 +40,6 @@ except ImportError:
 	sys.exit(1)
 
 
-def nmea_to_decimal(nmea_coord):
-	""" Convertit une coordonnée du format NMEA (DDMM.MMMMM) au format décimal.
-	Args:
-		nmea_coord (float): Coordonnée au format NMEA
-	Returns:
-		float: Coordonnée en format décimal
-	"""
-	nmea_str = str(nmea_coord)
-	words = nmea_str.split('.')
-	degres = 0
-	if len(words[0]) <= 2:
-		minutes = float(words[0] + '.' + words[1])
-	else:
-		degres = float(words[0][0:-2])
-		minutes = float(words[0][-2:] + '.' + words[1])
-	value = degres + (minutes / 60.0)
-	return value
-
-
 def create_gpx_header(name="ROS2 GPS Track"):
 	"""Crée l'en-tête du fichier GPX"""
 	current_date = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -156,9 +137,6 @@ def extract_gps_data(bag_path, output_path = None, track_name=None):
 					try:
 						if msg.status == - 1 or math.isnan(msg.latitude) or math.isnan(msg.longitude):
 							continue
-						# Supposons que msg contient des champs latitude et longitude
-						lat = nmea_to_decimal(msg.latitude)
-						lon = nmea_to_decimal(msg.longitude)
 						
 						# Utiliser l'altitude si disponible, sinon 0
 						ele = getattr(msg, 'altitude', 0.0)
@@ -171,7 +149,7 @@ def extract_gps_data(bag_path, output_path = None, track_name=None):
 							timestamp_str = timestamp_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 						
 						# Écrire le point dans le fichier GPX
-						gpx_file.write(create_gpx_point(lat, lon, ele, timestamp_str))
+						gpx_file.write(create_gpx_point(msg.latitude, msg.longitude, ele, timestamp_str))
 						points_count += 1
 						
 					except AttributeError as e:
