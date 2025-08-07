@@ -119,13 +119,13 @@ class GPIOController():
 		try:
 			count = 0
 			while button_pressed == False:
-				if count % 20 == 0: # 20 * 0.5 = 10, every 10s
+				if count % 40 == 0: # 40 * 0.25 = 10, every 10s
 					self.check_battery_state()
-				if count % 60 == 0: # 60 * 0.5 = 30, every 30s:
+				if count % 120 == 0: # 120 * 0.25 = 30, every 30s:
 					self.check_sd_card()
 				if blink:
 					self.toggle(LED_BUZY_GPIO)
-				time.sleep(0.5)
+				time.sleep(0.25)
 				count += 1
 			shutdown_type = BUTTON_SHUTDOWN
 		except BatteryException:
