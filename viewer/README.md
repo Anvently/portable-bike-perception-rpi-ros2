@@ -146,7 +146,7 @@ source ./setup/.bashrc
 
 ### Résoudre les dépendances avec rosdep
 
-Chaque package défini dans un fichier **package.xml** les dépendances dont il a besoin pour fonctionner.
+Chaque package définit dans un fichier **package.xml** les dépendances dont il a besoin pour fonctionner.
 
 ROS2 dispose de l'outil **rosdep** pour lire automatiquement ces fichiers et installer les dépendances manquantes.
 

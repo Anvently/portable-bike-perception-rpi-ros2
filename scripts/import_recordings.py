@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Created on Tue Aug 05 2025
-# Updated on Tue Aug 05 2025
+# Updated on Tue Aug 08 2025
 #
 #  This file is part of Cyclosafe
 # Copyright (c) 2025 Nicolas Pirard @Anvently
@@ -281,6 +281,9 @@ def process_single_record(record, output_dir, hostname=None, password=None, is_c
 	return True
 
 def main():
+	if os.environ.get("CYCLOSAFE_WORKSPACE", None) == None:
+		print("[WARNING]: cyclosafe environment does not appear to be source. This is needed for the script to run correctly. To discard this warning and run the script without any cyclosafe environment, just export a CYCLOSAFE_WORPSACE environment variable using : \'export CYCLOSAFE_WORKSPACE=whatever\'")
+
 	args = parse_arguments()
 	
 	# Determine output directory
