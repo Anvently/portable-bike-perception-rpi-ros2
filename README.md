@@ -1,6 +1,6 @@
 # CYCLOSAFE
 
-> The aim of the CycloSafe project is to rigorously quantify all the dangers to which cyclists are exposed during their journeys, so that we can better target concrete actions to improve their safety.
+> The aim of the CycloSafe project is to improve cyclist safety by rigorously quantifying the risks they face, with a particular focus on those occurring when being overtaken by a motor vehicle.
 > 
 > To do this, we have equipped a bicycle with LIDARs (Light Detection and Ranging), a camera and a GNSS antenna.
 
@@ -26,34 +26,45 @@ https://github.com/user-attachments/assets/d5b68dda-f3fe-4f50-86e3-c243446fb8e7
 > [**network.md**](network.md) : instructions pour la configuration réseau sur l'hôte et sur le raspberry permettant l'interaction entre les deux machines
 
 
+## About this project
+
+This project was carried out as part of an internship at the **Institut national de l’information géographique et forestière (IGN)**, within a broader research initiative aiming **to quantify the risks faced by cyclists when being overtaken by motor vehicles**.
+
+This repository focuses specifically on the **design and implementation of the acquisition module** used to collect measurement data for this study, as well as providing a set of **tools for processing, visualizing, and analyzing** the recorded data.
+
+It does not present or discuss the **results** of the study itself, and should not be directly associated with the conclusions or interpretations of that research.
+
+For more information on the study, see:
+Emmanuel Cledat, Dirk Lauinger, Aymeric Dutremble, Maeve Blarel, Damien Louis Peller, Tristan Geslain, Alexandre Esteoulle, Elisabeth Giroux, Gabin Bourlon, Nicolas Pirard, Eric Ta — ***Cyclo-Safe: Quantitative study of the risks to which cyclists are exposed during their daily commute***.
+
 ## License
 
-This project is licensed under the **CeCILL v2.1** license, a free software license fully compliant with French law, **based on the GNU GPL** and the principles of open source and copyleft.
+This project is licensed under the **CeCILL-B v1** license, a free software license fully compliant with French law, **based on the BSD 2-Clause license** and the principles of open source.
+
+**Scope of the license** — The following materials are covered by the CeCILL-B license:
+- Firmware code based on ROS2
+- All project installation scripts and data analysis scripts
+- Source code of data analysis tools, based on Qt and ROS2
+- PCB design files
+- 3D models and any corresponding f3d source files
+- Assembly and user manuals for the module
 
 You are **free to**:
-- Use, modify, and redistribute this project under the terms of the CeCILL v2.1 license
-- Use this project for both **academic** and **commercial** purposes, under the conditions of the CeCILL license
-- Access the source code and modify it, provided that any redistribution complies with the CeCILL terms
+- Use, modify, and redistribute this project under the terms of the CeCILL-B license
+- Use this project for both **academic** and **commercial** purposes, without the strong copyleft constraints of GPL-like licenses
+- Incorporate this code into proprietary software, as long as you respect the attribution requirements
 
 You must:
-- Include a copy of the CeCILL license with any redistributed version
+- Include a copy of the CeCILL-B license with any redistributed version
 - Retain notices of authorship and copyright
 - Clearly indicate any modifications made
 
-Author: [Nicolas Pirard aka Anvently](https://github.com/Anvently)  
+Author: [Nicolas Pirard (@Anvently)](https://github.com/Anvently)  
 Contact: [pirard.nicolas@hotmail.fr](mailto:pirard.nicolas@hotmail.fr)
+Additional contributors: See [CONTRIBUTORS.md](./CONTRIBUTORS.md)
 
-📄 Full license text: [CeCILL v2.1](http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.html)
+📄 Full license text: [CeCILL-B v1](http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html)  
 
-📄 Version  française: [CeCILL v2.1](https://cecill.info/licences/Licence_CeCILL_V2.1-fr.html)
+📄 Version française: [CeCILL-B v1](https://cecill.info/licences/Licence_CeCILL-B_V1-fr.html)  
 
 ---
-
-## Commercial Use
-
-Although the CeCILL license allows commercial use under its terms, a **custom commercial license** may be granted with support or warranty.
-
-If you are interested in using this project (or part of it) in a commercial product with additional guarantees, please contact:
-
-[pirard.nicolas@hotmail.fr](mailto:pirard.nicolas@hotmail.fr)
-

@@ -8,7 +8,7 @@
 # abiding by the rules of distribution of free software. You can use,
 # modify and/or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at:
-# https://cecill.info/licences/Licence_CeCILL_V2.1-en.html
+# https://cecill.info/licences/Licence_CeCILL-B_V1-en.html
 
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
 							QPushButton, QSlider, QLabel, QFileDialog, QTreeWidget, 
@@ -468,7 +468,7 @@ class RosbagPlayerWindow(QMainWindow):
 				# 	window_layout.addWidget(self.image_window_label)
 				# 	self.image_window.setLayout(window_layout)
 
-				# Mettre à jour l'image dans la fenêtre indépendante
+				# # Mettre à jour l'image dans la fenêtre indépendante
 				# self.image_window_label.setPixmap(pixmap)
 				# self.image_window_label.setToolTip(f"{topic} @ {timestamp:.2f}s")
 

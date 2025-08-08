@@ -1,0 +1,22 @@
+# Changelog
+
+## [1.1.0] - 2025-08-08
+### Added
+- CHANGELOG.md file
+- CONTRIBUTORS.md file
+- viewer/cyclosafe_player: visualize gps trace on map widget + live position + gps data curve and live output
+- scripts/import_recording: env check in import_recording script
+- viewer/dependancies: python3-rich to ROS env (viewer/cyclosafe_viewer/package.json)
+- README: section mentionning context of the project
+- README: section expliciting what material is concerned by the new CeCILL-B license
+
+### Modified
+- License CeCILL updated to CeCILL-B (from GPL to BSD) in order to make the project easier to redistribute
+- README: updated project description
+- core/gpio.py: changed shutdown button max latency from 0.5s to 0.25s
+- viewer/cyclosafe_player: updated image preview
+- scripts/README: added recommendation to install cyclosafe env from viewer/README
+
+## [1.0.0] - 2025-08-06
+### Added
+- Initial version of repo associated with a compressed firmware image. 

@@ -9,7 +9,7 @@
 # abiding by the rules of distribution of free software. You can use,
 # modify and/or redistribute the software under the terms of the CeCILL
 # license as circulated by CEA, CNRS and INRIA at:
-# https://cecill.info/licences/Licence_CeCILL_V2.1-en.html
+# https://cecill.info/licences/Licence_CeCILL-B_V1-en.html
 
 function color() {
   if [ "$#" -ne 2 ] ; then
