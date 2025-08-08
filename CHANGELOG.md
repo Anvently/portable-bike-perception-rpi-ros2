@@ -17,6 +17,9 @@
 - viewer/cyclosafe_player: updated image preview
 - scripts/README: added recommendation to install cyclosafe env from viewer/README
 
+### Fix
+- cyclosafe_player: missing python3-pyqt5.qtwebengine dependancy in package.json
+
 ## [1.0.0] - 2025-08-06
 ### Added
 - Initial version of repo associated with a compressed firmware image. 
