@@ -12,7 +12,10 @@
 
 ### Modified
 - License CeCILL updated to CeCILL-B (from GPL to BSD) in order to make the project easier to redistribute
-- README: updated project description
+- README: 
+  - updated project description 
+  - translated main page to english
+  - new name for the repo to be more exhaustive
 - core/gpio.py: changed shutdown button max latency from 0.5s to 0.25s
 - viewer/cyclosafe_player: updated image preview
 - scripts/README: added recommendation to install cyclosafe env from viewer/README

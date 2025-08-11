@@ -1,40 +1,44 @@
-# CYCLOSAFE
+# Cyclo-safe : a multi-sensor bike perception module (Camera, Dual 360° Lidar, GPS, Raspberry Pi, ROS2)
 
 > The aim of the CycloSafe project is to improve cyclist safety by rigorously quantifying the risks they face, with a particular focus on those occurring when being overtaken by a motor vehicle.
 > 
 > To do this, we have equipped a bicycle with LIDARs (Light Detection and Ranging), a camera and a GNSS antenna.
 
-Ce repo contient le firmware destiné à tourner sur un **raspberry** pour faire fonctionner l'ensemble des capteurs et **prendre les mesures**, les différents outils pour **exporter**, **visualiser** et **analyser** les données prises et les différents fichiers permettant l'**impression 3D du boitier** et la fabrication du **PCB dédié**.
+This repository contains :
+- the firmware intended to run on a **Raspberry Pi** to operate all the sensors and **take measurements**
+- Various tools to **export**, **visualize**, and **analyze** the collected data
+- Files required for **3D printing the case**
+- File needed to manufacture the **dedicated PCB**.  
+It was developed as part of an experimental data acquisition system for an academic research study on cyclist safety.
 
 https://github.com/user-attachments/assets/d5b68dda-f3fe-4f50-86e3-c243446fb8e7
 
 ## Structure
 
-> [**core/**](core/README.md) : répertoire destiné à être installé sur le raspberry. Contient :
-> 	- script d'installation de ROS
-> 	- script de mise en place de l'environnement cyclosafe
-> 	- script de mise en place des services systemd
-> 	- code source des différents noeuds ROS
+> [**core/**](core/README.md): Directory intended to be installed on the Raspberry Pi. Contains:
+> 	- ROS installation script
+> 	- CycloSafe environment setup script
+> 	- systemd services setup script
+> 	- source code for the different ROS nodes
 
-> [**design/**](design/README.md) : contient les fichiers relatifs à l'usinage du boitier et du PCB dédié.
+> [**design/**](design/README.md): Contains files related to the machining of the case and the dedicated PCB.
 
-> [**scripts/**](scripts/README.md) : contient des scripts utiles à la récupération et l'export des données
+> [**scripts/**](scripts/README.md): Contains scripts useful for retrieving and exporting data.
 
-> [**viewer/**](viewer/README.md) : répertoire destiné à être installé sur l'hôte. Contient un ensemble d'outils pour visualiser et analyser les données..
-> - [**ROS2.md**](viewer/ROS2.md) : documentation liée à ROS2 et son usage dans le projet.
+> [**viewer/**](viewer/README.md): Directory intended to be installed on the host machine. Contains a set of tools for visualizing and analyzing the data.
+> - [**ROS2.md**](viewer/ROS2.md): Documentation related to ROS2 and its use in the project.
 
-> [**network.md**](network.md) : instructions pour la configuration réseau sur l'hôte et sur le raspberry permettant l'interaction entre les deux machines
+> [**network.md**](network.md): Instructions for network configuration on both the host and the Raspberry Pi, enabling interaction between the two machines.
 
+## About the Cyclo-safe project
 
-## About this project
+This project is part of the broader **CycloSafe** research initiative conducted at the **Institut national de l’information géographique et forestière (IGN)**, which aims **to quantify the risks faced by cyclists when being overtaken by motor vehicles**.
 
-This project was carried out as part of an internship at the **Institut national de l’information géographique et forestière (IGN)**, within a broader research initiative aiming **to quantify the risks faced by cyclists when being overtaken by motor vehicles**.
+This repository is dedicated **exclusively to the design and implementation of the acquisition module** used to collect measurement data for the study, along with a set of **tools for processing, visualizing, and analyzing** the recorded data.
 
-This repository focuses specifically on the **design and implementation of the acquisition module** used to collect measurement data for this study, as well as providing a set of **tools for processing, visualizing, and analyzing** the recorded data.
+It does **not** present or discuss the **results** of the study itself, and should not be directly associated with its conclusions or interpretations.
 
-It does not present or discuss the **results** of the study itself, and should not be directly associated with the conclusions or interpretations of that research.
-
-For more information on the study, see:
+For more information on the full **CycloSafe** study, see:  
 Emmanuel Cledat, Dirk Lauinger, Aymeric Dutremble, Maeve Blarel, Damien Louis Peller, Tristan Geslain, Alexandre Esteoulle, Elisabeth Giroux, Gabin Bourlon, Nicolas Pirard, Eric Ta — ***Cyclo-Safe: Quantitative study of the risks to which cyclists are exposed during their daily commute***.
 
 ## License
@@ -60,11 +64,11 @@ You must:
 - Clearly indicate any modifications made
 
 Author: [Nicolas Pirard (@Anvently)](https://github.com/Anvently)  
-Contact: [pirard.nicolas@hotmail.fr](mailto:pirard.nicolas@hotmail.fr)
+Contact: [pirard.nicolas@hotmail.fr](mailto:pirard.nicolas@hotmail.fr)  
 Additional contributors: See [CONTRIBUTORS.md](./CONTRIBUTORS.md)
 
 📄 Full license text: [CeCILL-B v1](http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html)  
 
-📄 Version française: [CeCILL-B v1](https://cecill.info/licences/Licence_CeCILL-B_V1-fr.html)  
+📄 French version: [CeCILL-B v1](https://cecill.info/licences/Licence_CeCILL-B_V1-fr.html)  
 
 ---
