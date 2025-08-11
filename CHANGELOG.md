@@ -22,7 +22,9 @@
 - core/README : added reference to ROS2.md
 
 ### Fix
-- cyclosafe_player: missing python3-pyqt5.qtwebengine dependancy in package.json
+- cyclosafe_player:
+  - missing python3-pyqt5.qtwebengine dependancy in package.json
+  - nan check for angle_min, angle_max and angle_increment in lidar message
 
 ## [1.0.0] - 2025-08-06
 ### Added

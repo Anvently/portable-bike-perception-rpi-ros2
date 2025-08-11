@@ -28,7 +28,7 @@ from typing import List, Tuple, Any, Dict
 from cyclosafe_player.src.PeakDetection import detect_peaks, Peak
 from cyclosafe_player.src.Marker import Marker, MarkerCategory, MarkerCategoryEnum, GenericMarkerDialog, OvertakeMarkerDialog
 from cyclosafe_player.src.Csv import parse_csv_format
-import csv
+import csv, math
 
 
 # Update these values to configure which lidar points (all point between min and max radian) are
@@ -674,11 +674,14 @@ class SonarGraphWidget(QWidget):
 		angle_increment = laser_msg.angle_increment
 		ranges = laser_msg.ranges
 		
+		if math.isnan(angle_min) or math.isnan(angle_max) or math.isnan(angle_increment):
+			return float('nan')
+		
 		# Calculate indices corresponding to the desired angular range
 		# Clamp the angles to the laser scan's range
 		start_angle = max(rad_angle_start, angle_min)
 		end_angle = min(rad_angle_end, angle_max)
-		
+
 		# Convert angles to indices
 		start_index = int((start_angle - angle_min) / angle_increment)
 		end_index = int((end_angle - angle_min) / angle_increment)
