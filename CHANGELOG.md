@@ -19,6 +19,7 @@
 - core/gpio.py: changed shutdown button max latency from 0.5s to 0.25s
 - viewer/cyclosafe_player: updated image preview
 - scripts/README: added recommendation to install cyclosafe env from viewer/README
+- core/README : added reference to ROS2.md
 
 ### Fix
 - cyclosafe_player: missing python3-pyqt5.qtwebengine dependancy in package.json

@@ -13,6 +13,7 @@ Ce repo contient tous les packages et utilitaires nécessaires à la prise des m
 		- [Activer/désactiver la prise de mesures avec enregistrement au démarrage du raspberry](#activerdésactiver-la-prise-de-mesures-avec-enregistrement-au-démarrage-du-raspberry)
 	- [Documentation](#documentation)
 		- [Détails sur les packages et les différents noeuds](#détails-sur-les-packages-et-les-différents-noeuds)
+		- [Introduction à ROS2 et glossaire de ses différents concepts](#introduction-à-ros2-et-glossaire-de-ses-différents-concepts)
 		- [Détails sur l'installation](#détails-sur-linstallation)
 		- [Scripts](#scripts)
 		- [Services systemd](#services-systemd)
@@ -104,6 +105,10 @@ sudo systemctl disable cyclosafed.service # Désactiver
 ### Détails sur les packages et les différents noeuds
 
 [**cyclosafe.md**](cyclosafe.md)
+
+### Introduction à ROS2 et glossaire de ses différents concepts
+
+[**ROS2.md**](../viewer/ROS2.md)
 
 ### Détails sur l'installation
 
