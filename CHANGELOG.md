@@ -9,6 +9,7 @@
 - viewer/dependancies: python3-rich to ROS env (viewer/cyclosafe_viewer/package.json)
 - README: section mentionning context of the project
 - README: section expliciting what material is concerned by the new CeCILL-B license
+- added 3 csv script exporter files in scripts/
 
 ### Modified
 - License CeCILL updated to CeCILL-B (from GPL to BSD) in order to make the project easier to redistribute
