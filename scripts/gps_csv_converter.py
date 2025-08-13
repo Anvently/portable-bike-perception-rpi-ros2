@@ -1,20 +1,8 @@
 #!/usr/bin/env python3
-# Created on Tue Aug 11 2025
-# Updated on Tue Aug 11 2025
-#
-#  This file is part of Cyclosafe
-# Copyright (c) 2025 Eric Ta
-#
-# This software is governed by the CeCILL license under French law and
-# abiding by the rules of distribution of free software. You can use,
-# modify and/or redistribute the software under the terms of the CeCILL
-# license as circulated by CEA, CNRS and INRIA at:
-# https://cecill.info/licences/Licence_CeCILL-B_V1-en.html
-
-#!/usr/bin/env python3
 """
 Extracteur de données GPS depuis les fichiers MCAP
 Exploration récursive des dossiers pour trouver les fichiers MCAP
+Version intégrée avec import_recordings.py
 """
 
 import os
@@ -31,27 +19,49 @@ try:
 except ImportError:
     MCAP_AVAILABLE = False
 
+# =====================================================================================
+# EXCEPTIONS PERSONNALISÉES
+# =====================================================================================
+
+class GpsConverterError(Exception):
+    """Exception personnalisée pour les erreurs de conversion GPS"""
+    pass
+
+# =====================================================================================
+# FONCTIONS UTILITAIRES
+# =====================================================================================
+
 def demander_dossier_principal():
     """
-    Demande à l'utilisateur le nom du dossier principal contenant les données
+    Demande à l'utilisateur le chemin complet du dossier principal contenant les données
     """
     print("SELECTION DU DOSSIER DE DONNEES GPS")
     print("=" * 40)
     
     while True:
-        dossier_nom = input("Entrez le nom du dossier contenant vos données: ").strip()
+        dossier_chemin = input("Entrez le chemin complet du dossier contenant vos données: ").strip()
         
-        if not dossier_nom:
-            print("Nom de dossier vide. Veuillez entrer un nom valide.")
+        if not dossier_chemin:
+            print("Chemin de dossier vide. Veuillez entrer un chemin valide.")
             continue
         
+        # Nettoyer le chemin (supprimer guillemets, espaces)
+        dossier_chemin = dossier_chemin.strip('"').strip("'").strip()
+        
+        # Convertir en chemin absolu
+        dossier_absolu = os.path.abspath(dossier_chemin)
+        
         # Vérifier si le dossier existe
-        if os.path.exists(dossier_nom) and os.path.isdir(dossier_nom):
-            print(f"Dossier trouvé: {os.path.abspath(dossier_nom)}")
-            return os.path.abspath(dossier_nom)
+        if os.path.exists(dossier_absolu) and os.path.isdir(dossier_absolu):
+            print(f"Dossier trouvé: {dossier_absolu}")
+            return dossier_absolu
         else:
-            print(f"ERREUR: Le dossier '{dossier_nom}' n'existe pas.")
-            print("Vérifiez le nom et réessayez.")
+            print(f"ERREUR: Le dossier '{dossier_absolu}' n'existe pas.")
+            print("Vérifiez le chemin et réessayez.")
+            print("Exemples de chemins valides:")
+            print("  /home/user/mes_donnees")
+            print("  ~/Documents/enregistrements") 
+            print("  /media/user/USB_DRIVE/data")
 
 def explorer_dossiers_mcap(dossier_principal):
     """
@@ -146,6 +156,10 @@ def choisir_format_sortie():
         else:
             print("Choix invalide. Tapez 1, 2, ou 3.")
 
+# =====================================================================================
+# FONCTIONS DE CONVERSION
+# =====================================================================================
+
 def extraire_donnees_message_gps(gps_msg, message, schema):
     """
     Extrait les données d'un message GPS
@@ -199,11 +213,8 @@ def extraire_donnees_message_gps(gps_msg, message, schema):
 
 def convertir_gps_vers_json(mcap_path, topics_gps, output_dir, mcap_name_base):
     """
-    Convertit les données GPS d'un fichier MCAP en JSON
+    Convertit les données GPS d'un fichier MCAP en JSON - DIRECTEMENT dans output_dir
     """
-    json_dir = os.path.join(output_dir, "json")
-    os.makedirs(json_dir, exist_ok=True)
-    
     print(f"   Conversion JSON GPS de {os.path.basename(mcap_path)}...")
     
     gps_data = {}
@@ -254,13 +265,13 @@ def convertir_gps_vers_json(mcap_path, topics_gps, output_dir, mcap_name_base):
         print(f"      Erreur lecture {os.path.basename(mcap_path)}: {e}")
         return 0
     
-    # Sauvegarder les fichiers JSON
+    # Sauvegarder les fichiers JSON directement dans output_dir
     fichiers_crees = 0
     for topic, data in gps_data.items():
         if data["gps_points"]:
             topic_clean = topic.replace('/', '_').replace(':', '_')
             json_filename = f"{mcap_name_base}_{topic_clean}_gps.json"
-            json_path = os.path.join(json_dir, json_filename)
+            json_path = os.path.join(output_dir, json_filename)
             
             with open(json_path, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -272,11 +283,8 @@ def convertir_gps_vers_json(mcap_path, topics_gps, output_dir, mcap_name_base):
 
 def convertir_gps_vers_csv(mcap_path, topics_gps, output_dir, mcap_name_base):
     """
-    Convertit les données GPS d'un fichier MCAP en CSV
+    Convertit les données GPS d'un fichier MCAP en CSV - DIRECTEMENT dans output_dir
     """
-    csv_dir = os.path.join(output_dir, "csv")
-    os.makedirs(csv_dir, exist_ok=True)
-    
     print(f"   Conversion CSV GPS de {os.path.basename(mcap_path)}...")
     
     gps_data = {topic: [] for topic in topics_gps}
@@ -313,13 +321,13 @@ def convertir_gps_vers_csv(mcap_path, topics_gps, output_dir, mcap_name_base):
         print(f"      Erreur lecture {os.path.basename(mcap_path)}: {e}")
         return 0
     
-    # Sauvegarder les fichiers CSV
+    # Sauvegarder les fichiers CSV directement dans output_dir
     fichiers_crees = 0
     for topic, data in gps_data.items():
         if data:
             topic_clean = topic.replace('/', '_').replace(':', '_')
             csv_filename = f"{mcap_name_base}_{topic_clean}_gps.csv"
-            csv_path = os.path.join(csv_dir, csv_filename)
+            csv_path = os.path.join(output_dir, csv_filename)
             
             df = pd.DataFrame(data)
             df.to_csv(csv_path, index=False)
@@ -337,6 +345,10 @@ def convertir_gps_vers_csv(mcap_path, topics_gps, output_dir, mcap_name_base):
     
     return fichiers_crees
 
+# =====================================================================================
+# TRAITEMENT EN LOT
+# =====================================================================================
+
 def traiter_dossiers_out_gps(dossiers_out, format_choisi):
     """
     Traite tous les dossiers 'out' trouvés pour extraire les données GPS
@@ -347,7 +359,6 @@ def traiter_dossiers_out_gps(dossiers_out, format_choisi):
     # Statistiques globales
     total_fichiers = 0
     conversions_reussies = 0
-    total_points_gps = 0
     
     # Traiter chaque dossier "out" trouvé
     for i, dossier_info in enumerate(dossiers_out, 1):
@@ -358,9 +369,9 @@ def traiter_dossiers_out_gps(dossiers_out, format_choisi):
         print(f"\n[{i}/{len(dossiers_out)}] Traitement GPS de: {chemin_relatif}")
         print("-" * 50)
         
-        # Créer un dossier de sortie spécifique pour cet enregistrement
-        nom_dossier_sortie = chemin_relatif.replace('/', '_').replace('\\', '_')
-        output_dir = os.path.join("./gps_conversions", nom_dossier_sortie)
+        # Créer un seul dossier de sortie à côté du dossier "out"
+        dossier_parent = os.path.dirname(chemin_out)
+        output_dir = os.path.join(dossier_parent, "gps_conversions")
         os.makedirs(output_dir, exist_ok=True)
         
         # Traiter chaque fichier MCAP dans ce dossier
@@ -404,18 +415,124 @@ def traiter_dossiers_out_gps(dossiers_out, format_choisi):
     print(f"Extractions réussies: {conversions_reussies}")
     print(f"Échecs: {total_fichiers - conversions_reussies}")
     print(f"Taux de réussite: {(conversions_reussies/total_fichiers*100):.1f}%" if total_fichiers > 0 else "0%")
-    print(f"\nFichiers de sortie dans: ./gps_conversions/")
+    print(f"Fichiers de sortie dans les dossiers 'gps_conversions'")
+
+# =====================================================================================
+# API POUR INTEGRATION AVEC import_recordings.py
+# =====================================================================================
+
+def convert_gps_batch(root_directory, output_format="both", custom_topics=None, verbose=True):
+    """
+    API pour convertir les données GPS en mode batch (appelée par import_recordings.py)
     
-    # Afficher la structure des fichiers créés
-    if os.path.exists("./gps_conversions"):
-        print(f"\nStructure des fichiers créés:")
-        for root, dirs, files in os.walk("./gps_conversions"):
-            level = root.replace("./gps_conversions", '').count(os.sep)
-            indent = ' ' * 2 * level
-            print(f"{indent}{os.path.basename(root)}/")
-            subindent = ' ' * 2 * (level + 1)
-            for file in files:
-                print(f"{subindent}{file}")
+    Args:
+        root_directory (str): Répertoire racine contenant le dossier 'out' avec les MCAP
+        output_format (str): Format de sortie ('json', 'csv', 'both')
+        custom_topics (list): Topics GPS personnalisés à rechercher (optionnel)
+        verbose (bool): Affichage détaillé
+    
+    Returns:
+        dict: Statistiques d'extraction
+    """
+    try:
+        # Chercher le dossier 'out' dans le répertoire racine
+        out_dir = os.path.join(root_directory, "out")
+        if not os.path.exists(out_dir):
+            if verbose:
+                print(f"   Dossier 'out' non trouvé dans {root_directory}")
+            return {
+                'total_fichiers': 0,
+                'extractions_reussies': 0,
+                'fichiers_crees': 0,
+                'erreurs': ['Dossier out non trouvé']
+            }
+        
+        # Créer le dossier de sortie
+        output_dir = os.path.join(root_directory, "gps_conversions")
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Chercher les fichiers MCAP
+        fichiers_mcap = [f for f in os.listdir(out_dir) if f.endswith('.mcap')]
+        
+        if not fichiers_mcap:
+            if verbose:
+                print(f"   Aucun fichier MCAP trouvé dans {out_dir}")
+            return {
+                'total_fichiers': 0,
+                'extractions_reussies': 0,
+                'fichiers_crees': 0,
+                'erreurs': ['Aucun fichier MCAP trouvé']
+            }
+        
+        total_fichiers = len(fichiers_mcap)
+        extractions_reussies = 0
+        fichiers_crees_total = 0
+        erreurs = []
+        
+        if verbose:
+            print(f"   Traitement de {total_fichiers} fichiers MCAP pour GPS...")
+        
+        # Traiter chaque fichier MCAP
+        for mcap_file in fichiers_mcap:
+            mcap_path = os.path.join(out_dir, mcap_file)
+            mcap_name_base = mcap_file.replace('.mcap', '')
+            
+            try:
+                # Analyser les topics GPS dans ce fichier
+                if custom_topics:
+                    # Utiliser les topics personnalisés fournis
+                    topics_gps = custom_topics
+                    if verbose:
+                        print(f"     Utilisation des topics personnalisés: {topics_gps}")
+                else:
+                    # Découvrir automatiquement les topics GPS
+                    topics_gps = analyser_topics_gps_dans_fichier(mcap_path)
+                
+                if not topics_gps:
+                    if verbose:
+                        print(f"     ⚠ {mcap_file}: aucun topic GPS trouvé")
+                    continue
+                
+                if verbose:
+                    print(f"     Topics GPS dans {mcap_file}: {topics_gps}")
+                
+                fichiers_crees = 0
+                
+                # Convertir selon le format demandé
+                if output_format in ["json", "both"]:
+                    fichiers_crees += convertir_gps_vers_json(mcap_path, topics_gps, output_dir, mcap_name_base)
+                
+                if output_format in ["csv", "both"]:
+                    fichiers_crees += convertir_gps_vers_csv(mcap_path, topics_gps, output_dir, mcap_name_base)
+                
+                if fichiers_crees > 0:
+                    extractions_reussies += 1
+                    fichiers_crees_total += fichiers_crees
+                    if verbose:
+                        print(f"     ✓ {mcap_file}: {fichiers_crees} fichiers créés")
+                else:
+                    if verbose:
+                        print(f"     ⚠ {mcap_file}: aucune donnée GPS extraite")
+                        
+            except Exception as e:
+                error_msg = f"Erreur {mcap_file}: {str(e)}"
+                erreurs.append(error_msg)
+                if verbose:
+                    print(f"     ✗ {error_msg}")
+        
+        return {
+            'total_fichiers': total_fichiers,
+            'extractions_reussies': extractions_reussies,
+            'fichiers_crees': fichiers_crees_total,
+            'erreurs': erreurs
+        }
+        
+    except Exception as e:
+        raise GpsConverterError(f"Erreur dans convert_gps_batch: {str(e)}")
+
+# =====================================================================================
+# FONCTION PRINCIPALE
+# =====================================================================================
 
 def main():
     """

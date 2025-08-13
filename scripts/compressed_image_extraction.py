@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-# Created on Tue Aug 11 2025
-# Updated on Tue Aug 11 2025
-#
-#  This file is part of Cyclosafe
-# Copyright (c) 2025 Eric Ta
-#
-# This software is governed by the CeCILL license under French law and
-# abiding by the rules of distribution of free software. You can use,
-# modify and/or redistribute the software under the terms of the CeCILL
-# license as circulated by CEA, CNRS and INRIA at:
-# https://cecill.info/licences/Licence_CeCILL-B_V1-en.html
+"""
+Extracteur d'images compressées depuis les fichiers MCAP
+Exploration récursive des dossiers pour trouver les fichiers MCAP
+Version intégrée avec import_recordings.py
+"""
 
 import os
 import json
@@ -25,6 +19,18 @@ try:
     MCAP_AVAILABLE = True
 except ImportError:
     MCAP_AVAILABLE = False
+
+# =====================================================================================
+# EXCEPTIONS PERSONNALISÉES
+# =====================================================================================
+
+class ImageConverterError(Exception):
+    """Exception personnalisée pour les erreurs de conversion d'images"""
+    pass
+
+# =====================================================================================
+# FONCTIONS UTILITAIRES
+# =====================================================================================
 
 def demander_dossier_principal():
     """
@@ -148,6 +154,10 @@ def choisir_format_extraction():
         else:
             print("Choix invalide. Tapez 1, 2, 3, ou 4.")
 
+# =====================================================================================
+# FONCTIONS DE CONVERSION
+# =====================================================================================
+
 def extraire_donnees_message_image(image_msg, message, schema):
     """
     Extrait les données d'un message d'image compressée
@@ -239,9 +249,6 @@ def convertir_images_vers_csv(mcap_path, topics_camera, output_dir, mcap_name_ba
     """
     Convertit les métadonnées des images en CSV (sans données binaires)
     """
-    csv_dir = os.path.join(output_dir, "csv")
-    os.makedirs(csv_dir, exist_ok=True)
-    
     print(f"   Conversion CSV métadonnées images de {os.path.basename(mcap_path)}...")
     
     image_data = {topic: [] for topic in topics_camera}
@@ -291,7 +298,7 @@ def convertir_images_vers_csv(mcap_path, topics_camera, output_dir, mcap_name_ba
         if data:
             topic_clean = topic.replace('/', '_').replace(':', '_')
             csv_filename = f"{mcap_name_base}_{topic_clean}_images_metadata.csv"
-            csv_path = os.path.join(csv_dir, csv_filename)
+            csv_path = os.path.join(output_dir, csv_filename)
             
             df = pd.DataFrame(data)
             df.to_csv(csv_path, index=False)
@@ -313,9 +320,6 @@ def convertir_images_vers_json(mcap_path, topics_camera, output_dir, mcap_name_b
     """
     Convertit les images en JSON avec encodage base64
     """
-    json_dir = os.path.join(output_dir, "json")
-    os.makedirs(json_dir, exist_ok=True)
-    
     print(f"   Conversion JSON images (base64) de {os.path.basename(mcap_path)}...")
     
     image_data = {}
@@ -390,7 +394,7 @@ def convertir_images_vers_json(mcap_path, topics_camera, output_dir, mcap_name_b
         if data["images"]:
             topic_clean = topic.replace('/', '_').replace(':', '_')
             json_filename = f"{mcap_name_base}_{topic_clean}_images.json"
-            json_path = os.path.join(json_dir, json_filename)
+            json_path = os.path.join(output_dir, json_filename)
             
             with open(json_path, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -399,6 +403,10 @@ def convertir_images_vers_json(mcap_path, topics_camera, output_dir, mcap_name_b
             fichiers_crees += 1
     
     return fichiers_crees
+
+# =====================================================================================
+# TRAITEMENT EN LOT
+# =====================================================================================
 
 def traiter_dossiers_out_images(dossiers_out, format_choisi):
     """
@@ -421,9 +429,9 @@ def traiter_dossiers_out_images(dossiers_out, format_choisi):
         print(f"\n[{i}/{len(dossiers_out)}] Extraction images de: {chemin_relatif}")
         print("-" * 50)
         
-        # Créer un dossier de sortie spécifique pour cet enregistrement
-        nom_dossier_sortie = chemin_relatif.replace('/', '_').replace('\\', '_')
-        output_dir = os.path.join("./images_extractions", nom_dossier_sortie)
+        # Créer un dossier de sortie à côté du dossier "out"
+        dossier_parent = os.path.dirname(chemin_out)
+        output_dir = os.path.join(dossier_parent, "camera_conversions")
         os.makedirs(output_dir, exist_ok=True)
         
         # Traiter chaque fichier MCAP dans ce dossier
@@ -472,24 +480,133 @@ def traiter_dossiers_out_images(dossiers_out, format_choisi):
     print(f"Échecs: {total_fichiers - extractions_reussies}")
     print(f"Total images extraites: {total_images}")
     print(f"Taux de réussite: {(extractions_reussies/total_fichiers*100):.1f}%" if total_fichiers > 0 else "0%")
-    print(f"\nFichiers de sortie dans: ./images_extractions/")
+    print(f"Fichiers de sortie dans les dossiers 'camera_conversions'")
+
+# =====================================================================================
+# API POUR INTEGRATION AVEC import_recordings.py
+# =====================================================================================
+
+def convert_images_batch(root_directory, output_format="all", custom_topics=None, verbose=True):
+    """
+    API pour convertir les données d'images en mode batch (appelée par import_recordings.py)
     
-    # Afficher la structure des fichiers créés
-    if os.path.exists("./images_extractions"):
-        print(f"\nStructure des fichiers créés:")
-        for root, dirs, files in os.walk("./images_extractions"):
-            level = root.replace("./images_extractions", '').count(os.sep)
-            indent = ' ' * 2 * level
-            print(f"{indent}{os.path.basename(root)}/")
-            subindent = ' ' * 2 * (level + 1)
-            # Limiter l'affichage des fichiers images (trop nombreux)
-            if 'images' in root and len(files) > 5:
-                print(f"{subindent}... {len(files)} fichiers images .jpg")
-            else:
-                for file in files[:10]:  # Limiter à 10 fichiers max
-                    print(f"{subindent}{file}")
-                if len(files) > 10:
-                    print(f"{subindent}... et {len(files)-10} autres fichiers")
+    Args:
+        root_directory (str): Répertoire racine contenant le dossier 'out' avec les MCAP
+        output_format (str): Format de sortie ('images', 'csv', 'json', 'all')
+        custom_topics (list): Topics d'images personnalisés à rechercher (optionnel)
+        verbose (bool): Affichage détaillé
+    
+    Returns:
+        dict: Statistiques d'extraction
+    """
+    try:
+        # Chercher le dossier 'out' dans le répertoire racine
+        out_dir = os.path.join(root_directory, "out")
+        if not os.path.exists(out_dir):
+            if verbose:
+                print(f"   Dossier 'out' non trouvé dans {root_directory}")
+            return {
+                'total_fichiers': 0,
+                'extractions_reussies': 0,
+                'images_extraites': 0,
+                'fichiers_crees': 0,
+                'erreurs': ['Dossier out non trouvé']
+            }
+        
+        # Créer le dossier de sortie
+        output_dir = os.path.join(root_directory, "camera_conversions")
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Chercher les fichiers MCAP
+        fichiers_mcap = [f for f in os.listdir(out_dir) if f.endswith('.mcap')]
+        
+        if not fichiers_mcap:
+            if verbose:
+                print(f"   Aucun fichier MCAP trouvé dans {out_dir}")
+            return {
+                'total_fichiers': 0,
+                'extractions_reussies': 0,
+                'images_extraites': 0,
+                'fichiers_crees': 0,
+                'erreurs': ['Aucun fichier MCAP trouvé']
+            }
+        
+        total_fichiers = len(fichiers_mcap)
+        extractions_reussies = 0
+        images_extraites_total = 0
+        fichiers_crees_total = 0
+        erreurs = []
+        
+        if verbose:
+            print(f"   Traitement de {total_fichiers} fichiers MCAP pour les images...")
+        
+        # Traiter chaque fichier MCAP
+        for mcap_file in fichiers_mcap:
+            mcap_path = os.path.join(out_dir, mcap_file)
+            mcap_name_base = mcap_file.replace('.mcap', '')
+            
+            try:
+                # Analyser les topics d'images dans ce fichier
+                if custom_topics:
+                    # Utiliser les topics personnalisés fournis
+                    topics_camera = custom_topics
+                    if verbose:
+                        print(f"     Utilisation des topics personnalisés: {topics_camera}")
+                else:
+                    # Découvrir automatiquement les topics d'images
+                    topics_camera = analyser_topics_camera_dans_fichier(mcap_path)
+                
+                if not topics_camera:
+                    if verbose:
+                        print(f"     ⚠ {mcap_file}: aucun topic d'images trouvé")
+                    continue
+                
+                if verbose:
+                    print(f"     Topics images dans {mcap_file}: {topics_camera}")
+                
+                images_extraites = 0
+                fichiers_crees = 0
+                
+                # Convertir selon le format demandé
+                if output_format in ["images", "all"]:
+                    images_extraites += extraire_images_jpeg(mcap_path, topics_camera, output_dir, mcap_name_base)
+                
+                if output_format in ["csv", "all"]:
+                    fichiers_crees += convertir_images_vers_csv(mcap_path, topics_camera, output_dir, mcap_name_base)
+                
+                if output_format in ["json", "all"]:
+                    fichiers_crees += convertir_images_vers_json(mcap_path, topics_camera, output_dir, mcap_name_base)
+                
+                if images_extraites > 0 or fichiers_crees > 0:
+                    extractions_reussies += 1
+                    images_extraites_total += images_extraites
+                    fichiers_crees_total += fichiers_crees
+                    if verbose:
+                        print(f"     ✓ {mcap_file}: {images_extraites} images, {fichiers_crees} fichiers créés")
+                else:
+                    if verbose:
+                        print(f"     ⚠ {mcap_file}: aucune image extraite")
+                        
+            except Exception as e:
+                error_msg = f"Erreur {mcap_file}: {str(e)}"
+                erreurs.append(error_msg)
+                if verbose:
+                    print(f"     ✗ {error_msg}")
+        
+        return {
+            'total_fichiers': total_fichiers,
+            'extractions_reussies': extractions_reussies,
+            'images_extraites': images_extraites_total,
+            'fichiers_crees': fichiers_crees_total,
+            'erreurs': erreurs
+        }
+        
+    except Exception as e:
+        raise ImageConverterError(f"Erreur dans convert_images_batch: {str(e)}")
+
+# =====================================================================================
+# FONCTION PRINCIPALE
+# =====================================================================================
 
 def main():
     """
