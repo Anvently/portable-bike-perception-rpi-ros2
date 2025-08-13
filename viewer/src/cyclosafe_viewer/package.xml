@@ -19,6 +19,7 @@
   <depend>robot_state_publisher</depend>
   <depend>rclpy</depend>
   <depend>python3-rich</depend>
+  <depend>python3-pandas</depend>
 
   <export>
     <build_type>ament_python</build_type>

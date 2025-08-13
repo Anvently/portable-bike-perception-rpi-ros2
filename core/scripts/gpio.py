@@ -17,6 +17,7 @@ import os, time
 import battery_monitor
 import psutil
 from battery_monitor import INA219
+import pigpio
 
 BTN_RST_GPIO = 16
 LED_BATTERY_GPIO = 9
