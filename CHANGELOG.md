@@ -27,7 +27,7 @@
 - cyclosafe_player:
   - missing python3-pyqt5.qtwebengine dependancy in package.json
   - nan check for angle_min, angle_max and angle_increment in lidar message
-- cyclosafe core : missing import pigpio (removed in a previous commit for no reason)
+- core/scripts/gpio.py : missing import pigpio (removed in a previous commit for no reason), missing import sys (non fatal) + intercept exception related to i2c to ensure the script won't crash
 
 ## [1.0.0] - 2025-08-06
 ### Added

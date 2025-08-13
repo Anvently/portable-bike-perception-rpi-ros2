@@ -13,7 +13,7 @@
 # https://cecill.info/licences/Licence_CeCILL-B_V1-en.html
 
 
-import os, time
+import os, time, sys
 import battery_monitor
 import psutil
 from battery_monitor import INA219
@@ -109,7 +109,10 @@ class GPIOController():
 	def check_battery_state(self):
 		if not self.ina219:
 			return
-		bus_voltage = self.ina219.get_bus_voltage_V()
+		try:
+			bus_voltage = self.ina219.get_bus_voltage_V()
+		except:
+			pass #Make sure the script won't crash if error related to I2C
 		if bus_voltage < BATTERY_VOLTAGE_TRESHOLD:
 			raise BatteryException()
 		elif bus_voltage < LOW_BATTERY_TRESHOLD:
