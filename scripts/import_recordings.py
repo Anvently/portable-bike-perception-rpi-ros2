@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Created on Tue Aug 05 2025
-# Updated on Tue Aug 08 2025
+# Created on Tue Aug 05 2025 by Nicolas Pirard
+# Updated on Tue Aug 13 2025 by Eric Ta
 # Enhanced with MCAP converters integration (LiDAR, GPS, Images)
 #
 #  This file is part of Cyclosafe
@@ -85,8 +85,8 @@ def parse_arguments():
 	
 
 	parser.add_argument('--skip-mcap', action='store_true', help='Skip MCAP conversion (LiDAR, GPS, and Images)')
-	parser.add_argument('--mcap-format', choices=['json', 'csv', 'both'], default='both', help='Output format for MCAP conversion (LiDAR and GPS)')
-	parser.add_argument('--image-format', choices=['images', 'csv', 'json', 'all'], default='images', help='Output format for image extraction')
+	parser.add_argument('--mcap-format', choices=['json', 'csv', 'both'], default='csv', help='Output format for MCAP conversion (LiDAR and GPS)')
+	parser.add_argument('--image-format', choices=['images', 'csv', 'json', 'all'], default='all', help='Output format for image extraction')
 	
 	# Options pour types de données spécifiques
 	parser.add_argument('--lidar-only', action='store_true', help='Convert only LiDAR data (skip GPS and Images)')
@@ -101,7 +101,6 @@ def parse_arguments():
 	parser.add_argument('--skip-images', action='store_true', help='Skip image extraction')
 	
 	args = parser.parse_args()
-	
 
 	if args.hostname and args.copy:
 		parser.error("Cannot use both --hostname and --copy options together")
@@ -122,6 +121,7 @@ def parse_arguments():
 	
 	if args.hostname:
 		args.user = args.hostname.split('@')[0]
+
 	
 	return args
 
@@ -298,7 +298,7 @@ def repair_bag(bag_folder: str) -> bool:
 		logger.error(f"Error repairing bag in {bag_folder}: {e}")
 	return False
 
-def convert_mcap_data(record_dir, mcap_format="both", image_format="images", 
+def convert_mcap_data(record_dir, mcap_format="csv", image_format="all", 
 					 lidar_only=False, gps_only=False, images_only=False,
 					 skip_lidar=False, skip_gps=False, skip_images=False,
 					 custom_gps_topics=None, custom_image_topics=None):
@@ -451,7 +451,7 @@ def clean_local_bag_directory(record_dir):
 		return False
 
 def process_single_record(record, output_dir, hostname=None, password=None, is_copy=False, clean=False, 
-						 skip_mcap=False, mcap_format="both", image_format="images",
+						 skip_mcap=False, mcap_format="json", image_format="images",
 						 lidar_only=False, gps_only=False, images_only=False,
 						 skip_lidar=False, skip_gps=False, skip_images=False,
 						 custom_gps_topics=None, custom_image_topics=None):

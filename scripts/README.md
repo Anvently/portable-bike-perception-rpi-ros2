@@ -48,6 +48,11 @@ Il est nécessaire de préciser l'une des deux options d'import (**-u** en ssh o
 Ce script a besoin pour fonctionner d'être lancé dans un environnement ou ROS2 est installé et sourcé.
 Il est donc fortement recommandé de suivre les instructions d'installation [de ROS2 et de l'environnement cyclosafe](../viewer/README.md#installation).
 
+En complément le script de conversion de CSV nécessite quelques dépendances en plus :
+~~~
+pip install mcap mcap-ros2-support --break-system-packages
+~~~
+
 ## Usage
 
 ~~~

@@ -10,6 +10,7 @@
 - README: section mentionning context of the project
 - README: section expliciting what material is concerned by the new CeCILL-B license
 - added 3 csv script exporter files in scripts/
+- added automatic csv conversion to import_recording script
 
 ### Modified
 - License CeCILL updated to CeCILL-B (from GPL to BSD) in order to make the project easier to redistribute
@@ -26,6 +27,7 @@
 - cyclosafe_player:
   - missing python3-pyqt5.qtwebengine dependancy in package.json
   - nan check for angle_min, angle_max and angle_increment in lidar message
+- cyclosafe core : missing import pigpio (removed in a previous commit for no reason)
 
 ## [1.0.0] - 2025-08-06
 ### Added

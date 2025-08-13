@@ -1,4 +1,17 @@
 #!/usr/bin/env python3
+# Created on Tue Aug 13 2025
+# Updated on Tue Aug 13 2025
+# Enhanced with MCAP converters integration (LiDAR, GPS, Images)
+#
+#  This file is part of Cyclosafe
+# Copyright (c) 2025 Eric Ta
+#
+# This software is governed by the CeCILL license under French law and
+# abiding by the rules of distribution of free software. You can use,
+# modify and/or redistribute the software under the terms of the CeCILL
+# license as circulated by CEA, CNRS and INRIA at:
+# https://cecill.info/licences/Licence_CeCILL-B_V1-en.html
+
 """
 Convertisseur MCAP vers JSON/CSV pour les données LiDAR 360° (LaserScan)
 Exploration récursive des dossiers pour trouver les fichiers MCAP

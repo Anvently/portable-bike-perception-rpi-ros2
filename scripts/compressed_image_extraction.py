@@ -1,4 +1,17 @@
 #!/usr/bin/env python3
+# Created on Tue Aug 13 2025
+# Updated on Tue Aug 13 2025
+# Enhanced with MCAP converters integration (LiDAR, GPS, Images)
+#
+#  This file is part of Cyclosafe
+# Copyright (c) 2025 Eric Ta
+#
+# This software is governed by the CeCILL license under French law and
+# abiding by the rules of distribution of free software. You can use,
+# modify and/or redistribute the software under the terms of the CeCILL
+# license as circulated by CEA, CNRS and INRIA at:
+# https://cecill.info/licences/Licence_CeCILL-B_V1-en.html
+
 """
 Extracteur d'images compressées depuis les fichiers MCAP
 Exploration récursive des dossiers pour trouver les fichiers MCAP
@@ -231,7 +244,7 @@ def extraire_images_jpeg(mcap_path, topics_camera, output_dir, mcap_name_base):
                             
                             image_count += 1
                             
-                            if image_count % 10 == 0:
+                            if image_count % 100 == 0:
                                 print(f"      Images extraites: {image_count}")
                     
                     except Exception as e:
@@ -279,7 +292,7 @@ def convertir_images_vers_csv(mcap_path, topics_camera, output_dir, mcap_name_ba
                             image_data[channel.topic].append(image_entry)
                             image_count += 1
                             
-                            if image_count % 10 == 0:
+                            if image_count % 100 == 0:
                                 print(f"      Métadonnées traitées: {image_count}")
                     
                     except Exception as e:
@@ -375,7 +388,7 @@ def convertir_images_vers_json(mcap_path, topics_camera, output_dir, mcap_name_b
                             image_data[channel.topic]["metadata"]["total_images"] += 1
                             image_count += 1
                             
-                            if image_count % 10 == 0:
+                            if image_count % 100 == 0:
                                 print(f"      Images encodées: {image_count}")
                     
                     except Exception as e:
