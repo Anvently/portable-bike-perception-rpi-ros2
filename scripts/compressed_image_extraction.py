@@ -18,6 +18,13 @@ Exploration récursive des dossiers pour trouver les fichiers MCAP
 Version intégrée avec import_recordings.py
 """
 
+#!/usr/bin/env python3
+"""
+Extracteur d'images compressées depuis les fichiers MCAP
+Exploration récursive des dossiers pour trouver les fichiers MCAP
+Version intégrée avec import_recordings.py
+"""
+
 import os
 import json
 import pandas as pd
@@ -232,10 +239,20 @@ def extraire_images_jpeg(mcap_path, topics_camera, output_dir, mcap_name_base):
                         image_entry = extraire_donnees_message_image(image_msg, message, schema)
                         
                         if image_entry and 'image_data' in image_entry:
-                            # Créer le nom de fichier avec timestamp
-                            timestamp_str = datetime.fromtimestamp(image_entry['timestamp_sec']).strftime('%Y%m%d_%H%M%S_%f')[:-3]
+                            # Créer le nom de fichier avec date_heure et timestamp Unix
+                            timestamp_sec = image_entry['timestamp_sec']
+                            
+                            # Format date_heure : YYYY-MM-DD_HH-MM-SS
+                            date_heure = datetime.fromtimestamp(timestamp_sec).strftime('%Y-%m-%d_%H-%M-%S')
+                            
+                            # Timestamp Unix (secondes avec 3 décimales pour les millisecondes)
+                            timestamp_unix = f"{timestamp_sec:.3f}"
+                            
+                            # Topic nettoyé
                             topic_clean = channel.topic.replace('/', '_').replace(':', '_')
-                            image_filename = f"{mcap_name_base}_{topic_clean}_{timestamp_str}_{image_count:06d}.jpg"
+                            
+                            # Nom de fichier : mcap_topic_date-heure_timestamp-unix_index.jpg
+                            image_filename = f"{mcap_name_base}_{topic_clean}_{date_heure}_{timestamp_unix}_{image_count:06d}.jpg"
                             image_path = os.path.join(images_dir, image_filename)
                             
                             # Sauvegarder l'image JPEG
@@ -244,7 +261,7 @@ def extraire_images_jpeg(mcap_path, topics_camera, output_dir, mcap_name_base):
                             
                             image_count += 1
                             
-                            if image_count % 100 == 0:
+                            if image_count % 10 == 0:
                                 print(f"      Images extraites: {image_count}")
                     
                     except Exception as e:
@@ -282,17 +299,26 @@ def convertir_images_vers_csv(mcap_path, topics_camera, output_dir, mcap_name_ba
                         image_entry = extraire_donnees_message_image(image_msg, message, schema)
                         
                         if image_entry:
-                            # Supprimer les données binaires pour le CSV
-                            if 'image_data' in image_entry:
-                                del image_entry['image_data']
+                            # Préparer les informations demandées
+                            timestamp_sec = image_entry['timestamp_sec']
                             
-                            # Ajouter un index d'image
-                            image_entry['image_index'] = image_count
+                            # Générer le nom de fichier (même logique que pour l'extraction JPEG)
+                            date_heure_filename = datetime.fromtimestamp(timestamp_sec).strftime('%Y-%m-%d_%H-%M-%S')
+                            timestamp_unix = f"{timestamp_sec:.3f}"
+                            topic_clean = channel.topic.replace('/', '_').replace(':', '_')
+                            nom_fichier = f"{mcap_name_base}_{topic_clean}_{date_heure_filename}_{timestamp_unix}_{image_count:06d}.jpg"
                             
-                            image_data[channel.topic].append(image_entry)
+                            # CSV simplifié avec seulement 3 colonnes demandées
+                            csv_entry = {
+                                'nom': nom_fichier,
+                                'date_heure': datetime.fromtimestamp(timestamp_sec).strftime('%Y-%m-%d %H:%M:%S'),
+                                'timestamp_unix': timestamp_unix
+                            }
+                            
+                            image_data[channel.topic].append(csv_entry)
                             image_count += 1
                             
-                            if image_count % 100 == 0:
+                            if image_count % 10 == 0:
                                 print(f"      Métadonnées traitées: {image_count}")
                     
                     except Exception as e:
@@ -320,10 +346,9 @@ def convertir_images_vers_csv(mcap_path, topics_camera, output_dir, mcap_name_ba
             
             # Statistiques sur les images
             if len(data) > 0:
-                duree = data[-1]['timestamp_sec'] - data[0]['timestamp_sec']
+                duree = float(data[-1]['timestamp_unix']) - float(data[0]['timestamp_unix'])
                 fps = len(data) / duree if duree > 0 else 0
-                taille_moyenne = sum(entry['data_size'] for entry in data) / len(data)
-                print(f"        Durée: {duree:.1f}s, FPS moyen: {fps:.1f}, Taille moyenne: {taille_moyenne/1024:.1f} KB")
+                print(f"        Durée: {duree:.1f}s, FPS moyen: {fps:.1f}, {len(data)} images")
             
             fichiers_crees += 1
     
@@ -388,7 +413,7 @@ def convertir_images_vers_json(mcap_path, topics_camera, output_dir, mcap_name_b
                             image_data[channel.topic]["metadata"]["total_images"] += 1
                             image_count += 1
                             
-                            if image_count % 100 == 0:
+                            if image_count % 10 == 0:
                                 print(f"      Images encodées: {image_count}")
                     
                     except Exception as e:
