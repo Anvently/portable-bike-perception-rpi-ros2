@@ -135,7 +135,7 @@ source ./setup/.bashrc
 
 > Afin de ne pas avoir à répéter cette opération pour chaque nouveau terminal ouvert, vous pouvez l'ajouter au **.bashrc**  de votre dossier utilisateur (**~**) :
 > ~~~
-> echo source $CYCLOSAFE_WORKSPACE./setup/.bashrc >> ~/.bashrc
+> echo source $CYCLOSAFE_WORKSPACE/setup/.bashrc >> ~/.bashrc
 > ~~~
 > Le script sera désormais automatiquement executé à l'ouverture d'un terminal.
 
