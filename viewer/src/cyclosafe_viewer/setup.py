@@ -13,7 +13,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
 		('share/' + package_name + '/launch', ['launch/viewer.launch.py', 'launch/config.py']),
 		('share/' + package_name + '/launch', ['launch/view.rviz', ]),
-        ('share/' + package_name + '/urdf', ['urdf/model.urdf.xml']),
+        ('share/' + package_name + '/urdf', ['urdf/model.urdf.xml', 'urdf/model.urdf.inverted.xml']),
         ('share/' + package_name + '/urdf/model', glob('urdf/model/*')),
 
     ],

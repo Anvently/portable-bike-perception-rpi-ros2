@@ -42,21 +42,22 @@
   </joint>
 
   <!-- Horizontal -->
-  <link name="laser1">
-  </link>
-  <!-- Vertical -->
   <link name="laser2">
   </link>
-
-  <joint name="laser1_module_joint" type="fixed">
-    <parent link="module"/>
-    <child link="laser1"/>
-    <origin xyz="-0.048 -0.045 0.087" rpy="0 0 3.14" />
-  </joint>
+  <!-- Vertical -->
+  <link name="laser1">
+  </link>
 
   <joint name="laser2_module_joint" type="fixed">
     <parent link="module"/>
     <child link="laser2"/>
+    <origin xyz="-0.048 -0.045 0.087" rpy="0 0 3.14" />
+  </joint>
+
+
+  <joint name="laser1_module_joint" type="fixed">
+    <parent link="module"/>
+    <child link="laser1"/>
     <origin xyz="-0.164 -0.051 0.022" rpy="0 -1.57 0" />
   </joint>
 </robot>

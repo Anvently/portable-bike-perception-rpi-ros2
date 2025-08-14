@@ -47,6 +47,7 @@ launch_args = [
     DeclareLaunchArgument('bag', default_value=TextSubstitution(text=""), description="Specify a bag from which the data will be played"),
     DeclareLaunchArgument('map', default_value=TextSubstitution(text="false"), description="Enable live mapping from open street satellite image"),
     DeclareLaunchArgument('config', default_value=TextSubstitution(text=""), description="Optional path to a custom config file containing sensors_list"),
+    DeclareLaunchArgument('invert_lidar', default_value=TextSubstitution(text="false"), description="Invert lidars transformation in case they are wrongly connected"),
 ]
 
 
@@ -57,6 +58,7 @@ def launch_setup(context):
     bag = os.path.expanduser(LaunchConfiguration('bag').perform(context))
     map_arg = str2bool(LaunchConfiguration('map').perform(context))
     config_path = LaunchConfiguration('config').perform(context)
+    invert_lidar =  str2bool(LaunchConfiguration('invert_lidar').perform(context))
 
     sensors_list: List[Sensor] = import_sensors_list(config_path if config_path else None)
 
@@ -156,7 +158,7 @@ def launch_setup(context):
 
      # Nœuds pour le model publisher
     # Lecture du contenu du fichier URDF
-    urdf_path = os.path.join(get_package_share_directory('cyclosafe_viewer'), 'urdf', 'model.urdf.xml')
+    urdf_path = os.path.join(get_package_share_directory('cyclosafe_viewer'), 'urdf', 'model.urdf.xml' if not invert_lidar else 'model.urdf.inverted.xml')
     with open(urdf_path, 'r') as file:
         robot_description = file.read()
     ld.extend([

@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1] - 2025-08-14
+
+### Added
+- cyclosafe_viewer : implementd invert_lidar argument to use another urdf model where both lidar transformation are inverted , in case lidar connections are wrong
+- various readme : uml modl + simplified node schematic added
+
+### Modified
+- design/ : updated BOM
+
 ## [1.1.0] - 2025-08-08
 ### Added
 - CHANGELOG.md file

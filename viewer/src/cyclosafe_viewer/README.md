@@ -73,6 +73,10 @@ Et en fonction des paramètres :
 > - défaut: **"false"**
 > - si `true`, un noeud [**rviz_satellite**](../rviz_satellite/README.md) sera lancé et une tuile d'une vue satellite *openstreeview* sera mappée à partir des positions GPS publiées.
 
+> **invert_lidar** : boolean
+> - défaut: **"false"**
+> - si `true`, intervertit les transformations appliquées sur les frames des lidars (`robot_state_publisher` utilisera le fichier `urdf.model.inverted.xml`)
+
 ## Spécificités
 
 La structure de [**viewer.launch.py**](launch/viewer.launch.py) n'est pas tout à fait standard dans la mesure où :

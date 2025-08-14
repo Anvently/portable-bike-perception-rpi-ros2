@@ -18,6 +18,8 @@ Ce dossier contient l'ensemble des packages et utilitaires permettant de visuali
     - [Visualiser les données en direct](#visualiser-les-données-en-direct)
   - [Activer mapviz et rviz\_satellite (facultatif)](#activer-mapviz-et-rviz_satellite-facultatif)
 
+![uml diagram of cyclosafe project](../core//src/cyclosafe/resource/doc/cyclosafe_uml.webp)
+
 ## Structure
 
 > [**./**](core/README.md) : répertoire courant, correspond aussi au workspace  utilisé par **ROS2** dans lequel les packages sont installés.
@@ -244,6 +246,8 @@ ros2 launch cyclosafe_viewer viewer.launch.py bag:=path_to_mcap_file
 > **Note** : Les fichiers contenus dans le dossier **bag/** (au format .mcap ou .zstd) peuvent aussi être donné en paramètre mais ils ne contiendront qu'une partie de l'enregistrement.
 
 Cette launch description ouvre une fenêtre `Rviz` et une autre fenêtre `cyclosafe_player` permettant de contrôler la lecture des données.
+
+Voir plus: [cyclosafe_viewer](./src/cyclosafe_viewer/README.md)
 
 ### Visualiser les données en direct
 

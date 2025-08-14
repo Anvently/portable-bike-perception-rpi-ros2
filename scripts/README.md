@@ -13,6 +13,7 @@ Contient des scripts et utilitaires destinés à faciliter la récupération des
   - [Paramètres](#paramètres)
   - [Procédure normale](#procédure-normale)
   - [Paramètres](#paramètres-1)
+- [Diagramme UML du projet (section cyclosafe/scripts)](#diagramme-uml-du-projet-section-cyclosafescripts)
 
 # sd_flash.sh
 
@@ -352,3 +353,7 @@ $ python3 ./gpx_exporter.py -b ~/data/20250513-064355/out/_0.mcap
 > **-n (--name)**
 > 	- **optionnel**
 > 	- nom de la trace gpx (il ne s'agit pas du nom du fichier mais bien de la trace)
+
+# Diagramme UML du projet (section cyclosafe/scripts)
+
+![uml diagram of cyclosafe project](../core//src/cyclosafe/resource/doc/cyclosafe_uml.webp)

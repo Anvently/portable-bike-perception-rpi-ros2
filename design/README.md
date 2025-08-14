@@ -8,6 +8,7 @@ Ce dossier contient les fichiers relatifs à la fabrication du boitier destiné 
 	- [COMPOSANTS](#composants)
 	- [Quincaillerie](#quincaillerie)
 	- [Inserts](#inserts)
+	- [Total](#total)
 - [Electronique](#electronique)
 	- [Montage complet](#montage-complet)
 	- [PCB dédié](#pcb-dédié)
@@ -31,49 +32,57 @@ Ce dossier contient les fichiers relatifs à la fabrication du boitier destiné 
 
 ## COMPOSANTS
 
-| Quantité | Nom de la pièce | Fonction | Masse (g) | Type | Origine |
-|----------|-----------------|----------|-----------|------|---------|
-| 1 | Raspberry Pi 4 Model B | Firmware | 75.00 | PCB | Achat |
-| 1 | UPS-HAT | Batterie | 120.00 | PCB | Achat |
-| 1 | PCB custom | Électronique | 30.00 | PCB | Fabrication par un tiers |
-| 1 | Raspberry Pi HQ Camera | Capteur | 30.40 | Capteur | Achat |
-| 1 | Objectif CS-8 25mm | Capteur | 40.00 | Accessoire | Achat |
-| 2 | Slamtec RPLiDAR C1 | Capteur | 110.00 | Capteur | Achat |
-| 1 | Assemblage F | Fixation | 90.00 | Structure | Impression |
-| 1 | Collier | Fixation | 37.00 | Structure | Impression |
-| 1 | L76x GPS Module | Capteur | 5.00 | PCB | Achat |
-| 1 | Boîtier bas | Structure | 130.00 | Structure | Impression |
-| 1 | Boîtier haut | Structure | 101.00 | Structure | Impression |
-| 1 | Carte SD | Firmware | 2.00 | Accessoire | Achat |
-| 2 | Accu 18650 - 3400mAh | Batterie | 46.00 | Accessoire | Achat |
-| 1 | Couvercle carte SD | Structure | 3.30 | Structure | Impression |
-| 1 | Ficelle pour pin de verrouillage (diamètre < 2mm) | Fixation | 1.00 | Accessoire | Achat |
-| 1 | Pin de verrouillage | Fixation | 1.65 | Structure | Impression |
+| Quantité | Nom de la pièce | Fonction | Masse (g) | Type | Origine | Coût estimé |
+|----------|-----------------|----------|-----------|------|---------|-------------|
+| 1 | Raspberry Pi 4 Model B | Firmware | 75.00 | PCB | Achat | 65.00 |
+| 1 | UPS-HAT | Batterie | 120.00 | PCB | Achat | 22.00 |
+| 1 | PCB custom | Électronique | 30.00 | PCB | Fabrication par un tiers | 8.75 |
+| 1 | Raspberry Pi HQ Camera M12 mount | Capteur | 30.40 | Capteur | Achat | 52.00 |
+| 1 | Objectif grand angle M12 | Capteur | 100 | Accessoire | Achat | 25.00 |
+| 2 | Slamtec RPLiDAR C1 | Capteur | 110.00 | Capteur | Achat | 84.00 |
+| 1 | Assemblage F | Fixation | 90.00 | Structure | Impression | 2.00 |
+| 1 | Collier | Fixation | 37.00 | Structure | Impression | 0.5 |
+| 1 | L76x GPS Module | Capteur | 5.00 | PCB | Achat | 15.00 |
+| 1 | Boîtier bas | Structure | 130.00 | Structure | Impression | 1.89 |
+| 1 | Boîtier haut | Structure | 101.00 | Structure | Impression | 2.23 |
+| 1 | Carte SD | Firmware | 2.00 | Accessoire | Achat | 25.00 |
+| 2 | Accu 18650 - 3400mAh | Batterie | 46.00 | Accessoire | Achat | 18.50 |
+| 1 | Couvercle carte SD | Structure | 3.30 | Structure | Impression | 0.07 |
+| 1 | Ficelle pour pin de verrouillage (diamètre < 2mm) | Fixation | 1.00 | Accessoire | Achat | 0.05 |
+| 1 | Pin de verrouillage | Fixation | 1.65 | Structure | Impression | 0.05 |
+| 1 | Câble molex picoblade 510210800 8-pin double-M 20cm | Connection gps-pcb | 2.00 | Accessoire | Achat | 0.50 |
 
 ## Quincaillerie
 
-| Quantité | Nom de la pièce | Fonction | Masse (g) | Type | Origine |
-|----------|-----------------|----------|-----------|------|---------|
-| 1 | Vis à tête hexagonale M2.5x6 | Trappe carte SD | 0.487 | Quincaillerie | Achat |
-| 4 | Entretoise M/F M2.5x12 | Entretoise Raspberry | 1.999 | Quincaillerie | Achat |
-| 4 | Entretoise M/F M2.5x15 | Entretoise HAT | 2.393 | Quincaillerie | Achat |
-| 8 | Vis à tête hexagonale M2.5x12 | Lidars | 0.702 | Quincaillerie | Achat |
-| 2 | Vis à tête hexagonale M2x8 | GPS | 0.341 | Quincaillerie | Achat |
-| 3 | Vis à tête hexagonale M3x6 | Boîtiers | 0.796 | Quincaillerie | Achat |
-| 8 | Vis à tête hexagonale M2.5x10 | UPS HAT & caméra | 0.630 | Quincaillerie | Achat |
-| 1 | Vis à tête hexagonale M3x0.5x40 | Axe centrale du pin de blocage | 2.569 | Quincaillerie | Achat |
-| 2 | Vis à tête hexagonale M4x0.7x40 | Collier | 4.776 | Quincaillerie | Achat |
+| Quantité | Nom de la pièce | Fonction | Masse (g) | Type | Origine | Coût estimé |
+|----------|-----------------|----------|-----------|------|---------|--|
+| 1 | Vis à tête hexagonale M2.5x6 | Trappe carte SD | 0.487 | Quincaillerie | Achat | 0.05
+| 4 | Entretoise M/F M2.5x12 | Entretoise Raspberry | 1.999 | Quincaillerie | Achat | 0.50
+| 4 | Entretoise M/F M2.5x18 | Entretoise HAT | 2.393 | Quincaillerie | Achat | 0.50
+| 8 | Vis à tête hexagonale M2.5x12 | Lidars | 0.702 | Quincaillerie | Achat | 0.05
+| 2 | Vis à tête hexagonale M2x8 | GPS | 0.341 | Quincaillerie | Achat | 0.05
+| 3 | Vis à tête hexagonale M3x6 | Boîtiers | 0.796 | Quincaillerie | Achat | 0.05
+| 8 | Vis à tête hexagonale M2.5x10 | UPS HAT & caméra | 0.630 | Quincaillerie | Achat | 0.05
+| 1 | Vis à tête hexagonale M3x0.5x40 | Axe centrale du pin de blocage | 2.569 | Quincaillerie | Achat | 0.10
+| 2 | Vis à tête hexagonale M4x0.7x40 | Collier | 4.776 | Quincaillerie | Achat | 0.10
 
 ## Inserts
 
-| Quantité | Nom de la pièce | Fonction | Masse (g) | Type | Origine |
-|----------|-----------------|----------|-----------|------|---------|
-| 2 | Insert M4x8x6 | Collier | 2.00 | Quincaillerie | Achat |
-| 1 | Insert M3x4x4.5 | Emboîtement supérieur | 1.00 | Quincaillerie | Achat |
-| 2 | Insert M3x3x4.5 | Emboîtement latéral | 1.00 | Quincaillerie | Achat |
-| 4 | Insert M2.5x4x3.5 | Raspberry | 1.00 | Quincaillerie | Achat |
-| 2 | Insert M2x5x3.5 | GPS | 1.00 | Quincaillerie | Achat |
-| 5 | Insert M2.5x5x3.5 | Couvercle SD + caméra | 1.00 | Quincaillerie | Achat |
+| Quantité | Nom de la pièce | Fonction | Masse (g) | Type | Origine | Coût estimé
+|----------|-----------------|----------|-----------|------|---------|--|
+| 2 | Insert M4x8x6 | Collier | 2.00 | Quincaillerie | Achat | 0.08
+| 1 | Insert M3x4x4.5 | Emboîtement supérieur | 1.00 | Quincaillerie | Achat | 0.05
+| 2 | Insert M3x3x4.5 | Emboîtement latéral | 1.00 | Quincaillerie | Achat | 0.04
+| 4 | Insert M2.5x4x3.5 | Raspberry | 1.00 | Quincaillerie | Achat | 0.04
+| 2 | Insert M2x5x3.5 | GPS | 1.00 | Quincaillerie | Achat | 0.04
+| 5 | Insert M2.5x5x3.5 | Couvercle SD + caméra | 1.00 | Quincaillerie | Achat | 0.04
+
+## Total
+
+| Quantité | Nom de la pièce | Fonction | Masse (g) | Type | Origine |Coût estimé
+|----------|-----------------|----------|-----------|------|---------|--|
+|Poids|||1102.25||
+|Coût||||||431.17€
 
 # Electronique
 

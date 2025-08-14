@@ -5,6 +5,9 @@ A chaque capteur est associé un noeud ROS qui implémente éventuellement un dr
 Chaque noeud peut-être lancé indépendemment ou l'ensemble des noeuds sont lancés ensembles via la launch description [**cyclosafe.launch.py**](src/cyclosafe/README.md#launch-description)
 
 - [Résumé](#résumé)
+- [Schémas](#schémas)
+	- [Schéma simplifié](#schéma-simplifié)
+	- [Modèle UML complet](#modèle-uml-complet)
 - [Structure](#structure)
 	- [cyclosafe](#cyclosafe)
 	- [cyclosafe\_config](#cyclosafe_config)
@@ -12,6 +15,16 @@ Chaque noeud peut-être lancé indépendemment ou l'ensemble des noeuds sont lan
 	- [cyclosafe\_lidar](#cyclosafe_lidar)
 	- [rplidar\_ros2](#rplidar_ros2)
 
+
+# Schémas
+
+## Schéma simplifié
+
+![simple-node-diagram](./src/cyclosafe/resource/doc/node_schema.png)
+
+## Modèle UML complet
+
+![uml diagram of cyclosafe project](./src/cyclosafe/resource/doc/cyclosafe_uml.webp)
 
 # Structure
 
