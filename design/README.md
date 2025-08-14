@@ -28,6 +28,8 @@ Ce dossier contient les fichiers relatifs à la fabrication du boitier destiné 
 
 ![preview-velo-avec-module](docs/render-hd.jpg)
 
+https://github.com/user-attachments/assets/05b4201d-2b15-44bb-a8c5-ab20a0cb3d47
+
 # Liste du matériel (BOM)
 
 ## COMPOSANTS
