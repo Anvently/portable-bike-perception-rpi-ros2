@@ -108,11 +108,7 @@ Le dossier courant [**viewer/**](.) est l'environnement de travail de ROS2 (cad.
 
 A chaque fois qu'on ouvre un nouveau terminal, il est nécessaire de sourcer cet environnement afin d'avoir accès à **ROS2** ainsi qu'aux outils propres à Cyclosafe.
 
-Cela se fait normalement en utilisant la commande :
-
-~~~
-source ~/cyclosafe/viewer/install/setup.bash
-~~~
+Cela se fait normalement en sourcant le dossier `install` du workspace.
 
 Cependant lors de la première installation, le build et l'installation des packages n'a pas encore été effectuée donc le dossier `install` n'existe pas encore.
 
@@ -139,7 +135,7 @@ source ./setup/.bashrc
 
 > Afin de ne pas avoir à répéter cette opération pour chaque nouveau terminal ouvert, vous pouvez l'ajouter au **.bashrc**  de votre dossier utilisateur (**~**) :
 > ~~~
-> echo source ./setup/.bashrc >> ~/.bashrc
+> echo source $CYCLOSAFE_WORKSPACE./setup/.bashrc >> ~/.bashrc
 > ~~~
 > Le script sera désormais automatiquement executé à l'ouverture d'un terminal.
 
