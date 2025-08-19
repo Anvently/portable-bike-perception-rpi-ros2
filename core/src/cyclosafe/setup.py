@@ -31,6 +31,7 @@ setup(
 			'camera_pi = cyclosafe.camera_pi:main',
 			'camera_webcam = cyclosafe.camera_webcam:main',
 			'gps = cyclosafe.gps:main',
+			'encryptor = cyclosafe.encryptor:main'
         ],
     },
 )

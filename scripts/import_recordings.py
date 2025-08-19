@@ -21,58 +21,63 @@ import getpass
 import logging
 import shutil
 from rich.logging import RichHandler
+from decryptor import ROSBagDecryptor
+import time
+
+os.environ['NUMEXPR_MAX_THREADS'] = '8'
 
 FORMAT = "%(message)s"
 logging.basicConfig(
-	level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+	level="DEBUG", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )  # set level=20 or logging.INFO to turn off debug
 logger = logging.getLogger("rich")
 
-# Import des convertisseurs MCAP - MÉTHODE SÉCURISÉE
-def import_mcap_converters():
-    """Import sécurisé des convertisseurs MCAP"""
-    try:
-        # Import dynamique pour éviter les imports circulaires
-        import importlib
+# # Import des convertisseurs MCAP - MÉTHODE SÉCURISÉE
+# def import_mcap_converters():
+#     """Import sécurisé des convertisseurs MCAP"""
+#     try:
+#         # Import dynamique pour éviter les imports circulaires
+#         import importlib
         
-        # Import du module LiDAR
-        lidar_module = importlib.import_module('liddar_csv_converter')
-        if not hasattr(lidar_module, 'convert_lidar_batch'):
-            logger.error("Function 'convert_lidar_batch' not found in liddar_csv_converter")
-            return None, None, None, None, None, None, None, False
+#         # Import du module LiDAR
+#         lidar_module = importlib.import_module('liddar_csv_converter')
+#         if not hasattr(lidar_module, 'convert_lidar_batch'):
+#             logger.error("Function 'convert_lidar_batch' not found in liddar_csv_converter")
+#             return None, None, None, None, None, None, None, False
             
-        # Import du module GPS
-        gps_module = importlib.import_module('gps_csv_converter')
-        if not hasattr(gps_module, 'convert_gps_batch'):
-            logger.error("Function 'convert_gps_batch' not found in gps_csv_converter")
-            return None, None, None, None, None, None, None, False
+#         # Import du module GPS
+#         gps_module = importlib.import_module('gps_csv_converter')
+#         if not hasattr(gps_module, 'convert_gps_batch'):
+#             logger.error("Function 'convert_gps_batch' not found in gps_csv_converter")
+#             return None, None, None, None, None, None, None, False
         
-        # Import du module Images
-        images_module = importlib.import_module('compressed_image_extraction')
-        if not hasattr(images_module, 'convert_images_batch'):
-            logger.error("Function 'convert_images_batch' not found in compressed_image_extraction")
-            return None, None, None, None, None, None, None, False
+#         # Import du module Images
+#         images_module = importlib.import_module('compressed_image_extraction')
+#         if not hasattr(images_module, 'convert_images_batch'):
+#             logger.error("Function 'convert_images_batch' not found in compressed_image_extraction")
+#             return None, None, None, None, None, None, None, False
         
-        # Récupérer les fonctions et classes
-        convert_lidar_batch = getattr(lidar_module, 'convert_lidar_batch')
-        convert_gps_batch = getattr(gps_module, 'convert_gps_batch')
-        convert_images_batch = getattr(images_module, 'convert_images_batch')
-        LidarConverterError = getattr(lidar_module, 'LidarConverterError', Exception)
-        GpsConverterError = getattr(gps_module, 'GpsConverterError', Exception)
-        ImageConverterError = getattr(images_module, 'ImageConverterError', Exception)
+#         # Récupérer les fonctions et classes
+#         convert_lidar_batch = getattr(lidar_module, 'convert_lidar_batch')
+#         convert_gps_batch = getattr(gps_module, 'convert_gps_batch')
+#         convert_images_batch = getattr(images_module, 'convert_images_batch')
+#         LidarConverterError = getattr(lidar_module, 'LidarConverterError', Exception)
+#         GpsConverterError = getattr(gps_module, 'GpsConverterError', Exception)
+#         ImageConverterError = getattr(images_module, 'ImageConverterError', Exception)
         
-        logger.info("MCAP converters successfully imported")
-        return convert_lidar_batch, convert_gps_batch, convert_images_batch, LidarConverterError, GpsConverterError, ImageConverterError, True
+#         return convert_lidar_batch, convert_gps_batch, convert_images_batch, LidarConverterError, GpsConverterError, ImageConverterError, True
         
-    except ImportError as e:
-        logger.warning(f"Convertisseurs MCAP non disponibles: {e}")
-        return None, None, None, None, None, None, False
-    except Exception as e:
-        logger.error(f"Erreur lors de l'import des convertisseurs: {e}")
-        return None, None, None, None, None, None, False
+#     except ImportError as e:
+#         logger.warning(f"Convertisseurs MCAP non disponibles: {e}")
+#         return None, None, None, None, None, None, False
+#     except Exception as e:
+#         logger.error(f"Erreur lors de l'import des convertisseurs: {e}")
+#         return None, None, None, None, None, None, False
 
 # Initialisation des convertisseurs
-convert_lidar_batch, convert_gps_batch, convert_images_batch, LidarConverterError, GpsConverterError, ImageConverterError, MCAP_CONVERTERS_AVAILABLE = import_mcap_converters()
+from liddar_csv_converter import convert_lidar_batch, LidarConverterError
+from gps_csv_converter import convert_gps_batch, GpsConverterError
+from compressed_image_extraction import convert_images_batch, ImageConverterError
 
 def parse_arguments():
 	"""Parse command line arguments."""
@@ -281,14 +286,7 @@ def repair_bag(bag_folder: str) -> bool:
 		Return True if success
 	"""
 	print(f"Attempting to repair {bag_folder}")
-	compressed_bags = glob.glob(os.path.join(bag_folder, "*.zstd"))
 	try:
-		for bag in compressed_bags:
-			cmd = f"unzstd  {bag}"
-			logger.info(f"Running: {cmd}")
-			subprocess.run(cmd, shell=True, check=True, cwd=bag_folder)
-		if len(compressed_bags) > 0:
-			logger.info(f"Successfully uncompressed bag")
 		cmd = "ros2 bag reindex ."
 		logger.info(f"Running: {cmd}")
 		subprocess.run(cmd, shell=True, check=True, cwd=bag_folder)
@@ -321,14 +319,6 @@ def convert_mcap_data(record_dir, mcap_format="csv", image_format="all",
 	Returns:
 		dict: Conversion results with success/failure info
 	"""
-	if not MCAP_CONVERTERS_AVAILABLE:
-		logger.warning("MCAP converters not available, skipping MCAP conversion")
-		return {
-			'lidar_success': False, 
-			'gps_success': False, 
-			'images_success': False,
-			'error': 'Converters not available'
-		}
 	
 	record_name = os.path.basename(record_dir)
 	logger.info(f"Converting MCAP data in {record_name}...")
@@ -438,6 +428,21 @@ def convert_mcap_data(record_dir, mcap_format="csv", image_format="all",
 	
 	return results
 
+def decrypt_bag_folder(decryptor, bag_folder):
+	"""Decrypt every .enc folder in bag_folder. Return True for success"""
+	encrypted_files = glob.glob(os.path.join(bag_folder, "*.mcap.enc"))
+	success = True
+	for file in encrypted_files:
+		try:
+			result, error = decryptor.verify_file_integrity(file)
+			if result == False:
+				raise Exception(f"Verifying file integrity: {error}")
+			decryptor.decrypt_file(file)
+		except Exception as e:
+			logger.error(f"Decrypter: file integrity check failed for {file}: {e}")
+			success = False
+	return success
+
 def clean_local_bag_directory(record_dir):
 	"""Delete the bag/ directory locally after successful processing."""
 	bag_path = os.path.join(record_dir, "bag")
@@ -455,7 +460,7 @@ def process_single_record(record, output_dir, hostname=None, password=None, is_c
 						 lidar_only=False, gps_only=False, images_only=False,
 						 skip_lidar=False, skip_gps=False, skip_images=False,
 						 custom_gps_topics=None, custom_image_topics=None):
-	"""Process a single record: import/copy -> repair -> convert -> MCAP conversion -> clean (if enabled)."""
+	"""Process a single record: import/copy -> decrypt + decompress -> repair -> convert -> MCAP to CSV conversion -> clean (if enabled)."""
 	record_name = os.path.basename(record)
 	logger.info(f"Processing record: {record_name}")
 	
@@ -475,14 +480,23 @@ def process_single_record(record, output_dir, hostname=None, password=None, is_c
 	if record_name == "logs":
 		return {'record_name': record_name, 'success': True, 'mcap_results': None}
 	
-	# Step 2: Convert ROS bags (includes repair if needed)
+	# Step 2: Decrypt and decompress bags
+	private_key_path = os.getenv("PRIVATE_KEY_PATH")
+	if private_key_path == None:
+		logger.error(f"Private key path not specified. Cannot decrypt files in {record_name}")
+		return {'record_name': record_name, 'success': False, 'mcap_results': None}
+	decryptor = ROSBagDecryptor(private_key_path)
+	if decrypt_bag_folder(decryptor, os.path.join(target_dir, 'bag')) == False:
+		return {'record_name': record_name, 'success': False, 'mcap_results': None}
+
+	# Step 3: Convert ROS bags (includes repair if needed)
 	conversion_success = convert_single_bag(target_dir)
 	
 	if not conversion_success:
 		logger.error(f"Failed to convert ROS bags for {record_name}")
 		return {'record_name': record_name, 'success': False, 'mcap_results': None}
 	
-	# Step 3: Convert MCAP data if enabled
+	# Step 4: Convert MCAP data if enabled
 	mcap_results = {'lidar_success': False, 'gps_success': False, 'images_success': False}
 	if not skip_mcap and conversion_success:
 		mcap_results = convert_mcap_data(
@@ -513,7 +527,7 @@ def process_single_record(record, output_dir, hostname=None, password=None, is_c
 		else:
 			logger.warning(f"MCAP conversion had no successful outputs for {record_name}")
 	
-	# Step 4: Clean local bag directory if enabled and successful
+	# Step 5: Clean local bag directory if enabled and successful
 	if clean and conversion_success:
 		clean_local_bag_directory(target_dir)
 	
@@ -582,16 +596,11 @@ def main():
 	if os.environ.get("CYCLOSAFE_WORKSPACE", None) == None:
 		print("[WARNING]: cyclosafe environment does not appear to be source. This is needed for the script to run correctly. To discard this warning and run the script without any cyclosafe environment, just export a CYCLOSAFE_WORPSACE environment variable using : \'export CYCLOSAFE_WORKSPACE=whatever\'")
 
+	if os.environ.get("PRIVATE_KEY_PATH", None) == None:
+		print("[WARNING]: variable PRIVATE_KEY_PATH is not defiined in env. This is needed to decrypt imported data. The script will not run until the end. Starting in 3s... Ctrl-C to terminate.")
+		time.sleep(3)
+
 	args = parse_arguments()
-	
-	# Vérifier la disponibilité des convertisseurs MCAP si nécessaire
-	if not args.skip_mcap and not MCAP_CONVERTERS_AVAILABLE:
-		logger.warning("MCAP converters not available. Install dependencies or check converter files.")
-		logger.warning("Use --skip-mcap to proceed without MCAP conversion")
-		response = input("Continue without MCAP conversion? (y/n): ")
-		if response.lower() not in ['y', 'yes']:
-			sys.exit(1)
-		args.skip_mcap = True
 	
 	# Determine output directory
 	if args.output:

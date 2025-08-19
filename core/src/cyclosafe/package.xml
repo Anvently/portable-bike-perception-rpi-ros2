@@ -29,6 +29,8 @@
   <exec_depend>ldlidar_component</exec_depend>
   <exec_depend>python3-smbus</exec_depend>
   <exec_depend>picamera2</exec_depend>
+  <exec_depend>python3-watchdog</exec_depend>
+  <exec_depend>python3-cryptography</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

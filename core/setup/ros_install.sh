@@ -112,6 +112,6 @@ rosdep init
 rosdep update
 
 sudo apt update
-if ! sudo apt-get install -y cmake curl libopencv-dev python3-pip python3-opencv python3-numpy python3-smbus python3-pigpiod python3-picamera2 python3-opencv >/dev/null 2>&1; then
+if ! sudo apt-get install -y cmake curl libopencv-dev python3-pip python3-opencv python3-numpy python3-smbus python3-pigpiod python3-picamera2 python3-opencv mcap-ros2-support >/dev/null 2>&1; then
     error "Failed to install dependencies but ros core was installed."
 fi

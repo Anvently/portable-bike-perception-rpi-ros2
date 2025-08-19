@@ -92,10 +92,20 @@ def launch_setup(context):
         ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs"))])
         ld.extend([
                 ExecuteProcess(
-                    cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
+                    cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '-o', os.path.join(path, "bag")],
                     output='screen'
                 )
         ])
+        ld.extend([TimerAction(period=3.0,actions=[Node(
+                    package="cyclosafe",
+                    executable="encryptor",
+                    output='screen',
+                    emulate_tty=True,
+                    parameters=[{
+                        'watch_dir': os.path.join(path, "bag"),
+                        'delete_raw_bag': False
+                    }]
+                )])])
     for sensor in sensors_list:
         if sensor.enable == False or sensor.port == None:
             continue
