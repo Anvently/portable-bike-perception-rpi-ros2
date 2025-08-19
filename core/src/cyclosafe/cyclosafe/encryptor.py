@@ -37,11 +37,10 @@ Simplified ROS2 node: monitors a directory and encrypts/compresses new bag files
 class ROSBagCryptoHandler(FileSystemEventHandler):
 	"""Event handler to monitor and encrypt ROS bag files"""
 
-	def __init__(self, public_key_path: str, watch_dir: str, delete_raw_bag: bool, ros_node: Node):
+	def __init__(self, public_key_path: str, watch_dir: str, ros_node: Node):
 		self.ros_node = ros_node  # set first; used by _load_public_key
 		self.public_key = self._load_public_key(public_key_path)
 		self.watch_dir = Path(watch_dir)
-		self.delete_raw_bag =  delete_raw_bag
 
 		# File types to watch
 		self.bag_extensions = {'.db3', '.bag', '.mcap'}
@@ -77,7 +76,7 @@ class ROSBagCryptoHandler(FileSystemEventHandler):
 	def _is_bag_file(self, file_path: str) -> bool:
 		return Path(file_path).suffix.lower() in self.bag_extensions
 
-	def _is_file_complete(self, file_path: str, stability_time: float = 15) -> bool:
+	def _is_file_complete(self, file_path: str, stability_time: float = 2) -> bool:
 		"""Check if file size is stable for `stability_time` seconds."""
 		try:
 			size1 = os.path.getsize(file_path)
@@ -188,7 +187,7 @@ class ROSBagCryptoHandler(FileSystemEventHandler):
 			self.ros_node.get_logger().info(f"Encrypted file saved: {output_file}")
 
 			# Optionally delete the original file
-			if self.delete_raw_bag and self._secure_delete(file_path):
+			if self._secure_delete(file_path):
 				self.ros_node.get_logger().info(f"Original file deleted: {file_path}")
 
 			self.stats['files_encrypted'] += 1
@@ -230,10 +229,25 @@ class ROSBagCryptoHandler(FileSystemEventHandler):
 			f"Found {len(unencrypted_bags)} unencrypted bag file(s)"
 		)
 		for bag_file in unencrypted_bags:
-			if self._wait_for_file_stability(bag_file, 10):
+			if self._wait_for_file_stability(bag_file):
 				self._encrypt_file(str(bag_file))
 			else:
 				self.ros_node.get_logger().warning(f"Skipping unstable file: {bag_file}")
+
+		# Wait briefly for ongoing encryption
+		start_time = time.time()
+		max_wait = 10
+		while self.processing_files and (time.time() - start_time) < max_wait:
+			self.ros_node.get_logger().info(
+				f"Waiting for {len(self.processing_files)} file(s) to finish encryption…"
+			)
+			time.sleep(0.5)
+		if self.processing_files:
+			self.ros_node.get_logger().warning(
+				f"Some files are still being processed: {self.processing_files}"
+			)
+		else:
+			self.ros_node.get_logger().info("All files processed successfully")
 
 
 class BagCryptoNode(Node):
@@ -245,11 +259,9 @@ class BagCryptoNode(Node):
 		# Parameters
 		self.declare_parameter('watch_dir', '')
 		self.declare_parameter('public_key_path', '')
-		self.declare_parameter('delete_raw_bag', True)
 
 		self.watch_dir = self.get_parameter('watch_dir').get_parameter_value().string_value
 		self.public_key_path = self.get_parameter('public_key_path').get_parameter_value().string_value
-		self.delete_raw_bag = self.get_parameter('delete_raw_bag').get_parameter_value().bool_value
 
 		# Fallback to env var for public key
 		if not self.public_key_path:
@@ -285,7 +297,7 @@ class BagCryptoNode(Node):
 			return False
 		try:
 			self.event_handler = ROSBagCryptoHandler(
-				self.public_key_path, self.watch_dir, self.delete_raw_bag, self
+				self.public_key_path, self.watch_dir, self
 			)
 			self.observer = Observer()
 			self.observer.schedule(self.event_handler, self.watch_dir, recursive=True)

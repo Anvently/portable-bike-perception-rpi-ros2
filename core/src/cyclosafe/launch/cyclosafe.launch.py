@@ -102,8 +102,7 @@ def launch_setup(context):
                     output='screen',
                     emulate_tty=True,
                     parameters=[{
-                        'watch_dir': os.path.join(path, "bag"),
-                        'delete_raw_bag': False
+                        'watch_dir': os.path.join(path, "bag")
                     }]
                 )])])
     for sensor in sensors_list:
