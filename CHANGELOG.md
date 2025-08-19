@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.2.0] - 2025-08-19
+
+### Added
+
+- **ENCRYPTION**
+  - encryptor node to compress and encrypt ros bag as they are created
+  - encryptor node use AES algorithm, the key is encrypted with an RSA public key.
+    - the only way to decrypt the AES key is to have to RSA private key
+- core/.env : `$ENCRYPTION` environment variable can be defined to 1 to enable encryption
+- import_recordings : added verbose option to enable `INFO` log level (default is set to WARNING)
+
+### Modified
+
+- cyclosafe.launch.py:
+  - if `$ENCRYPTION=1` :
+    - rosbag recorder is launched withtout compression
+    - encryptor node is launched
+  - else
+    - rosbag recorder is launched with compression
+    - encryptor node is not launched*
+- launch_wrapper.sh :
+  - adapted `$EXPECTED_NODE` calculation to handle the encryptor node
+- .env: `$SHUTDOWN_DELAY` default value increased to 10s in order for the encryptor node to finish its encryptions
+- scripts/csv_importer : adapted scripts to be more efficient, simplified module imports
+
 ## [1.1.1] - 2025-08-14
 
 ### Added

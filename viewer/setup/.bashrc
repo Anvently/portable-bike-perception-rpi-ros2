@@ -8,6 +8,7 @@ echo "workspace: $CYCLOSAFE_WORKSPACE"
 export CYCLOSAFE_WORKSPACE=$CYCLOSAFE_WORKSPACE
 export HOST_IP=$HOST_IP
 export RASPI_IP=$RASPI_IP
+export PRIVATE_KEY_PATH=$PRIVATE_KEY_PATH
 
 if [ -f $CYCLOSAFE_WORKSPACE/install/setup.bash ]; then
     source $CYCLOSAFE_WORKSPACE/install/setup.bash

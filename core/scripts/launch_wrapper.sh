@@ -32,14 +32,19 @@ DISK_USAGE=$(df -BM / | awk 'NR==2{print $4}' | sed 's/M//')
 RECORD_OPTION="true"
 EXPECTED_NODES=5
 
+if [ "$ENCRYPTION" = "1" ]; then
+	ENCRYPT_OPTION="true"
+	EXPECTED_NODES=$((EXPECTED_NODES + 1))
+	log "INFO" "Encryption enabled. Expected nodes increased to $EXPECTED_NODES"
+fi
+
 if [ $DISK_USAGE -lt $LOW_STORAGE_TRESHOLD ]; then
 	log "INFO" "Low storage detected ($DISK_USAGE MB available). Recording disabled"
 	RECORD_OPTION="false"
-	EXPECTED_NODES=4
+	EXPECTED_NODES=$((EXPECTED_NODES - 1))
 else
 	log "INFO" "Storage OK ($DISK_USAGE MB available). Recording enabled"
 fi
-
 # Gestionnaire de signal SIGINT
 cleanup() {
 	log "INFO" "Stopped via SIGINT"
@@ -47,6 +52,7 @@ cleanup() {
 		log "INFO" "Terminating ros2 launch process..."
 		kill -SIGINT $LAUNCH_PID
 		wait $LAUNCH_PID 2>/dev/null || true
+		log "INFO" "Gracefull shutdown of cyclosafe completed."
 	fi
 	exit 0
 }
@@ -54,7 +60,7 @@ cleanup() {
 # Intercepter SIGINT
 trap cleanup SIGINT
 
-ros2 launch cyclosafe cyclosafe.launch.py record:=$RECORD_OPTION save:=false &
+ros2 launch cyclosafe cyclosafe.launch.py record:=$RECORD_OPTION save:=false encrypt:=$ENCRYPT_OPTION &
 LAUNCH_PID=$!
 CHECK_INTERVAL=30
 

@@ -46,6 +46,7 @@ launch_args = [
     DeclareLaunchArgument('log_level', default_value=TextSubstitution(text="info"), description="Log level for all nodes"),
     DeclareLaunchArgument('record', default_value=TextSubstitution(text="false"), description="Capture every topic in a bag"),
     DeclareLaunchArgument('config', default_value=TextSubstitution(text=""), description="Optional path to a custom config file containing sensors_list"),
+    DeclareLaunchArgument('encrypt', default_value=TextSubstitution(text="false"), description="Encrypt and compress bags as they are created"),
 ]
 
 def setup_directory(parent_dir: str, time_start: float) -> str:
@@ -81,6 +82,7 @@ def launch_setup(context):
     log_level = LaunchConfiguration('log_level').perform(context)
     record = str2bool(LaunchConfiguration('record').perform(context))
     config_path = LaunchConfiguration('config').perform(context)
+    encrypt = str2bool(LaunchConfiguration('encrypt').perform(context))
     time_start = time.time()
     print(f"Simulation start time = {time_start}")
 
@@ -92,10 +94,22 @@ def launch_setup(context):
         ld.extend([SetEnvironmentVariable(name='ROS_LOG_DIR', value=os.path.join(path, "logs"))])
         ld.extend([
                 ExecuteProcess(
-                    cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
+                    cmd=['ros2', 'bag', 'record', '-a', '-b', '50000000', '-o', os.path.join(path, "bag")] if encrypt
+                        else ['ros2', 'bag', 'record', '-a', '-b', '50000000', '--compression-mode', 'file', '--compression-format', 'zstd', '-o', os.path.join(path, "bag")],
                     output='screen'
                 )
         ])
+        if encrypt:
+            ld.extend([TimerAction(period=3.0,actions=[Node(
+                        package="cyclosafe",
+                        executable="encryptor",
+                        output='screen',
+                        emulate_tty=True,
+                        parameters=[{
+                            'watch_dir': os.path.join(path, "bag"),
+                            'delete_raw_bag': True
+                        }],
+                    )])])
     for sensor in sensors_list:
         if sensor.enable == False or sensor.port == None:
             continue
