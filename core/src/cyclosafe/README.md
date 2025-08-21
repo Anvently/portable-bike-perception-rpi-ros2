@@ -6,6 +6,7 @@ Contient :
 - l'ensemble des noeuds de capteur écrits en python, à savoir :
 	- [**noeud gps**](#gpspy) publiant des *cyclosafe_interfaces/msg/NavSatInfo*
 	- [**noeud caméra**](#camera_pipy) publiant des *sensor_msgs/msg/CompressedImage* sur le topic ***
+	- [**noeud d'encryption**](src/cyclosafe/README.md#encryptor) : surveille les rosbag créés dans un dossier donné, les compresse et les encrypte au fur et à mesure qu'ils sont créés.
 - l'implémentation de classes utilisées par des noeuds ou d'autres packages :
 	- [**ASerialSensor**](#aserialsensor) : modèle de noeud générique parsant des données envoyées via serial
 	- [**ACamera**](#acamera) : modèle de noeud caméra0
@@ -174,6 +175,57 @@ Obsolete car :
 > - **défaut** : *0.0*
 > - **unité** : secondes depuis l'epoch
 
+## encryptor.py
+
+Surveille les rosbag (fichiers `.mcap`) créés dans un dossier et lorsqu'ils sont stables (leur taille ne bouge plus), les compresse et les encrypte vers un fichier `.mcap.enc`.
+
+Le chiffrement utilisé est un chiffrement RSA + AES. un clé AES de 256 bits est générée pour chaque fichier et utilisée pour crypter la totalité du fichier.
+Cette clé est ensuite cryptée avec la clé public RSA du projet et la clé AES chiffrée est placée en cair dans le header du fichier encrypté. 
+Les fichiers sont compressés avec zstd avant d'être encryptés.
+
+Un header contenant des metadata sur les fichiers d'origine est écrit  au début de chaque fichier `.enc`.
+
+Si l'encryption réussie, le fichier original est **suprimé**.
+
+Ce header contient :
+
+~~~
+'original_name': file_path.name,
+'compression_method': 'zstd',
+'encryption_method': 'RSA-OAEP + AES-256-CBC',
+'key_length': len(encrypted_aes_key),
+'iv_length': len(iv),
+'timestamp': time.time(), #encryption time
+'original_size': original_size,
+'compressed_size': len(data),
+~~~
+
+### Paramètres
+
+> **watch_dir** : string
+> - chemin sur lequel sont surveillés et encryptés les rosbag
+> - **requis**
+
+> **public_key_path** : string
+> - chemin vers le fichier `.pem` contenant la clé RSA publique qui sera utilisée pour chiffrer la clé AES.
+> - **si omis**: la variable d'environnement `$PUBLIC_KEY_PATH` sera lue afin de déterminé le chemin à utiliser.
+
+### Example
+
+~~~
+ros2 run cyclosafe encryptor --ros-args -p watch_dir:=$CYCLOSAFE_RECORD/20250821-111521/bag -p public_key_path:=$PUBLIC_KEY_PATH
+~~~
+
+### Stabilité des bags
+
+Les bags sont encryptés seulement lorsqu'ils sont détectés comme étant **stables**, c'est à dire lorsque leur taille ne varie plus pendant un certain laps de temps. Cet intervalle de temps est défini par défaut à `15s` mais est réduit à `3s` lors de la fermeture du programme.
+
+### Fermeture du programme
+
+Lorsque le noeud est arrêté (par l'utilisateur ou par le système en cas d'un appui sur le bouton d'extinction), il arrête de surveiller les dossiers et fait en sorte d'encrypter les fichiers non encryptés restant dans le dossier. le `stability time` est réduit à `3s`.
+
+Si le programme est fermé alors qu'il n'a pas eu le temps d'encrypter tous les fichiers, les fichiers restants resteront intouchées et  lisibles par l'utilisateur.
+
 # Classes
 
 ## ASerialSensor
@@ -294,21 +346,17 @@ ros2 launch cyclosafe cyclsoafe.launch.py record:=true save:=false
 
 > **record** : str
 > - défaut: **"false""**
-> - si **true**, le programme **rosbag record** sera lancé et l'ensemble des messages publiés par les noeuds seront enregistrés dans un rosbag.
+> - si **true**, le programme **rosbag record** sera lancé et l'ensemble des messages publiés par les noeuds seront enregistrés dans un rosbag compressé. Si `encrypt:=true`, le programme **rosbag record** ne compressera pas les rosbag car c'est à l'encryptor de s'en occuper.
+
+> **encrypt** : str
+> - défaut: **"true""**
+> - si **true**, [le noeud encryptor](#encryptorpy) sera lancé pour compresser et encrypter les bags. Ne peut-être utilisé qu'avec `record:=true`.
 
 > **out_path** : str
 > - défaut: **""**
 > - indique le répertoire d'enregistrement du dossier
 > - si **""**,  le répertoire utilisé correspond à la variable d'environnement **$CYCLOSAFE_RECORD**
 > - le nom du dossier contenant les enregistrement sera: ***out_path/YYYYMMDD-HHMMSS***
-
-> **save** : str
-> - défaut: **"false""**
-> - si **true**, le noeud [**hub**](../cyclosafe_hub/README.md) sera démarré et enregistrera les mesures dans des fichiers isolés au format CSV.
-> - **Obsolete** : non mis à jour depuis longtemps
-> 	- gère les données publiées sous forme de *sensors_msgs/msg/range* et les images
-> 	- ne gère que les données gps publiées sous forme de *sensor_msgs/msg/NavSatFix* (et non de *cyclosafe_interfaces/msg/NavSatInfo*)
-> 	- contrairement au rosbag, ne compresse pas les données
 
 > **log_level** : str
 > - défaut: **"info""**
@@ -340,14 +388,15 @@ La structure de [**cyclosafe.launch.py**](launch/cyclosafe.launch.py) n'est pas 
 1. **Execution de la fonction opaque launch_setup()** avec le contexte (cad. les arguments transmis avec la commande **ros2 launch cyclosafe cyclosafe.launch.py [...args])**
 2. **Résolution des arguments**
 3. **Prise du start_time**, valeur qui sera transmise en paramètre à chacun des noeuds lancés
-4. **Optionnel : lancement de l'enregistrement du rosbag** si l'argument **record** est à **true**
-5. **Optionnel : lancement du noeud hub** si l'argument **save** est à **true**
-6. **Lancement de chaque noeud** à partir de la liste des capteurs importée depuis **config.py**
+4. **Optionnel si l'argument record** est à **true** : 
+      - lancement de l'enregistrement du rosbag avec `ros2 bag record`.
+      - si `encrypt:=true` : lancement du noeud encryptor pour compresser et encrypter les rosbag.
+5. **Lancement de chaque noeud** à partir de la liste des capteurs importée depuis **config.py**
    - les noeuds avec **enable=false** sont ignorés
    - **start_time** est transmis à chaque noeud
    - un délai est éventuellement ajouté en fonction de l'agument **delay**
    - le **log_level** associé au noeud est ajusté sur celui spécifique au noeud, ou à défaut celui de la config
-7. La description finale est renvoyée pour être lancée
+6. La description finale est renvoyée pour être lancée
 
 
 

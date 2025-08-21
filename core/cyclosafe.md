@@ -37,13 +37,8 @@ Noeud central du projet.
 Contient :
 - l'ensemble des noeuds de capteur écrits en python, à savoir :
 	- [**noeud gps**](src/cyclosafe/README.md#gpspy) publiant des *cyclosafe_interfaces/msg/NavSatInfo*
-	- 4 noeuds pour différents sonars  publiant des *sensor_msgs/msg/Range*
-		- [**sonar**](src/cyclosafe/README.md#sonarpy) pour la gamme MaxBotix USB
-		- [**sonar_sr04**](src/cyclosafe/README.md#sonar_sr04py) pour le modèle SR04
-		- [**sonar_lv_pw**](src/cyclosafe/README.md#sonar_lv_pwpy-obsolete) pour la gamme MaxBotix en mesurant la largeur des pulse (PWM)
-		- [**sonar_rs232**](src/cyclosafe/README.md#sonar_rs232py) pour la gamme MaxBotix LV10X0
-	- [**tof_lidar**](src/cyclosafe/README.md#tof_lidarpy) pour le lidar unidirectionnel de Waveshare publiant des *sensor_msgs/msg/Range*
 	- [**noeud caméra**](src/cyclosafe/README.md#camera_pipy) publiant des *sensor_msgs/msg/CompressedImage* sur le topic ***
+	- [**noeud d'encryption**](src/cyclosafe/README.md#encryptorpy) : surveille les rosbag créés dans un dossier donné, les compresse et les encrypte au fur et à mesure qu'ils sont créés.
 - l'implémentation de classes utilisées par des noeuds ou d'autres packages :
 	- [**ASerialSensor**](src/cyclosafe/README.md#aserialsensor) : modèle de noeud générique parsant des données envoyées via serial
 	- [**ACamera**](src/cyclosafe/README.md#acamera) : modèle de noeud caméra0

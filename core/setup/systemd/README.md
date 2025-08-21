@@ -20,7 +20,7 @@ C'est le service responsable de lancer la launch description principale de cyclo
 
 S'il est activé (**sudo systemctl enable cyclosafed.service**), les mesures sont prises dès le démarrage du raspberry.
 
-Il lance le script [`launch_wrapper.sh`](../../scripts/launch_wrapper.sh). Il s'agit d'un wrapper pour sourcer l'environnement ROS et executer la commande `ros2 launch cyclosafe cyclosafe.launch.py record:=true save:=false`.
+Il lance le script [`launch_wrapper.sh`](../../scripts/launch_wrapper.sh). Il s'agit d'un wrapper pour sourcer l'environnement ROS et executer la commande `ros2 launch cyclosafe cyclosafe.launch.py record:=true`.
 
 > **Note** : ce service est dépendant du bon fonctionnement des services [**gpiod.service**](#gpiodservice) et [**gps_time.service**](#gps_timeservice).
 
