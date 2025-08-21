@@ -305,7 +305,7 @@ class BagCryptoNode(Node):
 				self.event_handler.request_shutdown()
 			if self.observer:
 				self.observer.stop()
-				self.observer.join(0.0)
+				# self.observer.join(0.0)
 			self.is_running = False
 			self.get_logger().info('Bag encryption monitoring stopped')
 			return True

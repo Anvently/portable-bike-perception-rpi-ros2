@@ -218,11 +218,11 @@ ros2 run cyclosafe encryptor --ros-args -p watch_dir:=$CYCLOSAFE_RECORD/20250821
 
 ### Stabilité des bags
 
-Les bags sont encryptés seulement lorsqu'ils sont détectés comme étant **stables**, c'est à dire lorsque leur taille ne varie plus pendant un certain laps de temps. Cet intervalle de temps est défini par défaut à `15s` mais est réduit à `3s` lors de la fermeture du programme.
+Les bags sont encryptés seulement lorsqu'ils sont détectés comme étant **stables**, c'est à dire lorsque leur taille ne varie plus pendant un certain laps de temps. Cet intervalle de temps est défini par défaut à `15s` mais est réduit à `2s` lors de la fermeture du programme.
 
 ### Fermeture du programme
 
-Lorsque le noeud est arrêté (par l'utilisateur ou par le système en cas d'un appui sur le bouton d'extinction), il arrête de surveiller les dossiers et fait en sorte d'encrypter les fichiers non encryptés restant dans le dossier. le `stability time` est réduit à `3s`.
+Lorsque le noeud est arrêté (par l'utilisateur ou par le système en cas d'un appui sur le bouton d'extinction), il arrête de surveiller les dossiers et fait en sorte d'encrypter les fichiers non encryptés restant dans le dossier. le `stability time` est réduit à `2s`.
 
 Si le programme est fermé alors qu'il n'a pas eu le temps d'encrypter tous les fichiers, les fichiers restants resteront intouchées et  lisibles par l'utilisateur.
 
