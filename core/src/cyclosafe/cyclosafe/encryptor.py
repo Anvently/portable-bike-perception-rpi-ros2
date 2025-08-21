@@ -13,7 +13,6 @@
 
 import os
 import time
-import signal
 from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -205,6 +204,8 @@ class ROSBagCryptoHandler(FileSystemEventHandler):
 		if not event.is_directory and self._is_bag_file(event.src_path):
 			self.ros_node.get_logger().info(f"New bag file detected: {event.src_path}")
 			if self._is_file_complete(event.src_path):
+				if self.shutdown_requested:
+					return
 				self._encrypt_file(event.src_path)
 
 	def on_modified(self, event):
@@ -212,6 +213,8 @@ class ROSBagCryptoHandler(FileSystemEventHandler):
 			return
 		if not event.is_directory and self._is_bag_file(event.src_path):
 			if self._is_file_complete(event.src_path):
+				if self.shutdown_requested:
+					return
 				self._encrypt_file(event.src_path)
 
 	# Final pass on shutdown
@@ -302,10 +305,7 @@ class BagCryptoNode(Node):
 				self.event_handler.request_shutdown()
 			if self.observer:
 				self.observer.stop()
-				self.get_logger().debug('Waiting for observer thread to join')
-				self.observer.join()
-			else:
-				self.get_logger().debug('Observer is undefined')
+				self.observer.join(0.0)
 			self.is_running = False
 			self.get_logger().info('Bag encryption monitoring stopped')
 			return True

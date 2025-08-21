@@ -50,7 +50,7 @@ fi
 systemctl stop cyclosafed.service
 sleep $(($SHUTDOWN_DELAY + 1))
 
-systemctl is-active --quiet service && log "WARNING" "Shutdown while service still active"
+systemctl is-active --quiet cyclosafed.service && log "WARNING" "Shutdown while service still active"
 
 if [ $EXIT_CODE -eq 255 ] || [ $EXIT_CODE -eq 254 ]; then
 	shutdown -h now

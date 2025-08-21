@@ -19,7 +19,6 @@
   <depend>robot_state_publisher</depend>
   <depend>rclpy</depend>
   <depend>python3-rich</depend>
-  <depend>python3-pandas</depend>
   <depend>python3-cryptography</depend>
   <depend>mcap-ros2-support</depend>
 

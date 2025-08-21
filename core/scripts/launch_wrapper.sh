@@ -66,12 +66,22 @@ CHECK_INTERVAL=30
 
 # Fonction pour vérifier les nœuds actifs
 check_nodes() {
-	local active_nodes
-	active_nodes=$(ros2 node list | wc -l)
-	if [ "$active_nodes" -lt "$EXPECTED_NODES" ]; then
-		log "WARNING" "Expected $EXPECTED_NODES nodes, but only $active_nodes found. Restarting..."
+	local active_nodes_first
+	local active_nodes_second
+	
+	active_nodes_first=$(ros2 node list | wc -l)
+	
+	sleep 1
+	
+	active_nodes_second=$(ros2 node list | wc -l)
+	
+	if [ "$active_nodes_first" -lt "$EXPECTED_NODES" ] && [ "$active_nodes_second" -lt "$EXPECTED_NODES" ]; then
+		log "WARNING" "Expected $EXPECTED_NODES nodes, but only $active_nodes_first/$active_nodes_second found in consecutive checks. Restarting..."
 		kill -SIGINT $LAUNCH_PID
 		exit 1
+	elif [ "$active_nodes_first" -lt "$EXPECTED_NODES" ] || [ "$active_nodes_second" -lt "$EXPECTED_NODES" ]; then
+		# Si seulement une des deux vérifications échoue, on log un avertissement mais on continue
+		log "INFO" "Node count fluctuation detected: $active_nodes_first/$active_nodes_second (expected: $EXPECTED_NODES). Continuing monitoring..."
 	fi
 }
 
