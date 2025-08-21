@@ -112,7 +112,7 @@ class GPIOController():
 		try:
 			bus_voltage = self.ina219.get_bus_voltage_V()
 		except:
-			pass #Make sure the script won't crash if error related to I2C
+			return #Make sure the script won't crash if error related to I2C
 		if bus_voltage < BATTERY_VOLTAGE_TRESHOLD:
 			raise BatteryException()
 		elif bus_voltage < LOW_BATTERY_TRESHOLD:
@@ -131,6 +131,7 @@ class GPIOController():
 					self.toggle(LED_BUZY_GPIO)
 				time.sleep(0.25)
 				count += 1
+			print("Shutting down...")
 			shutdown_type = BUTTON_SHUTDOWN
 		except BatteryException:
 			shutdown_type = BATTERY_SHUTDOWN
@@ -151,9 +152,7 @@ gpio_controler = GPIOController()
 
 def host_shutdown(GPIO, level, tick):
 	"""Shutdown host computer."""
-	print("Shutting down...")
 	global button_pressed
-	gpio_controler.turn_on(LED_BUZY_GPIO)
 	button_pressed = True
 
 def main(args=None):

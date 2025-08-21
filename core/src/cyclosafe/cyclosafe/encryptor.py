@@ -25,6 +25,7 @@ import zstandard as zstd
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import ExternalShutdownException
+import threading
 
 """
 Simplified ROS2 node: monitors a directory and encrypts/compresses new bag files.
@@ -300,14 +301,26 @@ class BagCryptoNode(Node):
 	def stop_monitoring(self) -> bool:
 		if not self.is_running:
 			return False
+		
+		def async_stop():
+			"""Asynchronous observer stop"""
+			try:
+				if self.observer:
+					self.observer.stop()
+					# Join avec timeout très court
+					self.observer.join(0.1)
+			except Exception as e:
+				self.get_logger().warning(f"Observer stop exception: {e}")
+		
 		try:
 			if self.event_handler:
 				self.event_handler.request_shutdown()
-			if self.observer:
-				self.observer.stop()
-				# self.observer.join(0.0)
+			
+			stop_thread = threading.Thread(target=async_stop, daemon=True)
+			stop_thread.start()
+			
 			self.is_running = False
-			self.get_logger().info('Bag encryption monitoring stopped')
+			self.get_logger().info('Bag encryption monitoring stopped (async)')
 			return True
 		except Exception as e:
 			self.get_logger().error(f'Error stopping monitoring: {e}')

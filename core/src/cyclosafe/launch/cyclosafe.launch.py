@@ -109,6 +109,7 @@ def launch_setup(context):
                             'watch_dir': os.path.join(path, "bag"),
                             'delete_raw_bag': True
                         }],
+                        # arguments=['--ros-args', '--log-level', 'debug'],
                     )])])
     for sensor in sensors_list:
         if sensor.enable == False or sensor.port == None:
