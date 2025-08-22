@@ -13,11 +13,14 @@ echo "led brightness: $LED_BRIGHTNESS"
 echo "low battery percent: $LOW_BATTERY_PERCENT"
 echo "low storage treshold: $LOW_STORAGE_TRESHOLD MB"
 echo "public key path: $PUBLIC_KEY_PATH"
+echo "encryption: $ENCRYPTION"
+echo "expected nodes: $EXPECTED_NODES"
 
 export CYCLOSAFE_RECORD=$CYCLOSAFE_RECORD
 export PUBLIC_KEY_PATH=$PUBLIC_KEY_PATH
 export SCRIPTS_PATH=$SCRIPTS_PATH
 export ENCRYPTION=$ENCRYPTION
+export EXPECTED_NODES=$EXPECTED_NODES
 
 if [ -f $CYCLOSAFE_WORKSPACE/install/setup.bash ]; then
     source $CYCLOSAFE_WORKSPACE/install/setup.bash

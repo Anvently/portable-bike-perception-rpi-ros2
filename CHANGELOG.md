@@ -10,6 +10,7 @@
     - the only way to decrypt the AES key is to have to RSA private key
 - core/.env : `$ENCRYPTION` environment variable can be defined to 1 to enable encryption
 - import_recordings : added verbose option to enable `INFO` log level (default is set to WARNING)
+- launch_wrapper.sh: `$EXPECTED_NODE` is now defined by an env variable.
 
 ### Modified
 

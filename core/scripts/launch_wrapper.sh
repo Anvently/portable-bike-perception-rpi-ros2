@@ -30,12 +30,13 @@ log() {
 # Vérification de l'espace disque disponible
 DISK_USAGE=$(df -BM / | awk 'NR==2{print $4}' | sed 's/M//')
 RECORD_OPTION="true"
-EXPECTED_NODES=5
 
 if [ "$ENCRYPTION" = "1" ]; then
 	ENCRYPT_OPTION="true"
-	EXPECTED_NODES=$((EXPECTED_NODES + 1))
-	log "INFO" "Encryption enabled. Expected nodes increased to $EXPECTED_NODES"
+	log "INFO" "Encryption enabled."
+else
+	ENCRYPT_OPTION="false"
+	log "INFO" "Encryption disabled."
 fi
 
 if [ $DISK_USAGE -lt $LOW_STORAGE_TRESHOLD ]; then
@@ -60,11 +61,8 @@ cleanup() {
 # Intercepter SIGINT
 trap cleanup SIGINT
 
-if [ "$ENCRYPT_OPTION" -eq 1 ]; then
-    ros2 launch cyclosafe cyclosafe.launch.py record:=$RECORD_OPTION encrypt:=$ENCRYPT_OPTION &
-else
-    ros2 launch cyclosafe cyclosafe.launch.py record:=$RECORD_OPTION &
-fi
+
+ros2 launch cyclosafe cyclosafe.launch.py record:=$RECORD_OPTION encrypt:=$ENCRYPT_OPTION &
 
 LAUNCH_PID=$!
 CHECK_INTERVAL=30
