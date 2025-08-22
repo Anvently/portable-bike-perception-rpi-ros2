@@ -3,7 +3,7 @@
 # Crerated on Tue Aug 05 2025
 # Updated on Tue Aug 05 2025
 #
-#  This file is part of Cyclosafe
+# This file is part of Cyclosafe
 # Copyright (c) 2025 Nicolas Pirard @Anvently
 #
 # This software is governed by the CeCILL license under French law and
@@ -12,93 +12,77 @@
 # license as circulated by CEA, CNRS and INRIA at:
 # https://cecill.info/licences/Licence_CeCILL-B_V1-en.html
 
-
-import os, time, sys
+import os, time, sys, signal
 import battery_monitor
 import psutil
 from battery_monitor import INA219
-import pigpio
+from gpiozero import Button, PWMLED
 
 BTN_RST_GPIO = 16
 LED_BATTERY_GPIO = 9
 LED_BUZY_GPIO= 7
 LED_SD_CARD_GPIO = 10
-# LED_B_GPIO = 9
 
-# Led are turned off via PWM with [0;255] scale.
-# Dutycycle is set to (LED_BRIGHTNESS * 255)
-# So full brightness is achieved with LED_BRIGHTNESS = 1.0 and half brightness with LED_BRIGHTNESS = 0.5
-LED_BRIGHTNESS = float(os.getenv("LED_BRIGHTNESS", "1.0")) # Full brightness
+LED_BRIGHTNESS = float(os.getenv("LED_BRIGHTNESS", "1.0"))
 
-pi = pigpio.pi()
-button_pressed = False
+button = Button(BTN_RST_GPIO, pull_up=True, bounce_time=0.1)
 
 class BatteryException(Exception):
 	pass
 
-# Valeurs de retours
-
 BUTTON_SHUTDOWN = 255
 BATTERY_SHUTDOWN = 254
 
-"""
- Total voltage	= nbr_cell * charge_voltage
-				= 2 * 4.2 = 8.4
-
- Range_per_cell	= charge_voltage - min_voltage
-				= 4.2 - 3 = 1.2
- Min_voltage	= Total voltage - (nbr_cell * range_per_cell)
-				= 8.4 - (2 * 1.2) = 6
-"""
-# Nombre d'accus de la batterie
 NBR_CELLS = 2
-
-# Tension de charge pour un accu
 CHARGE_VOLTAGE = 4.2
-# Tension minimale pour un accu 
-# (techniquement le pallier limite est à 2.5V)
-# (dans les faits les sécurités hardware, cad l'extinction brutale, se mettent en place à 2.8V)
-MIN_VOLTAGE = 3 
+MIN_VOLTAGE = 3
 
 VOLTAGE_RANGE = CHARGE_VOLTAGE - MIN_VOLTAGE
 BUS_CHARGE_VOLTAGE = NBR_CELLS * CHARGE_VOLTAGE
 BATTERY_VOLTAGE_TRESHOLD = BUS_CHARGE_VOLTAGE - (NBR_CELLS * VOLTAGE_RANGE)
 
-# Voltage treshold when battery is less than 20%
 LOW_BATTERY_PERCENT = float(os.getenv("LOW_BATTERY_PERCENT", "0.2"))
 LOW_BATTERY_TRESHOLD = BATTERY_VOLTAGE_TRESHOLD + (LOW_BATTERY_PERCENT * NBR_CELLS * VOLTAGE_RANGE)
 
-# When free storage is less than this threshold (in MB), the SD_CARD led will be turned on.
-LOW_STORAGE_TRESHOLD = int(os.getenv("LOW_STORAGE_TRESHOLD", "512")) # (512MB)
+LOW_STORAGE_TRESHOLD = int(os.getenv("LOW_STORAGE_TRESHOLD", "512"))
 
 class GPIOController():
-	
-	"""
-		Mutliple tasks:
-			- monitor battery state
-			- control state led
-	"""
-
 	def __init__(self):
 		GPIOController.colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (0,255,255), (255,255,255)]
 		self.color_index = 0
 		self.gpio_state = {LED_BATTERY_GPIO: False, LED_BUZY_GPIO: False, LED_SD_CARD_GPIO: False}
+		
+		self.led_battery = PWMLED(LED_BATTERY_GPIO)
+		self.led_busy = PWMLED(LED_BUZY_GPIO)
+		self.led_sd = PWMLED(LED_SD_CARD_GPIO)
+		
 		for gpio in self.gpio_state:
-			pi.set_mode(gpio, pigpio.OUTPUT)
-			pi.set_PWM_range(gpio, 255)
 			self.turn_off(gpio)
-			self.pos = 0
+		self.pos = 0
 		self.enable = True
 
 		self.ina219 = INA219(1, addr=0x42)
 
 	def turn_on(self, gpio):
-		pi.set_PWM_dutycycle(gpio, int(LED_BRIGHTNESS * 255))
+		led = self._get_led(gpio)
+		if led:
+			led.value = LED_BRIGHTNESS
 		self.gpio_state[gpio] = True
 
 	def turn_off(self, gpio):
-		pi.set_PWM_dutycycle(gpio, 0)
+		led = self._get_led(gpio)
+		if led:
+			led.off()
 		self.gpio_state[gpio] = False
+
+	def _get_led(self, gpio):
+		if gpio == LED_BATTERY_GPIO:
+			return self.led_battery
+		elif gpio == LED_BUZY_GPIO:
+			return self.led_busy
+		elif gpio == LED_SD_CARD_GPIO:
+			return self.led_sd
+		return None
 
 	def toggle(self, gpio):
 		if self.gpio_state[gpio]:
@@ -112,20 +96,27 @@ class GPIOController():
 		try:
 			bus_voltage = self.ina219.get_bus_voltage_V()
 		except:
-			return #Make sure the script won't crash if error related to I2C
+			return
 		if bus_voltage < BATTERY_VOLTAGE_TRESHOLD:
 			raise BatteryException()
 		elif bus_voltage < LOW_BATTERY_TRESHOLD:
 			self.turn_on(LED_BATTERY_GPIO)
 
+	def cleanup(self):
+		self.turn_off(LED_BATTERY_GPIO)
+		self.turn_off(LED_SD_CARD_GPIO)
+		self.turn_on(LED_BUZY_GPIO)
+		self.led_battery.close()
+		self.led_sd.close()
+
 	def routine(self, blink = True):
 		shutdown_type = 0
 		try:
 			count = 0
-			while button_pressed == False:
-				if count % 40 == 0: # 40 * 0.25 = 10, every 10s
+			while not button.is_pressed:
+				if count % 40 == 0:
 					self.check_battery_state()
-				if count % 120 == 0: # 120 * 0.25 = 30, every 30s:
+				if count % 120 == 0:
 					self.check_sd_card()
 				if blink:
 					self.toggle(LED_BUZY_GPIO)
@@ -135,39 +126,40 @@ class GPIOController():
 			shutdown_type = BUTTON_SHUTDOWN
 		except BatteryException:
 			shutdown_type = BATTERY_SHUTDOWN
-		gpio_controler.turn_on(LED_BUZY_GPIO)
-		sys.exit(shutdown_type)
 		
+		self.cleanup()
+		return shutdown_type
 
 	def check_sd_card(self) -> bool:
 		mb_available = psutil.disk_usage("/").free / 1024 / 1024
+		print(mb_available, LOW_STORAGE_TRESHOLD)
 		if (mb_available < LOW_STORAGE_TRESHOLD):
 			self.turn_on(LED_SD_CARD_GPIO)
 			return False
 		self.turn_off(LED_SD_CARD_GPIO)
 		return True
 
-
 gpio_controler = GPIOController()
 
-def host_shutdown(GPIO, level, tick):
-	"""Shutdown host computer."""
-	global button_pressed
-	button_pressed = True
+def signal_handler(signum, frame):
+	gpio_controler.cleanup()
+	sys.exit(0)
 
 def main(args=None):
 	global gpio_controler
-	# pi.set_pull_up_down(BTN_RST_GPIO, pigpio.PUD_UP)
-	pi.set_mode(BTN_RST_GPIO, pigpio.INPUT)
-	pi.callback(BTN_RST_GPIO, pigpio.FALLING_EDGE, host_shutdown)
-	if gpio_controler.check_sd_card() == False:
-		gpio_controler.routine(blink=False)
-		# If SD card is full at startup, no recording will start
-		# So we don't want to blink the buzy led
-	else:
-		gpio_controler.routine()
 	
-	sys.exit(0)
+	signal.signal(signal.SIGINT, signal_handler)
+	signal.signal(signal.SIGTERM, signal_handler)
+	shutdown_code = 0
+	try:
+		if gpio_controler.check_sd_card() == False:
+			shutdown_code = gpio_controler.routine(blink=False)
+		else:
+			shutdown_code = gpio_controler.routine(blink=True)
+	except:
+		pass
+
+	sys.exit(shutdown_code)
 
 if __name__ == '__main__':
 	main()

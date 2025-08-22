@@ -60,7 +60,12 @@ cleanup() {
 # Intercepter SIGINT
 trap cleanup SIGINT
 
-ros2 launch cyclosafe cyclosafe.launch.py record:=$RECORD_OPTION encrypt:=$ENCRYPT_OPTION &
+if [ "$ENCRYPT_OPTION" -eq 1 ]; then
+    ros2 launch cyclosafe cyclosafe.launch.py record:=$RECORD_OPTION encrypt:=$ENCRYPT_OPTION &
+else
+    ros2 launch cyclosafe cyclosafe.launch.py record:=$RECORD_OPTION &
+fi
+
 LAUNCH_PID=$!
 CHECK_INTERVAL=30
 

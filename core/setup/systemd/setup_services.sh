@@ -112,8 +112,6 @@ if [ $? -eq 4 ]; then
 cat << EOF | sudo tee /etc/systemd/system/gpiod.service
 [Unit]
 Description=gpio daemon controlling led blinking, button press and battery monitoring
-After=pigpiod.service
-Requires=pigpiod.service
 StartLimitIntervalSec=60
 StartLimitBurst=3
 
@@ -158,35 +156,6 @@ TimeoutStopSec=10
 WantedBy=multi-user.target
 EOF
 fi
-
-sudo systemctl status pigpiod.service > /dev/null
-if [ $? -eq 4 ]; then
-  info "Installing pigpiod service"
-  # Créer le fichier service
-cat << EOF | sudo tee /etc/systemd/system/pigpiod.service
-[Unit]
-Description=pigpio library daemon
-After=network.target
-
-[Service]
-Type=simple
-Restart=on-failure
-ExecStart=/usr/bin/pigpiod -lg
-TimeoutStopSec=1
-KillMode=mixed
-KillSignal=SIGKILL
-SendSIGKILL=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
-fi
-
-sudo systemctl daemon-reload
-
-sudo systemctl enable pigpiod.service
-sudo systemctl start pigpiod.service
-info "pigpiod.service enabled and started"
 
 sudo systemctl enable gps_time.service
 sudo systemctl enable gps_time.service

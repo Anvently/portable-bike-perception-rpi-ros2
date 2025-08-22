@@ -35,10 +35,10 @@ log "INFO" "Powered on"
 
 cd $SCRIPT_DIR
 export PYTHONPATH=$SCRIPT_DIR:$PYTHONPATH
+export LOW_STORAGE_TRESHOLD=$LOW_STORAGE_TRESHOLD
 python3 "$PYTHON_SCRIPT"
 EXIT_CODE="$?"
 
-# Vérifier si le retour est -1 ou -2
 if [ $EXIT_CODE -eq 255 ]; then
 	log "INFO" "Shutdown triggered by button"
 elif [ $EXIT_CODE -eq 254 ]; then
@@ -48,13 +48,34 @@ else
 fi
 
 systemctl stop cyclosafed.service
-sleep $(($SHUTDOWN_DELAY + 1))
 
-systemctl is-active --quiet cyclosafed.service && log "WARNING" "Shutdown while service still active"
+wait_start_time=$(date +%s)
+max_wait_time=$SHUTDOWN_DELAY
+
+while systemctl is-active --quiet cyclosafed.service; do
+	current_time=$(date +%s)
+	elapsed_time=$((current_time - wait_start_time))
+	
+	if [ $elapsed_time -ge $max_wait_time ]; then
+		log "WARNING" "Service still active after ${max_wait_time}s timeout, forcing shutdown"
+		break
+	fi
+	
+	# Attendre 0.5 seconde avant de revérifier
+	sleep 0.5
+done
+
+if systemctl is-active --quiet cyclosafed.service; then
+	log "WARNING" "Shutdown while service still active (timeout reached)"
+else
+	service_stop_time=$(date +%s)
+	total_wait_time=$((service_stop_time - wait_start_time))
+	log "INFO" "Service stopped successfully after ${total_wait_time}s"
+fi
 
 if [ $EXIT_CODE -eq 255 ] || [ $EXIT_CODE -eq 254 ]; then
+	log "INFO" "Shutting down system"
 	shutdown -h now
-	# echo "SHUTDOWN"
 else
 	log "WARNING" "Shutdown cancelled"
 fi

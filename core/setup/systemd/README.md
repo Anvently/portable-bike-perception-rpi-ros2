@@ -63,6 +63,3 @@ Service démarrant le script [**gps_time.sh**](../../scripts/README#gps_timesh).
 
 Le script est lancé une seule fois à chaque démarrage.
 
-## pigpiod.service
-
-Lance le daemon de pigpio sur lequel repose la libraire python permettant d'interagir avec les gpio du raspberry.

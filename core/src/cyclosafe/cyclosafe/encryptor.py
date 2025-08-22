@@ -218,6 +218,14 @@ class ROSBagCryptoHandler(FileSystemEventHandler):
 					return
 				self._encrypt_file(event.src_path)
 
+	def wait_for_metadata(self):
+		self.ros_node.get_logger().info("Waiting for metadata file...")
+		while True:
+			if os.path.exists(os.path.join(self.watch_dir, 'metadata.yaml')):
+				self.ros_node.get_logger().info("Metadata found")
+				return
+			time.sleep(0.01)
+
 	# Final pass on shutdown
 	def process_final_files(self):
 		self.ros_node.get_logger().info(
@@ -232,11 +240,9 @@ class ROSBagCryptoHandler(FileSystemEventHandler):
 		self.ros_node.get_logger().info(
 			f"Found {len(unencrypted_bags)} unencrypted bag file(s)"
 		)
+		self.wait_for_metadata()
 		for bag_file in unencrypted_bags:
-			if self._wait_for_file_stability(bag_file, 2):
-				self._encrypt_file(str(bag_file))
-			else:
-				self.ros_node.get_logger().warning(f"Skipping unstable file: {bag_file}")
+			self._encrypt_file(str(bag_file))
 
 
 class BagCryptoNode(Node):

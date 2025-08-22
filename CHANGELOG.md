@@ -25,10 +25,14 @@
 - .env: `$SHUTDOWN_DELAY` default value increased to 10s in order for the encryptor node to finish its encryptions
 - scripts/csv_importer : adapted scripts to be more efficient, simplified module imports
 - core/launch_wrapper.sh : number of node is now checked twice
+- gpio.py : removed pigpiod dependancy and now use gpiozero
+- package.json : changed python3-pigpio to python3-gpiozero
+- gpio.sh : SHUTDOWN_DELAY is now a maximum timeout, and the system can stop quicker if cyclosafed.service has exited cleanly.
 
 ### Fixed
 
 - core/gpio.sh : last warning check to log when shutdown while cyclosafed.service still active was targetting wrong service name
+- issue with pigpiod :  the stop button was randomly not working
 
 ## [1.1.1] - 2025-08-14
 
