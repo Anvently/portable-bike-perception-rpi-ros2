@@ -215,32 +215,61 @@ class RosBagExporter:
 			logger.error(f"Error exporting NavSatInfo: {e}")
 			self.stats["errors"] += 1
 			
-	def export_compressed_image(self, msg, timestamp_sec: float):
+	def export_compressed_image(self, msg, msg_type, timestamp_sec: float):
 		"""Export CompressedImage: metadata sync, image async."""
-
 		dt = datetime.fromtimestamp(timestamp_sec)
-		filename = dt.strftime("%Y%m%d-%H%M%S") + f"_{int((timestamp_sec % 1) * 1000):03d}.jpeg"
+		filename = dt.strftime("%Y%m%d-%H%M%S") + f"_{int((timestamp_sec % 1) * 1000):03d}{".jpeg" if "CompressedImage" in msg_type else ".png"}"
 		filepath = self.images_path / filename
-
+		
 		writer = self.get_csv_writer('images', 'metadata', ['nom', 'date_heure', 'timestamp_unix'])
 		writer.writerow([filename, self.timestamp_to_datetime(timestamp_sec), timestamp_sec])
 		self.stats["images"] += 1
-
+		
 		def task():
 			try:
 				np_arr = np.frombuffer(msg.data, np.uint8)
-				cv_img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-
+				
+				if 'CompressedImage' in msg_type:
+					cv_img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+				else:
+					height = msg.height
+					width = msg.width
+					encoding = msg.encoding
+					
+					if encoding in ['rgb8', 'bgr8']:
+						channels = 3
+						dtype = np.uint8
+					elif encoding in ['rgb16', 'bgr16']:
+						channels = 3
+						dtype = np.uint16
+					elif encoding in ['mono8']:
+						channels = 1
+						dtype = np.uint8
+					elif encoding in ['mono16']:
+						channels = 1
+						dtype = np.uint16
+					else:
+						logger.warning(f"Unsupported encoding: {encoding}")
+						self.stats["errors"] += 1
+						return
+					
+					if channels == 1:
+						cv_img = np_arr.reshape((height, width))
+					else:
+						cv_img = np_arr.reshape((height, width, channels))
+					
+					cv_img = cv_img.astype(dtype)
+				
 				if cv_img is not None:
 					cv2.imwrite(str(filepath), cv_img)
 				else:
 					logger.warning(f"Failed to decode image at timestamp {timestamp_sec}")
 					self.stats["errors"] += 1
-
+					
 			except Exception as e:
-				logger.error(f"Error exporting CompressedImage: {e}")
+				logger.error(f"Error exporting image: {e}")
 				self.stats["errors"] += 1
-
+		
 		future = self.executor.submit(task)
 		self.image_futures.append(future)
 
@@ -268,7 +297,7 @@ class RosBagExporter:
 		total_message = sum(
 			topic.message_count
 			for topic in topics_infos
-			if topic.topic_metadata.type in ['sensor_msgs/msg/LaserScan', 'sensor_msgs/msg/CompressedImage', 'cyclosafe_interfaces/msg/NavSatInfo']
+			if topic.topic_metadata.type in ['sensor_msgs/msg/LaserScan', 'sensor_msgs/msg/CompressedImage', 'sensor_msgs/msg/Image', 'cyclosafe_interfaces/msg/NavSatInfo']
 		)
 		type_map = {topic.name: topic.type for topic in topic_types}
 		logger.info(f"Found {len(type_map)} topics and {total_message} messages")
@@ -297,8 +326,8 @@ class RosBagExporter:
 						self.export_laser_scan(msg, timestamp_sec, topic_name)
 					elif 'NavSatInfo' in msg_type:
 						self.export_nav_sat_info(msg, timestamp_sec, topic_name)
-					elif 'CompressedImage' in msg_type:
-						self.export_compressed_image(msg, timestamp_sec)
+					elif 'Image' in msg_type:
+						self.export_compressed_image(msg, msg_type, timestamp_sec)
 						
 				except Exception as e:
 					logger.error(f"Error processing message from {topic_name}: {e}")

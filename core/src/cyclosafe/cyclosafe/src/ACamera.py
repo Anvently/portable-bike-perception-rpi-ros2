@@ -13,7 +13,7 @@
 
 from rclpy.node import Node, ParameterDescriptor
 from rcl_interfaces.msg import ParameterDescriptor
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import CompressedImage, Image
 from collections import deque
 from abc import abstractmethod
 from cyclosafe_interfaces.srv import SaveImages
@@ -45,9 +45,11 @@ class AImagePublisher(Node):
 			self.declare_parameter('compression', 95, ParameterDescriptor(description="Compression level [0-100]"))
 			self.declare_parameter('preview', False, ParameterDescriptor(description="Enable/Disable preview. Only before start"))
 			self.declare_parameter('start_time', 0.0, ParameterDescriptor(description="Time to be used as the beginning of the simulation. Float value of seconds since epoch."))
+			self.declare_parameter('no_compression', False, ParameterDescriptor(description="Disable jpeg compression. Use Image instead of CompressedImage."))
 			self.update_parameters()
 
 			self.preview = self.get_parameter('preview').get_parameter_value().bool_value
+			self.no_compression = self.get_parameter('no_compression').get_parameter_value().bool_value
 
 			self.start_time = Time(seconds=self.get_parameter('start_time').get_parameter_value().double_value, clock_type=self.get_clock().clock_type)
 
@@ -56,7 +58,10 @@ class AImagePublisher(Node):
 
 			self.init_camera()
 			
-			self.pub = self.create_publisher(CompressedImage, 'images/compressed', 10)
+			if self.no_compression == False:
+				self.pub = self.create_publisher(CompressedImage, 'images/compressed', 10)
+			else:
+				self.pub = self.create_publisher(Image, 'images', 10)
 			self.save_service = self.create_service(SaveImages, 'save_images', self.save_files)
 			self.timer = self.create_timer(self.interval, self.routine)
 		
@@ -124,16 +129,22 @@ class AImagePublisher(Node):
 		_, compressed_img = cv2.imencode('.jpg', image_array, encode_param)
 		return (compressed_img)
 
-	def publish(self, timestamp, img_compressed):
+	def publish(self, timestamp, img_data):
+		if self.no_compression == False:
+			msg = CompressedImage()
+			msg.format = 'jpeg'
+			msg.data = bytes(img_data.tobytes())
+		else:
+			msg = Image()
+			msg.height = self.resolution[1]
+			msg.width = self.resolution[0]
+			msg.encoding = 'bgr8'  # ou 'rgb8' selon votre format
+			msg.step = self.resolution[0] * 3  # 3 bytes par pixel pour BGR/RGB
+			msg.is_bigendian = False
+			msg.data = bytes(img_data.flatten().tobytes())
 		
-		msg = CompressedImage()
 		msg.header.stamp = self.get_clock().now().to_msg()
-		msg.format = 'jpeg'
-		msg.data = bytes(img_compressed.tobytes())
-	
-		# Publier le message
 		self.pub.publish(msg)
-		self.get_logger().debug(f"Published compressed image: {len(msg.data) / 1024:.2f}KB at {timestamp}")
 
 	def update_parameters(self):
 		self.compression = self.get_parameter('compression').get_parameter_value().integer_value
@@ -152,10 +163,18 @@ class AImagePublisher(Node):
 			self.update_parameters()
 			image_array = self.capture()
 			timestamp = self.get_current_timestamp()
-			image_compressed = self.compress(image_array)
-			self.publish(timestamp, image_compressed)
+			
+			if self.no_compression == False:
+				image_compressed = self.compress(image_array)
+				self.publish(timestamp, image_compressed)
+				queue_data = image_compressed
+			else:
+				# Pour les images non compressées, stockez l'array original
+				self.publish(timestamp, image_array)
+				queue_data = image_array
+				
 			if (self.queue_size > 0):
-				self.img_queue.append((timestamp, image_compressed))
+				self.img_queue.append((timestamp, queue_data))
 			self.count += 1
 		except Exception as e:
 			self.get_logger().error(f"Failed to capture image: {str(e)}")

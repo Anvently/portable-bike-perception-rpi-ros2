@@ -135,4 +135,4 @@ Définit l'ensemble des variables d'environnement utilisées par cyclosafe.
 
 > **PUBLIC_KEY_PATH** : chemin vers le fichier `.pem` contenant la clé publique à utiliser pour l'encryptage des bags.
 
-> **EXPECTED_NODE** : définit le nombre de noeud attendu par le service systemd **cyclosafed.service**. Si celui-ci ne détecte pas consécutivement deux fois le bon nombre de noeuds, il est redemarré. Ex : avec encrypt = 1 et tous les noeuds actifs (2*lidars + 1*gps + 1*camera + 1*bag_recorder + 1*encrypt_node = 6). Si encrypt = 0, `EXPECTED_NODE` devra être abaissé à 5.
+> **EXPECTED_NODES** : définit le nombre de noeud attendu par le service systemd **cyclosafed.service**. Si celui-ci ne détecte pas consécutivement deux fois le bon nombre de noeuds, il est redemarré. Ex : avec encrypt = 1 et tous les noeuds actifs (2*lidars + 1*gps + 1*camera + 1*bag_recorder + 1*encrypt_node = 6). Si encrypt = 0, `EXPECTED_NODES` devra être abaissé à 5.
