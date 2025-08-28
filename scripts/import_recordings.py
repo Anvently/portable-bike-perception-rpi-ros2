@@ -292,8 +292,12 @@ def process_single_record(record, output_dir, hostname=None, password=None, is_c
 	if not conversion_success:
 		logger.error(f"Failed to convert ROS bags for {record_name}")
 		return False
+
+	# Step 4: Clean local bag directory if enabled and successful
+	if clean and conversion_success:
+		clean_local_bag_directory(target_dir)
 	
-	# Step 4: Convert MCAP data if enabled
+	# Step 5: Convert MCAP data if enabled
 	if skip_conversion == False:
 		if not os.path.exists(os.path.join(target_dir, "export")):
 			with RosBagExporter(os.path.join(target_dir, "out"), os.path.join(target_dir, "export")) as exporter:
@@ -303,9 +307,6 @@ def process_single_record(record, output_dir, hostname=None, password=None, is_c
 			logger.info(f"Exported data for {record_name} already exist. Skipping...")
 
 		
-	# Step 5: Clean local bag directory if enabled and successful
-	if clean and conversion_success:
-		clean_local_bag_directory(target_dir)
 	
 	logger.info(f"Successfully processed record: {record_name}")
 	return True
