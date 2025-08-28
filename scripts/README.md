@@ -13,6 +13,18 @@ Contient des scripts et utilitaires destinés à faciliter la récupération des
   - [Paramètres](#paramètres)
   - [Procédure normale](#procédure-normale)
   - [Paramètres](#paramètres-1)
+- [gpx\_exporter.py](#gpx_exporterpy)
+  - [Usage](#usage-2)
+  - [Exemple](#exemple-1)
+  - [Paramètres](#paramètres-2)
+- [bag\_converter.py](#bag_converterpy)
+  - [Usage](#usage-3)
+  - [Exemple](#exemple-2)
+  - [Paramètres](#paramètres-3)
+- [decryptor.py](#decryptorpy)
+  - [Usage](#usage-4)
+  - [Exemple](#exemple-3)
+  - [Paramètres](#paramètres-4)
 - [Diagramme UML du projet (section cyclosafe/scripts)](#diagramme-uml-du-projet-section-cyclosafescripts)
 
 # sd_flash.sh
@@ -177,9 +189,9 @@ INFO     Output directory: /home/cycliste/data/pouet                            
 	/home/user/data/
 	└── 20250515-125326 # Date de l'enregistrement
 		├── bag # Dossier contenant les fichiers créés par rosbag
-		│   ├── bag_0.mcap.zstd
-		│   ├── bag_1.mcap.zstd
-		│   └── metadata.yaml
+		│   ├── bag_0.mcap.zstd
+		│   ├── bag_1.mcap.zstd
+		│   └── metadata.yaml
 		└── logs # Un fichier log pour chaque noeud
 		    ├── ldlidar_stl_ros2_node_1008_1747313607000.log
 		    ├── node_lidar_1087_1747313611560.log
@@ -239,21 +251,21 @@ INFO     Output directory: /home/cycliste/data/pouet                            
 	/home/user/data/
 	└── 20250515-125326 # Date de l'enregistrement
 		├── bag # Dossier contenant les fichiers créés par rosbag
-		│   ├── bag_0.mcap.zstd
-		│   ├── bag_0.mcap
-		│   ├── bag_1.mcap.zstd
-		│   ├── bag_1.mcap
-		│   └── metadata.yaml
+		│   ├── bag_0.mcap.zstd
+		│   ├── bag_0.mcap
+		│   ├── bag_1.mcap.zstd
+		│   ├── bag_1.mcap
+		│   └── metadata.yaml
 		├── logs
-		│   ├── ldlidar_stl_ros2_node_1008_1747314778850.log
-		│   ├── node_lidar_1087_1747314783363.log
-		│   ├── python3_1002_1747314780257.log
-		│   ├── python3_1004_1747314785384.log
-		│   ├── python3_1006_1747314780497.log
-		│   └── rplidar_node_1010_1747314778850.log
+		│   ├── ldlidar_stl_ros2_node_1008_1747314778850.log
+		│   ├── node_lidar_1087_1747314783363.log
+		│   ├── python3_1002_1747314780257.log
+		│   ├── python3_1004_1747314785384.log
+		│   ├── python3_1006_1747314780497.log
+		│   └── rplidar_node_1010_1747314778850.log
 		├── out # Dossier de sortie du bag converti
-		│   ├── _0.mcap # Contient l'intégralité de l'enregistrement
-		│   └── metadata.yaml # Information sur l'enregistrement
+		│   ├── _0.mcap # Contient l'intégralité de l'enregistrement
+		│   └── metadata.yaml # Information sur l'enregistrement
 		└── out_options
 	~~~
 
@@ -276,8 +288,8 @@ Lorsque le raspberry s'éteint brutalement ou que [**cyclosafed.service**](../co
 $ tree ~/data/20250515-125326
 /home/user/data/20250515-125326
 ├── bag # Absence du fichier metadata.yaml
-│   ├── bag_0.mcap.zstd
-│   └── bag_1.mcap # Le dernier bag n'est pas compressé
+│   ├── bag_0.mcap.zstd
+│   └── bag_1.mcap # Le dernier bag n'est pas compressé
 └── logs
     ├── ldlidar_stl_ros2_node_1008_1747313607000.log
     ├── node_lidar_1087_1747313611560.log
@@ -348,6 +360,188 @@ $ python3 ./gpx_exporter.py -b ~/data/20250513-064355/out/_0.mcap
 > **-n (--name)**
 > 	- **optionnel**
 > 	- nom de la trace gpx (il ne s'agit pas du nom du fichier mais bien de la trace)
+
+# bag_converter.py
+
+Utilitaire permettant d'exporter les données d'un rosbag vers des fichiers CSV et d'extraire les images. Supporte les types de messages LaserScan, CompressedImage, Image et NavSatInfo.
+
+## Usage
+
+~~~
+$ python3 ./bag_converter.py --help
+usage: bag_converter.py [-h] [-o OUTPUT] [-v] bag_path
+
+Export ROS bag data to CSV files and extract images
+
+positional arguments:
+  bag_path              Path to the directory containing ROS bag files
+
+options:
+  -h, --help            show this help message and exit
+  -o OUTPUT, --output OUTPUT
+                        Output directory (default: bag_path/export)
+  -v, --verbose         Enable verbose logging
+~~~
+
+## Exemple
+
+~~~
+$ python3 ./bag_converter.py ~/data/20250515-125326/out/
+Processing bag from: /home/user/data/20250515-125326/out
+Found 4 topics and 2847 messages
+Processing messages... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:12
+Export completed
+LaserScan messages: 1205
+GPS messages: 87
+Images exported: 1555
+Errors: 0
+Output directory: /home/user/data/20250515-125326/out/export
+~~~
+
+La structure de sortie générée est la suivante :
+~~~
+$ tree ~/data/20250515-125326/out/export/
+/home/user/data/20250515-125326/out/export/
+├── images/                           # Images extraites
+│   ├── 20250515-125430_123.jpeg
+│   ├── 20250515-125431_456.jpeg
+│   └── ...
+├── images_metadata.csv              # Métadonnées des images
+├── lidar_scan_LaserScan.csv        # Données LiDAR
+└── gps_NavSatInfo.csv              # Données GPS
+~~~
+
+## Paramètres
+
+> **bag_path**
+> 	- **obligatoire**
+> 	- chemin vers le dossier contenant les fichiers bag ROS2
+
+> **-o (--output)**
+> 	- **optionnel**
+> 	- **par défaut** : bag_path/export
+> 	- répertoire de sortie pour les fichiers exportés
+
+> **-v (--verbose)**
+> 	- **optionnel**
+> 	- **par défaut** : false
+> 	- active les logs détaillés pour le débogage
+
+Le script traite les types de messages suivants :
+- **LaserScan** : exporte les données LiDAR avec les ranges, intensités et métadonnées de scan
+- **NavSatInfo** : exporte les données GPS avec latitude, longitude, altitude et statut
+- **CompressedImage/Image** : extrait les images et génère un fichier de métadonnées associé
+
+Les images sont sauvegardées de manière asynchrone pour optimiser les performances, et le script gère automatiquement les différents formats d'encodage d'images.
+
+# decryptor.py
+
+Utilitaire de déchiffrement et décompression pour les fichiers de bags ROS chiffrés. Compatible avec le chiffrement hybride RSA+AES et la compression zstd.
+
+## Usage
+
+~~~
+$ python3 ./decryptor.py --help
+usage: decryptor.py [-h] --private-key PRIVATE_KEY [--file FILE] [--directory DIRECTORY] 
+                    [--output-dir OUTPUT_DIR] [--verify] [--info] [--verbose]
+
+ROS bag file decryptor
+
+options:
+  -h, --help            show this help message and exit
+  --private-key PRIVATE_KEY
+                        Path to private key
+  --file FILE           Encrypted file to decrypt
+  --directory DIRECTORY
+                        Directory containing encrypted files
+  --output-dir OUTPUT_DIR
+                        Output directory for decrypted files
+  --verify              Verify file integrity only
+  --info                Show info of encrypted files
+  --verbose, -v         Verbose mode
+~~~
+
+## Exemple
+
+~~~
+$ python3 ./decryptor.py --private-key private_key.pem --file ~/data/encrypted/bag_0.mcap.enc
+2025-08-19 14:32:15,123 - INFO - Private key successfully loaded
+2025-08-19 14:32:15,247 - INFO - Decrypted file saved: /home/user/data/encrypted/bag_0.mcap
+Decrypted file: /home/user/data/encrypted/bag_0.mcap
+
+$ python3 ./decryptor.py --private-key private_key.pem --directory ~/data/encrypted/ --output-dir ~/data/decrypted/
+2025-08-19 14:33:02,456 - INFO - Private key successfully loaded
+2025-08-19 14:33:02,789 - INFO - Decrypted file saved: /home/user/data/decrypted/bag_0.mcap
+2025-08-19 14:33:03,012 - INFO - Decrypted file saved: /home/user/data/decrypted/bag_1.mcap
+2025-08-19 14:33:03,234 - INFO - Decryption finished: 2/2 files
+Decryption finished: 2 files processed
+  - /home/user/data/decrypted/bag_0.mcap
+  - /home/user/data/decrypted/bag_1.mcap
+~~~
+
+**Vérification d'intégrité :**
+~~~
+$ python3 ./decryptor.py --private-key private_key.pem --file bag_0.mcap.enc --verify
+Verification of bag_0.mcap.enc: Valid file
+
+$ python3 ./decryptor.py --private-key private_key.pem --directory ~/data/encrypted/ --verify
+Verification of bag_0.mcap.enc: Valid file
+Verification of bag_1.mcap.enc: Valid file
+~~~
+
+**Information sur les fichiers chiffrés :**
+~~~
+$ python3 ./decryptor.py --private-key private_key.pem --file bag_0.mcap.enc --info
+Encrypted file info: bag_0.mcap.enc
+  Original name: bag_0.mcap
+  Encryption method: RSA-OAEP + AES-256-CBC
+  Compression method: zstd
+  Timestamp: 2025-08-19T14:30:12.456789
+  Encrypted key size: 256 bytes
+  IV size: 16 bytes
+  Encrypted data size: 15728640 bytes
+~~~
+
+## Paramètres
+
+> **--private-key**
+> 	- **obligatoire**
+> 	- chemin vers la clé privée RSA au format PEM pour le déchiffrement
+
+> **--file**
+> 	- **optionnel**
+> 	- chemin vers un fichier .enc à déchiffrer
+> 	- mutuellement exclusif avec --directory
+
+> **--directory**
+> 	- **optionnel**
+> 	- répertoire contenant les fichiers .enc à déchiffrer
+> 	- mutuellement exclusif avec --file
+
+> **--output-dir**
+> 	- **optionnel**
+> 	- **par défaut** : même répertoire que les fichiers chiffrés
+> 	- répertoire de sortie pour les fichiers déchiffrés
+
+> **--verify**
+> 	- **optionnel**
+> 	- vérifie uniquement l'intégrité des fichiers chiffrés sans les déchiffrer
+
+> **--info**
+> 	- **optionnel**
+> 	- affiche les métadonnées des fichiers chiffrés sans les déchiffrer
+
+> **--verbose**
+> 	- **optionnel**
+> 	- **par défaut** : false
+> 	- active les logs détaillés pour le débogage
+
+Le script supporte le déchiffrement de fichiers utilisant :
+- **Chiffrement hybride** : RSA-OAEP pour la clé AES + AES-256-CBC pour les données
+- **Compression** : décompression automatique zstd
+- **Intégrité** : vérification des métadonnées et de la structure des fichiers chiffrés
+
+Le processus de déchiffrement supprime automatiquement les métadonnées de chiffrement et restaure le fichier original dans son format natif.
 
 # Diagramme UML du projet (section cyclosafe/scripts)
 
